@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>猫咪识别</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    </head>
+    <body>
+        <div class="d-flex bg-light justify-content-center align-items-center vh-100 gap-4">
+            <div class="w-25">
+                <div class="bg-white  shadow rounded-3 p-3 w-100 d-flex flex-column justify-content-between" style="height: calc(75vh + 2rem); overflow-y:auto;">
+                    <div>
+                        <p class="text-secondary">Choose an image</p>
+                        <!-- 图片选择表单 -->
+                        <form id="select-image-form" method="get" action="{{ url_for('index') }}">
+                        {% for img in images %}
+                            <div class="form-check mb-2">
+                                <input 
+                                    class="form-check-input" 
+                                    type="radio" 
+                                    name="selected_image" 
+                                    id="img{{ loop.index }}" 
+                                    value="{{ img }}"
+                                    {% if img == selected_image %}checked{% endif %}
+                                    onchange="document.getElementById('select-image-form').submit();">
+                                <label class="form-check-label d-block text-truncate small" for="img{{ loop.index }}">
+                                    {{ img[:6] }}...{{ img[-6:] }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                        </form>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data" class="">
+                            <label class="btn btn-outline-secondary w-100 mb-0">
+                                Add
+                                <input type="file" name="image" accept="image/*" onchange="this.form.submit()" hidden>
+                            </label>
+                        </form>
+                        <!-- 检测按钮表单 -->
+                        <form action="{{ url_for('detect') }}" method="post" class="w-100 mt-2">
+                            <input type="hidden" name="selected_image" value="{{ selected_image }}">
+                            <button class="btn btn-primary w-100" type="submit" {% if not selected_image %}disabled{% endif %}>Detect</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+            <div class="w-50">
+                <div class="bg-white  shadow rounded-3 p-3 w-100 mb-4" style="height: 50vh;">
+                    <p class="text-secondary mb-0">Current Image Preview</p>
+                    <div class="d-flex justify-content-center align-items-center h-100 ">
+                        {% if result_image %}
+                            <!-- 如果有检测结果，显示结果图片 -->
+                            <img src="{{ url_for('serve_file', folder='results', filename=result_image) }}" alt="Result" class="img-fluid mb-4" style=" max-width: 400px;">
+                        {% elif selected_image %}
+                            <!-- 如果没有检测结果，显示选中的图片 -->
+                            <img src="{{ url_for('serve_file', folder='uploads', filename=selected_image) }}" alt="Selected" class="img-fluid mb-4" style=" max-width: 400px;">
+                        {% else %}
+                            <!-- 如果没有选中图片，显示提示 -->
+                            <span class="text-secondary">No image selected</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="bg-white  shadow rounded-3 p-3  w-100" style="height: 25vh;">
+                    <p class="text-secondary mb-0">Current Detection Result</p>
+                    <div class="d-flex justify-content-center align-items-center h-100">
+                        {% if num_cats is not none %}
+                            <p class="mb-0">We have detected <span class="fw-bold text-danger mb-0">{{ num_cats }} cat(s)</span> in this image.</p>
+                        {% else %}
+                            <p class="text-secondary mb-0">No detection yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
