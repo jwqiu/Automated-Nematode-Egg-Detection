@@ -8,7 +8,8 @@ from typing import Dict, List, Tuple, Optional, Union
 from pathlib import Path
 import cv2
 from datetime import datetime
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 
 
 from pycocotools.coco import COCO

@@ -235,7 +235,7 @@ def compute_average_precision(gt_data: Dict, pred_data: Dict, iou_threshold: flo
     
     return ap
 
-def compute_map(gt_data: Dict, pred_data: Dict, iou_thresholds: List[float] = None) -> Dict[str, float]:
+def compute_map(gt_data: Dict, pred_data: Dict, iou_thresholds: Optional[List[float]] = None) -> Dict[str, float]:
     """Compute mean Average Precision (mAP) over multiple IoU thresholds."""
     if iou_thresholds is None:
         iou_thresholds = [0.5]
