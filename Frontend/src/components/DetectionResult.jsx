@@ -65,7 +65,7 @@ function DetectionResult({ selectedImage,setSelectedImage }) {
   }
 
   return (
-    <div className="bg-white shadow-lg  max-h-[200px] flex flex-col justify-center items-center rounded-lg p-8 flex-1">
+    <div className="bg-white shadow-lg  max-h-[300px] flex flex-col justify-start items-center rounded-lg p-8 ">
       {statusMessage}
 
           {/* 显示 boxes */}
@@ -95,7 +95,9 @@ function DetectionResult({ selectedImage,setSelectedImage }) {
           onClick={handleDetect}
           disabled={!selectedImage || loading}
           className={`rounded-xl px-4 py-2 mt-3 text-white font-bold ${
-            loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+            !selectedImage || loading
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-500 hover:bg-blue-600'
           }`}
         >
           {loading ? 'Detecting...' : 'Detect'}

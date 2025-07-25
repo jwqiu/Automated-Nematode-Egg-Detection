@@ -11,7 +11,7 @@ function App() {
 
   return (
     <>
-      <div className=' bg-gray-100 flex flex-col lg:overflow-hidden'>
+      <div className='min-h-screen bg-gray-100 flex flex-col lg:overflow-hidden'>
         <LogoHeader />
         <div className="flex-1  flex items-center justify-center">
             <div className=" w-[1000px] lg:w-[1200px] xl:max-w-[1500px]  grid grid-cols-1 mt-8 lg:mt-0 lg:grid-cols-3 gap-8 px-8 lg:px-8 xl:px-0 pb-12">

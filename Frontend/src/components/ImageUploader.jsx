@@ -16,7 +16,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
 
     const newImages = [];
 
-    files.forEach((file) => {
+    files.forEach((file, index) => {
       const previewUrl = URL.createObjectURL(file);
 
       const formData = new FormData();
@@ -44,12 +44,21 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
             detected: false,
             boxes: null
           }));
+          if (index === 0) {
+            setSelectedImage({
+              file: file,
+              url: previewUrl,
+              uid: data.uid,
+              filename: data.filename,
+              detected: false,
+              boxes: null
+            });
+          }
         })
         .catch((err) => {
           console.error("Upload failed:", err);
         });
     });
-
     event.target.value = "";
   }
 
@@ -100,7 +109,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
   return (
     <div className="w-full   max-h-[600px] 2xl:max-h-[800px] overflow-y-auto rounded-lg   mx-auto  px-8 py-6 bg-white shadow-lg ">
       {/* 图片上传的 input 元素 */}
-        <div className="flex items-center w-full  justify-between mb-6 mt-0 sticky z-10 bg-white p-3 rounded-lg border bg-white/60 shadow-lg top-0">
+        <div className="flex items-center w-full bg-gray-200/60  justify-between mb-6 mt-0 sticky z-10  p-3 rounded-lg   shadow-lg top-0">
             <div className=""> 
                 <p className="mb-0 text-gray-500 ms-2">Images:</p>
             </div>

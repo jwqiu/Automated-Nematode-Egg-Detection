@@ -65,6 +65,11 @@ function ImagePreview({ selectedImage }) {
     lastPos.current = { x: e.clientX, y: e.clientY };
   };
 
+  const handleReset = () => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+  };
+
   const containerClass = `
     rounded-lg flex flex-col flex-1 min-h-[300px]
     overflow-hidden border bg-white shadow-lg
@@ -79,7 +84,8 @@ function ImagePreview({ selectedImage }) {
       {selectedImage ? (
         <div
           className="
-            w-full h-full flex justify-center items-center
+          relative  
+          w-full h-full flex justify-center items-center
             cursor-grab
             touch-none        /* 禁止触摸默认滚动 */
             overscroll-none   /* 禁止边缘滚动链 */
@@ -117,6 +123,18 @@ function ImagePreview({ selectedImage }) {
               height: 'auto', 
             }}
           />
+          
+          <button
+            onClick={handleReset}
+            className="absolute top-3 right-3 bg-white p-1 rounded shadow hover:bg-gray-100"
+            title="Reset"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+            </svg>
+          </button>
+
+
         </div>
       ) : (
         <div className="flex items-center justify-center h-full p-8">
