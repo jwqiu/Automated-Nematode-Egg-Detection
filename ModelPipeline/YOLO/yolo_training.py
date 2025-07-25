@@ -122,6 +122,24 @@ def predict_model(weight_path: str, config_name: str, task: str, name):
         save_conf=True,
         verbose=True
     )
+    
+def predict_model_for_web(weight_path, config_name, task, source, project, name):
+
+    model = YOLO(weight_path)
+    model.predict(
+        source=source,            # 现在是真正的文件路径
+        project=project,
+        name=name,
+        task=task,
+        exist_ok=True,
+        save_json=True,
+        save_txt=False,
+        save_conf=True,
+        save=True,
+        verbose=False
+    )
+
+
 
 
 # -------------------------

@@ -6,7 +6,11 @@ import json
 import numpy as np
 import cv2
 from tqdm import tqdm
-from yolo_training import predict_model
+from .yolo_training import predict_model
+from PIL import Image
+import io
+import base64
+
 
 # -------------------------
 # Configuration
@@ -89,6 +93,10 @@ def parse_yolo_line(line, img_width, img_height, task):
 # -------------------------
 # Draw Predictions and Annotations
 # -------------------------
+
+
+
+
 for image_name in tqdm(os.listdir(IMAGE_DIR), desc="Rendering predictions and annotations"):
     if not image_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff')):
         print(f"Warning: not valid files .png', '.jpg', '.jpeg', '.tif', '.tiff'")

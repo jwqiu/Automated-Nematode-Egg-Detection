@@ -11,53 +11,88 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
 
   // 处理上传图片的函数
   function handleImageUpload(event) {
-    // 获取 input 中用户选择的文件
     const fileList = event.target.files;
-
-    // 将类数组的 fileList 转换为真正的数组
     const files = Array.from(fileList);
 
-    // 创建一个新的数组，用于存储包含文件和预览地址的对象
     const newImages = [];
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-
-      // 为每张图片生成一个可供浏览器预览的 URL
+    files.forEach((file) => {
       const previewUrl = URL.createObjectURL(file);
 
-      // 将文件和生成的预览地址打包成一个对象，放入数组中
-      newImages.push({
-        file: file,
-        url: previewUrl
-      });
-    }
+      const formData = new FormData();
+      formData.append("image", file);
 
-    // 更新状态，把新的图片追加到原有的 images 列表中
-    setImages(function (previousImages) {
-      return previousImages.concat(newImages);
+      // 发送 POST 请求到后端上传图片
+      fetch("http://127.0.0.1:5001/upload", {
+        method: "POST",
+        body: formData
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            // 后端返回 404、500 等状态码时，避免 json 报错
+            const errorText = await res.text();
+            throw new Error(`Upload failed: ${res.status} ${errorText}`);
+          }
+          return res.json();
+        })
+        .then((data) => {
+          setImages((previousImages) => previousImages.concat({
+            file: file,
+            url: previewUrl,
+            uid: data.uid,
+            filename: data.filename,
+            detected: false,
+            boxes: null
+          }));
+        })
+        .catch((err) => {
+          console.error("Upload failed:", err);
+        });
     });
-    event.target.value = "";
 
+    event.target.value = "";
   }
 
-  function handleRemove(indexToRemove) {
-    const imageToRemove = images[indexToRemove];
-
-    // 释放浏览器中占用的临时图片地址（节省内存）
-    URL.revokeObjectURL(imageToRemove.url);
-
-    // 如果当前删除的是已选中的图片，则清除选中状态
-    if (selectedImage && selectedImage.url === imageToRemove.url) {
-      setSelectedImage(null);
-    }
-
-    // 删除指定 index 的图片，并更新状态
-    setImages(function (previousImages) {
-      return previousImages.filter(function (_, index) {
-        return index !== indexToRemove;
-      });
+  function deleteImageOnServer({ uid, filename }) {
+    return fetch("http://127.0.0.1:5001/delete", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uid, filename })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      return res.json();
     });
+  }
+
+
+  function handleRemove(indexToRemove) {
+    const img = images[indexToRemove];
+
+    // 先调用后端接口
+    deleteImageOnServer(img)
+      .then((data) => {
+        if (data.status !== "success") {
+          console.error("删除失败：", data.error);
+          return;
+        }
+
+        // 后端删成功，前端再做清理
+        URL.revokeObjectURL(img.url);
+        setImages(prev =>
+          prev.filter((_, idx) => idx !== indexToRemove)
+        );
+        if (selectedImage?.uid === img.uid) {
+          // 如果是 blob URL，也要 revoke
+          if (selectedImage.url.startsWith("blob:")) {
+            URL.revokeObjectURL(selectedImage.url);
+          }
+          setSelectedImage(null);
+        }
+      })
+      .catch(err => {
+        console.error("删除过程中出错：", err);
+      });
   }
 
 
@@ -65,14 +100,14 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
   return (
     <div className="w-full   max-h-[600px] 2xl:max-h-[800px] overflow-y-auto rounded-lg   mx-auto  px-8 py-6 bg-white shadow-lg ">
       {/* 图片上传的 input 元素 */}
-        <div className="flex items-center w-full justify-between mb-4 mt-0 sticky z-10 bg-white p-3 rounded-lg border bg-white/60 shadow-lg top-0">
+        <div className="flex items-center w-full  justify-between mb-6 mt-0 sticky z-10 bg-white p-3 rounded-lg border bg-white/60 shadow-lg top-0">
             <div className=""> 
-                <p className="mb-0 text-gray-500">Images:</p>
+                <p className="mb-0 text-gray-500 ms-2">Images:</p>
             </div>
             <div>
                 <label
                 htmlFor="upload"
-                className="cursor-pointer inline-block bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600"
+                className="cursor-pointer font-bold inline-block bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600"
                 >
                     Upload
                 </label>
@@ -90,38 +125,49 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
         
 
         {/* 图片列表区域 */}
-        <div className="flex flex-row lg:flex-col  gap-5 overflow-x-auto">
+        <div className="flex flex-row lg:min-h-[500px] lg:flex-col gap-6 overflow-x-auto">
           {images.length === 0 ? (
-              <div className=" min-h-[300px] w-full flex items-center justify-center p-4 bg-gray-50 rounded shadow-inner">
-                  <p className="text-gray-400 text-md  italic">No images uploaded yet.</p>
-              </div>
-
+            <p className="text-gray-400 text-md text-center italic">No images uploaded yet.</p>
           ) : (
-              images.map(function (img, index) {
-                  return (
-                      <div key={index} className="relative group shadow-lg bg-gray-100 hover:bg-gray-300 rounded">
-                          <img
-                              src={img.url}
-                              alt={"preview-" + index}
-                              className="w-full h-40 object-cover rounded transition group-hover:brightness-75"
-                              onClick={() => setSelectedImage(img)}
-                          />
-                          <p className="text-sm ms-2 text-start group-hover:text-gray-800 mt-1 py-1 text-gray-600 truncate">
-                              {img.file.name}
-                          </p>
+            images
+              .slice()         // 拷贝一份，防止修改原数组
+              .reverse()       
+              .map((img, index) => {
+              const isSelected = selectedImage?.uid === img.uid; // ✅ 判断选中
 
-                          {/* 删除按钮（鼠标移上去才显示） */}
-                          <button
-                              onClick={function () {
-                                  handleRemove(index);
-                              }}
-                              className="absolute top-2 right-2 bg-red-500 text-white rounded px-3 py-1 text-xl opacity-0 group-hover:opacity-100 transition"
-                          >
-                              ×
-                          </button>
-                      </div>
-                  );
-              })
+              return (
+                <div
+                  key={index}
+                  className={`relative group min-w-[160px] flex-shrink-0 lg:w-full bg-gray-100 hover:bg-gray-300 overflow-hidden rounded cursor-pointer ${
+                    isSelected ? 'border-4 border-gray-400 rounded' : ''
+                  }`}
+                >
+                  {/* ✅ 左上角角标 */}
+                  {isSelected && (
+                    <div className="absolute z-10 top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded shadow">
+                      Selected
+                    </div>
+                  )}
+                  <img
+                    src={img.url}
+                    alt={"preview-" + index}
+                    className="w-full max-w-72 lg:max-w-none h-40 xl:h-55 object-cover transition group-hover:brightness-75"
+                    onClick={() => setSelectedImage(img)}
+                  />
+                  <p className="text-sm ms-2 text-start group-hover:text-gray-800 mt-1 py-1 text-gray-600 truncate">
+                    {img.file.name}
+                  </p>
+
+                  {/* 删除按钮 */}
+                  <button
+                    onClick={() => handleRemove(index)}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded px-3 py-1 text-xl opacity-0 group-hover:opacity-100 transition"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })
           )}
         </div>
     </div>

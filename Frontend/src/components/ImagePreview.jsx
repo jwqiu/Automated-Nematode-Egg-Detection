@@ -1,21 +1,128 @@
-import React from 'react';
+// import React from 'react';
+
+// function ImagePreview({ selectedImage }) {
+//   const containerClass = `rounded-lg flex flex-col overflow-auto border ${
+//     selectedImage ? 'p-0 bg-white' : 'p-8 bg-white shadow-lg flex-1'
+//   }`;
+
+//   return (
+//     <div className={containerClass}>
+//       {selectedImage ? (
+//         <div className="w-full h-full flex justify-center items-center">
+//           <img
+//             src={selectedImage.url}
+//             alt="Selected or Detection Result"
+//             className="max-w-full max-h-full object-contain"
+//             draggable={false}
+//           />
+//         </div>
+//       ) : (
+//         <div className="flex items-center justify-center h-full">
+//           <p className="mb-0 italic text-gray-400">No image selected.</p>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+// export default ImagePreview;
+
+import React, { useState, useRef } from 'react';
 
 function ImagePreview({ selectedImage }) {
-  const containerClass = `   rounded-lg flex flex-col  overflow-auto ${
-    selectedImage ? 'p-0 bg-gray-100 ' : 'p-8 bg-white shadow-lg flex-1'
-  }`;
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const isDragging = useRef(false);
+  const lastPos = useRef({ x: 0, y: 0 });
+
+  // 滚轮缩放
+  const handleWheel = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setScale(prev => {
+      const next = prev * delta;
+      return Math.min(Math.max(next, 0.5), 5);
+    });
+  };
+
+  // 拖拽开始
+  const handleMouseDown = e => {
+    isDragging.current = true;
+    lastPos.current = { x: e.clientX, y: e.clientY };
+  };
+  // 拖拽结束
+  const handleMouseUp = () => {
+    isDragging.current = false;
+  };
+  // 拖拽中平移
+  const handleMouseMove = e => {
+    if (!isDragging.current) return;
+    e.preventDefault();
+    const dx = e.clientX - lastPos.current.x;
+    const dy = e.clientY - lastPos.current.y;
+    setTranslate(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+    lastPos.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const containerClass = `
+    rounded-lg flex flex-col flex-1 min-h-[300px]
+    overflow-hidden border bg-white shadow-lg
+  `;
+
+  // 辅助函数：进/出时关/开 body 滚动
+  const disableBodyScroll = () => { document.body.style.overflow = 'hidden'; };
+  const enableBodyScroll  = () => { document.body.style.overflow = 'auto'; };
+
   return (
     <div className={containerClass}>
-        {selectedImage ? (
-          <img src={selectedImage.url} className="w-full h-full object-contain rounded-lg" />
-        ) : (
-          <>
-            <p className="mb-3 text-gray-500">Preview the Image / Detection Result:</p>
-            <div className="flex-1  bg-gray-50 p-0 flex items-center shadow-inner justify-center rounded min-h-[100px] ">
-              <p className="text-center text-md italic text-gray-400">No image selected</p>
-            </div>
-          </>
-        )}
+      {selectedImage ? (
+        <div
+          className="
+            w-full h-full flex justify-center items-center
+            cursor-grab
+            touch-none        /* 禁止触摸默认滚动 */
+            overscroll-none   /* 禁止边缘滚动链 */
+          "
+          // 缩放 & 拖拽
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+
+          // 进/出时彻底关/开页面滚动
+          onMouseEnter={disableBodyScroll}
+          onMouseLeave={e => {
+              handleMouseUp();      // 结束拖拽
+              enableBodyScroll();   // 恢复页面滚动
+            }}          
+          onTouchStart={disableBodyScroll}
+          onTouchEnd={enableBodyScroll}
+
+          // 触摸滑动也拦截
+          onTouchMove={e => e.preventDefault()}
+        >
+          <img
+            src={selectedImage.url}
+            alt="Selected or Detection Result"
+            draggable={false}
+            style={{
+              transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+              transition: isDragging.current
+                ? 'none'
+                : 'transform 0.1s ease-out',
+              // maxWidth: '100%',
+              // maxHeight: '100%',
+              width: '100%',
+              height: 'auto', 
+            }}
+          />
+        </div>
+      ) : (
+        <div className="flex items-center justify-center h-full p-8">
+          <p className="italic text-gray-400">No image selected.</p>
+        </div>
+      )}
     </div>
   );
 }
