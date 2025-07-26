@@ -1,6 +1,5 @@
 !frontend/package.json
-
-Data/
+!frontend/public/static/images/Lincoln-University-Logo-Horizontal-RGB-Blue-01.pngData/
 Jupyter Notebooks/
 pdf/
 Reports/
