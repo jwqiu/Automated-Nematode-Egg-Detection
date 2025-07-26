@@ -4,7 +4,7 @@ function LogoHeader() {
   return (
     <div className="flex-shrink-0  flex justify-between items-center shadow-lg lg:transparent lg:shadow-none">
       <img
-        src="/static/images/Lincoln University Logo Horizontal_RGB Blue-01.png"
+        src={`${import.meta.env.BASE_URL}static/images/Lincoln-University-Logo-Horizontal-RGB-Blue-01.png`}
         className="h-[100px] "
         alt="LOGO"
       />
