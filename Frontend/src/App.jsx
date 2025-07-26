@@ -14,7 +14,7 @@ function App() {
   return (
     <>
       <ParticlesNetwork />
-      <div className='relative bg-gradient-to-b from-white  via-blue-200 to-blue-400 lg:bg-gradient-to-r lg:from-gray-100 lg:via-blue-200 lg:to-blue-400 min-h-screen bg-gray-100 flex flex-col lg:overflow-hidden'>
+      <div className='relative bg-gradient-to-b from-white  via-blue-200 to-blue-300 lg:bg-gradient-to-tr lg:from-white lg:via-gray-100 lg:to-blue-300 min-h-screen bg-gray-100 flex flex-col lg:overflow-hidden'>
         <LogoHeader />
         <div className="flex-1 flex items-center justify-center">
             <div className=" w-[1000px] lg:w-[1200px] xl:max-w-[1500px]  grid grid-cols-1 mt-8 lg:mt-0 lg:grid-cols-3 gap-8 px-8 lg:px-8 xl:px-0 pb-12">
