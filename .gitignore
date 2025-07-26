@@ -36,7 +36,8 @@ Dataset/
 March/
 Models/
 ModelPipeline/Trained_Models/
-
+node_modules/
+frontend/node_modules/
 
 
 # macOS

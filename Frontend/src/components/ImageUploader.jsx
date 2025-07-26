@@ -107,7 +107,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
 
   // 返回要渲染的 HTML 结构（JSX）
   return (
-    <div className="w-full   max-h-[600px] 2xl:max-h-[800px] overflow-y-auto rounded-lg   mx-auto  px-8 py-6 bg-white shadow-lg ">
+    <div className="w-full    max-h-[600px] 2xl:max-h-[800px] overflow-y-auto rounded-lg   mx-auto  px-8 py-6 bg-white shadow-lg ">
       {/* 图片上传的 input 元素 */}
         <div className="flex items-center w-full bg-gray-200/60  justify-between mb-6 mt-0 sticky z-10  p-3 rounded-lg   shadow-lg top-0">
             <div className=""> 

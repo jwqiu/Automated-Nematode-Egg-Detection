@@ -22,7 +22,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 OUTPUT_FOLDER = os.path.join(BASE_DIR, 'outputs')
-WEIGHTS_PATH = 'ModelPipeline/Trained_Models/YOLO/yolov8s_sgd_lr0001_max/weights/best.pt'
+WEIGHTS_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "ModelPipeline", "Trained_Models", "YOLO", "yolov8s_sgd_lr0001_max", "weights", "best.pt")
+)
+
 CONFIG_NAME = "web_predict"
 TASK = "detect"
 
