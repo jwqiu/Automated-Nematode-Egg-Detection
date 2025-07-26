@@ -9,7 +9,7 @@ function LogoHeader() {
         alt="LOGO"
       />
       <div>
-        <p className="text-gray-700 font-mono font-bold text-md lg:text-xl me-8 mb-0 text-nowrap">Parasite Detection System</p>
+        <p className="text-gray-700 font-serif font-bold text-md lg:text-xl me-8 mb-0 text-nowrap">Parasite Detection System</p>
         <p className='text-gray-500 text-sm text-end me-8 italic'>*Research Project</p>
       </div>
 
