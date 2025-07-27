@@ -32,6 +32,8 @@ function App() {
                 <DetectionResult 
                   selectedImage={selectedImage} 
                   setSelectedImage={setSelectedImage}
+                  images={images}
+                  setImages={setImages}
                 />
               </div>
             </div>
