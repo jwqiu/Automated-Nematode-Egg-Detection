@@ -90,42 +90,46 @@ def delete_image():
     return jsonify(status="success"), 200
 
 
-def draw_boxes_on_image(image_path, boxes):
-    """在图片上绘制预测框，并返回 RGB ndarray"""
-    image = cv2.imread(image_path)
-    if image is None:
-        raise ValueError(f"Cannot load image: {image_path}")
-    
+def draw_boxes_on_array(img_array, boxes):
+    """在 numpy 数组图像上绘制预测框，并返回 RGB ndarray"""
+
+    # OpenCV 处理的是 BGR，因此如果输入是 RGB，则先转为 BGR
+    image = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+
     for idx, box in enumerate(boxes):
-        x1, y1, x2, y2 = map(int, box['bbox'])  # 坐标
+        x1, y1, x2, y2 = map(int, box['bbox'])
         conf = box['confidence']
         label = f"{conf*100:.1f}%"
 
-        # 绿色框
         cv2.rectangle(image, (x1, y1), (x2, y2), color=(0, 255, 128), thickness=2)
         cv2.putText(image, label, (x1, y1 - 8), cv2.FONT_HERSHEY_SIMPLEX,
                     fontScale=0.6, color=(0, 255, 128), thickness=2)
 
-    # OpenCV 是 BGR，需要转成 RGB
+    # 转回 RGB 返回
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return image_rgb
 
+
 @app.route('/predict', methods=['POST'])
 def predict():
-    data     = request.get_json() or {}
-    uid      = data.get("uid")
-    filename = data.get("filename")
-    if not uid or not filename:
-        return jsonify(error="Missing uid or filename"), 400
+    data = request.get_json()
+    image_b64 = data.get("image_base64")
+    filename  = data.get("filename", "uploaded_image.jpg")
 
-    input_path = os.path.join(UPLOAD_FOLDER, uid, filename)
-    if not os.path.exists(input_path):
-        return jsonify(error="Image not found"), 404
+    if not image_b64:
+        return jsonify(error="Missing image_base64"), 400
 
     try:
+
+      # 解码 base64
+        image_bytes = base64.b64decode(image_b64)
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+
+        # 临时转换成 numpy 数组传给模型
+        img_array = np.array(image)
         # 内存中推理，不写任何中间文件
         results = model.predict(
-            source=input_path,
+            source=img_array,
             task=TASK,
             exist_ok=True,
             save=False,
@@ -137,9 +141,8 @@ def predict():
         app.logger.error(f"Predict error: {e}")
         return jsonify(error="Internal prediction error"), 500
     
-    img_b64 = None 
     if not results:
-        return jsonify(image=img_b64, boxes=[]), 200
+        return jsonify(image=None, boxes=[]), 200
     
     r = results[0]
     # 提取坐标和置信度
@@ -152,15 +155,15 @@ def predict():
         for b, c in zip(coords, confs)
     ]
 
-    img_array = draw_boxes_on_image(input_path, boxes_info)
-    image_pil = Image.fromarray(img_array)
+    # 把框画在原图上
+    drawn_img_array = draw_boxes_on_array(img_array, boxes_info)  # 注意你可能要改一下 draw 函数的输入
+    output_pil = Image.fromarray(drawn_img_array)
     buf = io.BytesIO()
-    image_pil.save(buf, format="PNG")  # PNG 颜色更稳定
-    img_b64 = base64.b64encode(buf.getvalue()).decode()
+    output_pil.save(buf, format="PNG")
+    result_image_b64 = base64.b64encode(buf.getvalue()).decode()
 
-  
     return jsonify({
-        "image": img_b64,
+        "image": result_image_b64,
         "boxes": boxes_info
     })
 

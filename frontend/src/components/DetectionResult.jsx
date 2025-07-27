@@ -12,13 +12,25 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
     setError(null);
 
     try {
-      const res = await fetch('http://127.0.0.1:5001/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      // 把 FileReader 封装成 Promise
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result.split(',')[1]; // 去掉前缀
+          resolve(base64);
+        };
+        reader.onerror = () => reject("无法读取图像");
+        reader.readAsDataURL(selectedImage.file);
+      });
+
+      // 调用后端
+      const res = await fetch("http://127.0.0.1:5001/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          uid: selectedImage.uid,
-          filename: selectedImage.filename
-        })
+          image_base64: base64Data,
+          filename: selectedImage.filename,
+        }),
       });
 
       if (!res.ok) {
@@ -30,9 +42,9 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
 
       setSelectedImage({
         ...selectedImage,
-        url: 'data:image/jpeg;base64,' + resJson.image,
+        url: "data:image/png;base64," + resJson.image, // 注意后端是 PNG
         detected: true,
-        boxes: resJson.boxes
+        boxes: resJson.boxes,
       });
 
       setImages((prevImages) =>
@@ -40,21 +52,21 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
           img.uid === selectedImage.uid
             ? {
                 ...img,
-                url: 'data:image/jpeg;base64,' + resJson.image,
+                url: "data:image/png;base64," + resJson.image,
                 detected: true,
-                boxes: resJson.boxes
+                boxes: resJson.boxes,
               }
             : img
         )
       );
-
     } catch (err) {
       console.error(err);
-      setError(err.message);
+      setError(err.message || "发生错误");
     } finally {
       setLoading(false);
     }
   };
+
 
   let statusMessage = null;
 
@@ -109,8 +121,8 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
       {(!selectedImage?.boxes || selectedImage.boxes.length === 0) && (
         <div className="flex items-center mt-2 justify-between gap-2">
           <div className="hover:bg-gray-200 bg-gray-100 rounded-lg border p-1  flex items-center gap-1" onClick={() => setShowSettings(true)}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8 text-gray-400 hover:text-gray-500">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-8 text-gray-400 hover:text-gray-500">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
             </svg>
             <p className="text-gray-400">Setting</p>
           </div>

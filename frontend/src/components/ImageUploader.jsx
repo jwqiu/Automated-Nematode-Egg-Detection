@@ -9,100 +9,161 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
   // const [images, setImages] = React.useState([]);
   // const [selectedImage, setSelectedImage] = React.useState(null);
 
+  function resizeAndPadImage(img, callback) {
+    const targetSize = 608;
+    const canvas = document.createElement("canvas");
+    canvas.width = targetSize;
+    canvas.height = targetSize;
+    const ctx = canvas.getContext("2d");
+
+    // 计算等比缩放尺寸
+    const ratio = Math.min(targetSize / img.width, targetSize / img.height);
+    const newWidth = img.width * ratio;
+    const newHeight = img.height * ratio;
+
+    const dx = (targetSize - newWidth) / 2;
+    const dy = (targetSize - newHeight) / 2;
+
+    // 可选：设置背景色为灰色（与 YOLO letterbox 一致）
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(0, 0, targetSize, targetSize);
+
+    // 居中绘制缩放后的图像
+    ctx.drawImage(img, dx, dy, newWidth, newHeight);
+
+    canvas.toBlob((blob) => {
+      callback(blob);
+    }, "image/jpeg", 0.8);
+  }
+
   // 处理上传图片的函数
   function handleImageUpload(event) {
     const fileList = event.target.files;
     const files = Array.from(fileList);
 
-    const newImages = [];
+    files.forEach(async (file, index) => {
+      // 🧠 Step 1: 将原始文件转换为 Image 对象
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
 
-    files.forEach((file, index) => {
-      const previewUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        resizeAndPadImage(img, async (blob) => {
+          const previewUrl = URL.createObjectURL(blob);
+          const formData = new FormData();
+          formData.append("image", blob, file.name); // 保留原文件名
+          const newUid = crypto.randomUUID();
+          // try {
+          //   const res = await fetch("http://127.0.0.1:5001/upload", {
+          //     method: "POST",
+          //     body: formData,
+          //   });
 
-      const formData = new FormData();
-      formData.append("image", file);
+          //   if (!res.ok) {
+          //     const errorText = await res.text();
+          //     throw new Error(`Upload failed: ${res.status} ${errorText}`);
+          //   }
 
-      // 发送 POST 请求到后端上传图片
-      fetch("http://127.0.0.1:5001/upload", {
-        method: "POST",
-        body: formData
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            // 后端返回 404、500 等状态码时，避免 json 报错
-            const errorText = await res.text();
-            throw new Error(`Upload failed: ${res.status} ${errorText}`);
-          }
-          return res.json();
-        })
-        .then((data) => {
-          setImages((previousImages) => previousImages.concat({
-            file: file,
-            url: previewUrl,
-            uid: data.uid,
-            filename: data.filename,
-            detected: false,
-            boxes: null
-          }));
-          if (index === 0) {
-            setSelectedImage({
-              file: file,
-              url: previewUrl,
-              uid: data.uid,
-              filename: data.filename,
-              detected: false,
-              boxes: null
-            });
-          }
-        })
-        .catch((err) => {
-          console.error("Upload failed:", err);
-        });
+          //   const data = await res.json();
+
+            setImages((prev) =>
+              prev.concat({
+                file: blob,
+                url: previewUrl,
+                uid: newUid,
+                filename: file.name,
+                detected: false,
+                boxes: null,
+              })
+            );
+
+            if (index === files.length - 1) {              
+              setSelectedImage({
+                file: blob,
+                url: previewUrl,
+                uid: newUid,
+                filename: file.name,
+                detected: false,
+                boxes: null,
+              });
+            }
+          // } catch (err) {
+          //   console.error("Upload failed:", err);
+          // }
+        }, "image/jpeg", 0.8); // 第三个参数为压缩质量（可选）
+      };
     });
+
     event.target.value = "";
   }
 
-  function deleteImageOnServer({ uid, filename }) {
-    return fetch("http://127.0.0.1:5001/delete", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uid, filename })
-    })
-    .then(res => {
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      return res.json();
-    });
+
+  // function deleteImageOnServer({ uid, filename }) {
+  //   return fetch("http://127.0.0.1:5001/delete", {
+  //     method: "DELETE",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ uid, filename })
+  //   })
+  //   .then(res => {
+  //     if (!res.ok) throw new Error(`Server returned ${res.status}`);
+  //     return res.json();
+  //   });
+  // }
+
+  
+
+  // function handleRemove(indexToRemove) {
+  //   const img = images[indexToRemove];
+
+  //   // 先调用后端接口
+  //   deleteImageOnServer(img)
+  //     .then((data) => {
+  //       if (data.status !== "success") {
+  //         console.error("删除失败：", data.error);
+  //         return;
+  //       }
+
+  //       // 后端删成功，前端再做清理
+  //       URL.revokeObjectURL(img.url);
+  //       setImages(prev =>
+  //         prev.filter((_, idx) => idx !== indexToRemove)
+  //       );
+  //       if (selectedImage?.uid === img.uid) {
+  //         // 如果是 blob URL，也要 revoke
+  //         if (selectedImage.url.startsWith("blob:")) {
+  //           URL.revokeObjectURL(selectedImage.url);
+  //         }
+  //         setSelectedImage(null);
+  //       }
+  //     })
+  //     .catch(err => {
+  //       console.error("删除过程中出错：", err);
+  //     });
+  // }
+
+  function handleRemove(uidToRemove) {
+    const imgIndex = images.findIndex(img => img.uid === uidToRemove);
+    if (imgIndex === -1) return;
+
+    const img = images[imgIndex];
+
+    // 清理 URL
+    URL.revokeObjectURL(img.url);
+
+    // 更新图片列表（前端删除）
+    const newImages = images.filter(img => img.uid !== uidToRemove);
+    setImages(newImages);
+
+    // 清理 selectedImage（必须在最后执行，不能用旧的 images 判断）
+    if (selectedImage?.uid === uidToRemove) {
+      if (selectedImage.url.startsWith("blob:")) {
+        URL.revokeObjectURL(selectedImage.url);
+      }
+      setSelectedImage(null);
+    }
   }
 
 
-  function handleRemove(indexToRemove) {
-    const img = images[indexToRemove];
 
-    // 先调用后端接口
-    deleteImageOnServer(img)
-      .then((data) => {
-        if (data.status !== "success") {
-          console.error("删除失败：", data.error);
-          return;
-        }
-
-        // 后端删成功，前端再做清理
-        URL.revokeObjectURL(img.url);
-        setImages(prev =>
-          prev.filter((_, idx) => idx !== indexToRemove)
-        );
-        if (selectedImage?.uid === img.uid) {
-          // 如果是 blob URL，也要 revoke
-          if (selectedImage.url.startsWith("blob:")) {
-            URL.revokeObjectURL(selectedImage.url);
-          }
-          setSelectedImage(null);
-        }
-      })
-      .catch(err => {
-        console.error("删除过程中出错：", err);
-      });
-  }
 
 
   // 返回要渲染的 HTML 结构（JSX）
@@ -146,7 +207,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
 
               return (
                 <div
-                  key={index}
+                  key={img.uid}
                   className={`relative group min-w-[160px] flex-shrink-0 lg:w-full bg-gray-100 hover:bg-gray-300 overflow-hidden rounded cursor-pointer ${
                     isSelected ? 'border-4 border-gray-400 rounded' : ''
                   }`}
@@ -159,7 +220,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
                   )}
                   <img
                     src={img.url}
-                    alt={"preview-" + index}
+                    alt={"preview-" + img.uid}
                     className="w-full max-w-72 lg:max-w-none h-40 xl:h-55 object-cover transition group-hover:brightness-75"
                     onClick={() => setSelectedImage(img)}
                   />
@@ -169,7 +230,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
 
                   {/* 删除按钮 */}
                   <button
-                    onClick={() => handleRemove(index)}
+                    onClick={() => handleRemove(img.uid)}
                     className="absolute top-2 right-2 bg-red-500 text-white rounded px-3 py-1 text-xl opacity-0 group-hover:opacity-100 transition"
                   >
                     ×

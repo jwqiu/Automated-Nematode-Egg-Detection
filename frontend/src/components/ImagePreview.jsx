@@ -27,13 +27,14 @@
 
 // export default ImagePreview;
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 function ImagePreview({ selectedImage }) {
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const isDragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
+  // const containerRef = useRef(null); // ✅ 用 ref
 
   // 滚轮缩放
   const handleWheel = e => {
@@ -45,6 +46,14 @@ function ImagePreview({ selectedImage }) {
       return Math.min(Math.max(next, 0.5), 5);
     });
   };
+  // const handleWheel = (e) => {
+  //   e.preventDefault();
+  //   const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  //   setScale((prev) => {
+  //     const next = prev * delta;
+  //     return Math.min(Math.max(next, 0.5), 5);
+  //   });
+  // };
 
   // 拖拽开始
   const handleMouseDown = e => {
@@ -79,12 +88,28 @@ function ImagePreview({ selectedImage }) {
   const disableBodyScroll = () => { document.body.style.overflow = 'hidden'; };
   const enableBodyScroll  = () => { document.body.style.overflow = 'auto'; };
 
+
+  // ✅ 用 ref 精准绑定非 passive 的 wheel 监听
+  // useEffect(() => {
+  //   const container = containerRef.current;
+  //   if (!container) return;
+
+  //   container.addEventListener("wheel", handleWheel, { passive: false });
+
+  //   return () => {
+  //     container.removeEventListener("wheel", handleWheel);
+  //   };
+  // }, []);
+
+
   return (
     <div className={containerClass}>
       {selectedImage ? (
         <div
+          // ref={containerRef}
           className="
           relative  
+          image-preview-container
           w-full h-full flex justify-center items-center
             cursor-grab
             touch-none        /* 禁止触摸默认滚动 */
@@ -129,8 +154,8 @@ function ImagePreview({ selectedImage }) {
             className="absolute top-3 right-3 bg-white p-1 rounded shadow hover:bg-gray-100"
             title="Reset"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
             </svg>
           </button>
 
