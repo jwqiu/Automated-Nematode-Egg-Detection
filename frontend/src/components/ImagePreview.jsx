@@ -80,8 +80,8 @@ function ImagePreview({ selectedImage }) {
   };
 
   const containerClass = `
-    rounded-lg flex flex-col flex-1 min-h-[300px]
-    overflow-hidden border bg-white shadow-lg
+    rounded-lg flex flex-col h-[320px] xl:h-[400px] 
+    border bg-white shadow-lg overflow-hidden
   `;
 
   // 辅助函数：进/出时关/开 body 滚动
@@ -108,9 +108,9 @@ function ImagePreview({ selectedImage }) {
         <div
           // ref={containerRef}
           className="
-          relative  
+          relative  flex-1 h-full flex overflow-hidden
           image-preview-container
-          w-full h-full flex justify-center items-center
+            justify-center items-center
             cursor-grab
             touch-none        /* 禁止触摸默认滚动 */
             overscroll-none   /* 禁止边缘滚动链 */
@@ -137,6 +137,7 @@ function ImagePreview({ selectedImage }) {
             src={selectedImage.url}
             alt="Selected or Detection Result"
             draggable={false}
+            className="w-full h-auto object-contain"
             style={{
               transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
               transition: isDragging.current
@@ -144,8 +145,8 @@ function ImagePreview({ selectedImage }) {
                 : 'transform 0.1s ease-out',
               // maxWidth: '100%',
               // maxHeight: '100%',
-              width: '100%',
-              height: 'auto', 
+              // width: '100%',
+              // height: 'auto', 
             }}
           />
           

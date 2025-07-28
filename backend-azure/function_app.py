@@ -111,6 +111,7 @@
 # def test_addition(req: func.HttpRequest) -> func.HttpResponse:
 #     result = 1 + 1
 #     return func.HttpResponse(f"The result of 1 + 1 is {result}")
+
 import azure.functions as func
 import json
 import base64
@@ -165,8 +166,8 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
             preds = preds.squeeze(0)  # 变成 (300, 6)
 
         for idx, row in enumerate(preds):
-            print("DEBUG:", [(v, type(v), getattr(v, 'shape', None)) for v in row[:6]])
-            print(f"row {idx}:", row, type(row), getattr(row, "shape", None))
+            # print("DEBUG:", [(v, type(v), getattr(v, 'shape', None)) for v in row[:6]])
+            # print(f"row {idx}:", row, type(row), getattr(row, "shape", None))
             x1, y1, x2, y2, conf, cls = [float(v) for v in row[:6]]
             if conf > 0.5:
                 boxes_info.append({
@@ -177,13 +178,23 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
         # 5. 用 Pillow 在原图上画框和置信度
         draw = ImageDraw.Draw(pil)
         font = ImageFont.load_default()
+
         for b in boxes_info:
             x1, y1, x2, y2 = b["bbox"]
-            draw.rectangle([x1, y1, x2, y2], outline="green", width=2)
-            draw.text((x1, y1 - 10),
-                      f"{b['confidence']*100:.1f}%",
-                      font=font,
-                      fill="green")
+            draw.rectangle([x1, y1, x2, y2], outline="red", width=2)
+
+            text = f"{b['confidence']*100:.1f}%"
+            x, y = x1, y1 - 12  # 上移一点
+
+            # 白色描边（周围一圈）
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    if dx != 0 or dy != 0:
+                        draw.text((x + dx, y + dy), text, font=font, fill="white")
+
+            # 红色文字在正中
+            draw.text((x, y), text, font=font, fill="red")
+
 
         # 6. 输出 Base64
         buf = io.BytesIO()

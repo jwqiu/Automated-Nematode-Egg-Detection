@@ -168,7 +168,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
 
   // 返回要渲染的 HTML 结构（JSX）
   return (
-    <div className="w-full    max-h-[600px] 2xl:max-h-[800px] overflow-y-auto rounded-lg   mx-auto  px-8 py-6 bg-white shadow-lg ">
+    <div className=" flex-1 overflow-auto rounded-lg    px-8 py-6 bg-white shadow-lg ">
       {/* 图片上传的 input 元素 */}
         <div className="flex items-center w-full bg-gray-200/60  justify-between mb-6 mt-0 sticky z-10  p-3 rounded-lg   shadow-lg top-0">
             <div className=""> 
@@ -195,7 +195,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
         
 
         {/* 图片列表区域 */}
-        <div className="flex flex-row lg:min-h-[500px] lg:flex-col gap-6 overflow-x-auto">
+        <div className="flex flex-row  lg:flex-col gap-6 overflow-x-auto">
           {images.length === 0 ? (
             <p className="text-gray-400 text-md text-center italic">No images uploaded yet.</p>
           ) : (
@@ -209,7 +209,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
                 <div
                   key={img.uid}
                   className={`relative group min-w-[160px] flex-shrink-0 lg:w-full bg-gray-100 hover:bg-gray-300 overflow-hidden rounded cursor-pointer ${
-                    isSelected ? 'border-4 border-gray-400 rounded' : ''
+                    isSelected ? 'border-4 border-blue-500 rounded' : ''
                   }`}
                 >
                   {/* ✅ 左上角角标 */}
@@ -225,7 +225,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
                     onClick={() => setSelectedImage(img)}
                   />
                   <p className="text-sm ms-2 text-start group-hover:text-gray-800 mt-1 py-1 text-gray-600 truncate">
-                    {img.file.name}
+                    {img.filename}
                   </p>
 
                   {/* 删除按钮 */}
