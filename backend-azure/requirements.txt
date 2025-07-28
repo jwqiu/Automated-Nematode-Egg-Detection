@@ -1,0 +1,15 @@
+# Uncomment to enable Azure Monitor OpenTelemetry
+# Ref: aka.ms/functions-azure-monitor-python 
+# azure-monitor-opentelemetry 
+
+# azure-functions
+# torch
+# numpy
+# opencv-python-headless
+# Pillow
+# ultralytics
+
+azure-functions
+numpy==1.24.4
+Pillow
+onnxruntime

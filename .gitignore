@@ -1,5 +1,6 @@
 !frontend/package.json
 !frontend/public/static/images/Lincoln-University-Logo-Horizontal-RGB-Blue-01.pngData/
+
 Jupyter Notebooks/
 pdf/
 Reports/
@@ -8,7 +9,7 @@ Results/
 __pycache__/
 *.ipynb_checkpoints
 .env
-.vscode/
+
 venv/
 images/
 runs/
@@ -39,7 +40,8 @@ Models/
 ModelPipeline/Trained_Models/
 node_modules/
 frontend/node_modules/
-
+predict-backend/best.onnx
+!predict-backend/host.json
 
 # macOS
 .DS_Store

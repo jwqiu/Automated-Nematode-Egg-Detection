@@ -89,7 +89,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
           // } catch (err) {
           //   console.error("Upload failed:", err);
           // }
-        }, "image/jpeg", 0.8); // 第三个参数为压缩质量（可选）
+        }, "image/jpeg", 1); // 第三个参数为压缩质量（可选）
       };
     });
 

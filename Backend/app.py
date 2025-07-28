@@ -153,7 +153,8 @@ def predict():
     boxes_info = [
         {"bbox": b, "confidence": c}
         for b, c in zip(coords, confs)
-    ]
+        if c > 0.5
+    ]        
 
     # 把框画在原图上
     drawn_img_array = draw_boxes_on_array(img_array, boxes_info)  # 注意你可能要改一下 draw 函数的输入

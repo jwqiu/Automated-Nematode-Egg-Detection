@@ -23,8 +23,22 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
         reader.readAsDataURL(selectedImage.file);
       });
 
+
+      // // 根据当前页面的 host 判断运行环境
+      // const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
+      // // 设置 API base URL
+      // const apiBaseUrl = isLocalhost
+      //   ? "http://localhost:7071/api"  // 本地 Azure Function 地址
+      //   : "https://<your-function-app-name>.azurewebsites.net/api"; // 替换成你的部署地址
+
+      // // 调用后端
+      // const res = await fetch(`${apiBaseUrl}/predict`, {
+
       // 调用后端
-      const res = await fetch("http://127.0.0.1:5001/predict", {
+      // const res = await fetch("http://127.0.0.1:5001/predict", {
+      const res = await fetch("https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/predict", {
+                          // https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/predict
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
