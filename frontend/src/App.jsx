@@ -14,11 +14,11 @@ function App() {
   return (
     <>
       {/* <ParticlesNetwork /> */}
-      <div className=' bg-gradient-to-b from-white  via-blue-200 to-blue-300 lg:bg-gradient-to-tr lg:from-white lg:via-gray-100 lg:to-blue-300 h-screen bg-gray-100 flex flex-col lg:overflow-hidden'>
+      <div className='flex flex-col h-full'>
         <LogoHeader />
-        <div className="flex-1 flex flex-col  pb-8 pt-4 px-8 w-[1000px] xl:w-[1200px] mx-auto lg:pb-12 lg:px-12 lg:pt-6">
-            <div className="grid grid-cols-1 flex-1 lg:grid-cols-3 gap-8 ">
-              <div className="lg:col-span-1 flex flex-col border shadow-lg lg:h-[calc(100vh-168px)] overflow-y-auto">             
+        <div className="flex-1  min-h-0 pb-8 pt-4 px-8 w-full lg:w-[1000px] xl:w-[1200px] mx-auto lg:pb-12 lg:px-12 lg:pt-6">
+            <div className=" h-full min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-8 ">
+              <div className="lg:col-span-1 flex flex-col  shadow-lg  lg:overflow-y-auto">             
                 <ImageUploader
                   images={images}
                   setImages={setImages}
@@ -27,7 +27,7 @@ function App() {
                 />                
               </div>
 
-              <div className="lg:col-span-2 flex flex-col gap-8 ">
+              <div className="lg:col-span-2 flex flex-col h-full gap-8 min-h-0 ">
                 <ImagePreview
                   selectedImage={selectedImage}
                 />

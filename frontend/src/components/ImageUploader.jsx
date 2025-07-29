@@ -168,7 +168,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
 
   // 返回要渲染的 HTML 结构（JSX）
   return (
-    <div className=" flex-1 overflow-auto rounded-lg    px-8 py-6 bg-white shadow-lg ">
+    <div className="h-full overflow-auto rounded-lg border  px-8 py-6 bg-white shadow-lg ">
       {/* 图片上传的 input 元素 */}
         <div className="flex items-center w-full bg-gray-200/60  justify-between mb-6 mt-0 sticky z-10  p-3 rounded-lg   shadow-lg top-0">
             <div className=""> 
@@ -191,8 +191,6 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
                 />
             </div>
         </div>
-
-        
 
         {/* 图片列表区域 */}
         <div className="flex flex-row  lg:flex-col gap-6 overflow-x-auto">
@@ -221,7 +219,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
                   <img
                     src={img.url}
                     alt={"preview-" + img.uid}
-                    className="w-full max-w-72 lg:max-w-none h-40 xl:h-55 object-cover transition group-hover:brightness-75"
+                    className="w-full max-w-72 lg:max-w-none h-36 xl:h-55 object-cover transition group-hover:brightness-75"
                     onClick={() => setSelectedImage(img)}
                   />
                   <p className="text-sm ms-2 text-start group-hover:text-gray-800 mt-1 py-1 text-gray-600 truncate">

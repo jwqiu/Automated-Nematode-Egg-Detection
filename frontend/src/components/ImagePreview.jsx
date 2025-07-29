@@ -80,7 +80,7 @@ function ImagePreview({ selectedImage }) {
   };
 
   const containerClass = `
-    rounded-lg flex flex-col h-[320px] xl:h-[400px] 
+    rounded-lg flex flex-col flex-1 overflow-y-auto
     border bg-white shadow-lg overflow-hidden
   `;
 

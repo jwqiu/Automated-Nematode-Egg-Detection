@@ -106,11 +106,9 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
   }
 
   return (
-    <div className="bg-white shadow-lg flex-1 flex flex-col justify-start items-center rounded-lg p-6 ">
+    <div className="bg-white border shadow-lg h-[200px] flex flex-col justify-start items-center rounded-lg p-6">
 
-      {/* 只有当还没有检测到任何 box 时才显示按钮 */}
-
-      <div className="flex w-full justify-between  items-center  gap-2">
+      <div className="flex w-full justify-between h-[35px]  items-center  gap-2">
         <div>
           <p className="text-gray-500">Detection Result:</p>
         </div>
@@ -137,7 +135,7 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
       {/* {(!selectedImage?.boxes || selectedImage.boxes.length === 0) && (
       )} */}
 
-      <div className='w-full flex justify-center items-center mt-4  rounded-lg bg-gray-100 flex-1'>
+      <div className='w-full flex justify-center items-center mt-4 overflow-y-auto rounded-lg bg-gray-100 flex-1'>
         {statusMessage}
         {/* 显示 boxes */}
         {selectedImage?.boxes?.length > 0 && (
