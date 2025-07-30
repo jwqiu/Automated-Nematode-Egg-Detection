@@ -1,6 +1,9 @@
 import React from 'react';
 // index.js
 const useState = React.useState;
+const useEffect = React.useEffect;
+const useRef = React.useRef;
+
 
 // React 组件函数，名称为 ImageUploader
 function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
@@ -33,69 +36,153 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
 
     canvas.toBlob((blob) => {
       callback(blob);
-    }, "image/jpeg", 0.8);
+    }, "image/jpeg", 0.9);
   }
 
+  const [isUploading, setIsUploading] = useState(false);
+  const imageListRef = useRef(null);
+
   // 处理上传图片的函数
-  function handleImageUpload(event) {
+  async function handleImageUpload(event) {
+    
     const fileList = event.target.files;
     const files = Array.from(fileList);
 
-    files.forEach(async (file, index) => {
+    const uploadTasks = files.map((file) => {
+      return new Promise((resolve) => {
       // 🧠 Step 1: 将原始文件转换为 Image 对象
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
 
-      img.onload = () => {
-        resizeAndPadImage(img, async (blob) => {
-          const previewUrl = URL.createObjectURL(blob);
-          const formData = new FormData();
-          formData.append("image", blob, file.name); // 保留原文件名
-          const newUid = crypto.randomUUID();
-          // try {
-          //   const res = await fetch("http://127.0.0.1:5001/upload", {
-          //     method: "POST",
-          //     body: formData,
-          //   });
+        img.onload = () => {
+          resizeAndPadImage(img, async (blob) => {
+            const previewUrl = URL.createObjectURL(blob);
+            const formData = new FormData();
+            formData.append("image", blob, file.name); // 保留原文件名
+            const newUid = crypto.randomUUID();
+            // try {
+            //   const res = await fetch("http://127.0.0.1:5001/upload", {
+            //     method: "POST",
+            //     body: formData,
+            //   });
 
-          //   if (!res.ok) {
-          //     const errorText = await res.text();
-          //     throw new Error(`Upload failed: ${res.status} ${errorText}`);
-          //   }
+            //   if (!res.ok) {
+            //     const errorText = await res.text();
+            //     throw new Error(`Upload failed: ${res.status} ${errorText}`);
+            //   }
 
-          //   const data = await res.json();
+            //   const data = await res.json();
 
-            setImages((prev) =>
-              prev.concat({
-                file: blob,
-                url: previewUrl,
-                uid: newUid,
-                filename: file.name,
-                detected: false,
-                boxes: null,
-              })
-            );
+              setImages((prev) =>
+                prev.concat({
+                  file: blob,
+                  url: previewUrl,
+                  uid: newUid,
+                  filename: file.name,
+                  detected: false,
+                  boxes: null,
+                })
+              );
+              // if (index === files.length - 1) {              
+              //   setSelectedImage({
+              //     file: blob,
+              //     url: previewUrl,
+              //     uid: newUid,
+              //     filename: file.name,
+              //     detected: false,
+              //     boxes: null,
+              //   });
+              // }
+            // } catch (err) {
+            //   console.error("Upload failed:", err);
+            // }
+              resolve();
 
-            if (index === files.length - 1) {              
-              setSelectedImage({
-                file: blob,
-                url: previewUrl,
-                uid: newUid,
-                filename: file.name,
-                detected: false,
-                boxes: null,
-              });
-            }
-          // } catch (err) {
-          //   console.error("Upload failed:", err);
-          // }
-        }, "image/jpeg", 1); // 第三个参数为压缩质量（可选）
-      };
+          }, "image/jpeg", 1); // 第三个参数为压缩质量（可选）
+        };
+      });
     });
-
+    await Promise.all(uploadTasks); 
+    setIsUploading(true); 
     event.target.value = "";
   }
 
+  useEffect(() => {
+    if (isUploading && images.length > 0) {
+      setSelectedImage(images[images.length - 1]);
+      setIsUploading(false); // 重置状态
+
+      setTimeout(() => {
+        const el = imageListRef.current;
+        if (!el) return;
+        el.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "smooth",
+        });
+      }, 0); // 确保 DOM 更新后再滚动
+    }
+  }, [images]);
+
+  function loadDefaultImages() {
+    const defaultImageUrls = [
+      `${import.meta.env.BASE_URL}static/images/default_Image1.png`,
+      `${import.meta.env.BASE_URL}static/images/default_Image2.jpeg`,
+      `${import.meta.env.BASE_URL}static/images/default_Image3.png`,
+    ];
+
+    const loadAll = async () => {
+      const newImages = await Promise.all(
+        defaultImageUrls.map(async (url) => {
+          const res = await fetch(url);
+          const blob = await res.blob();
+          const objectUrl = URL.createObjectURL(blob);  // 原图临时地址
+
+          // Step 1: 加载图片为 Image 对象
+          const resizedBlob = await new Promise((resolve) => {
+            const img = new Image();
+            img.src = objectUrl;
+            img.onload = () => {
+              resizeAndPadImage(img, (resizedBlob) => {
+                resolve(resizedBlob);
+              }, "image/jpeg", 0.9);
+            };
+          });
+
+          const previewUrl = URL.createObjectURL(resizedBlob);
+          const base64 = await convertToBase64(resizedBlob);
+
+          return {
+            file: resizedBlob,
+            url: previewUrl,
+            uid: crypto.randomUUID(),
+            filename: url.split("/").pop(),
+            image_base64: base64,
+            detected: false,
+            boxes: null,
+          };
+        })
+      );
+
+      setImages(newImages);
+      if (newImages.length > 0) {
+        setSelectedImage(newImages[newImages.length - 1]);
+      }
+    };
+
+    loadAll();
+  }
+
+  function convertToBase64(blob) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result.split(",")[1];
+        resolve(base64);
+      };
+      reader.readAsDataURL(blob);
+    });
+  }
 
   // function deleteImageOnServer({ uid, filename }) {
   //   return fetch("http://127.0.0.1:5001/delete", {
@@ -162,15 +249,11 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
     }
   }
 
-
-
-
-
   // 返回要渲染的 HTML 结构（JSX）
   return (
-    <div className="h-full overflow-auto rounded-lg border  px-8 py-6 bg-white shadow-lg ">
+    <div  className="h-full min-h-0 flex flex-col rounded-lg border  px-8 py-6 bg-white shadow-lg ">
       {/* 图片上传的 input 元素 */}
-        <div className="flex items-center w-full bg-gray-200/60  justify-between mb-6 mt-0 sticky z-10  p-3 rounded-lg   shadow-lg top-0">
+        <div className="flex overflow-auto h-[65px] items-center w-full bg-gray-200/60  justify-between mb-6 mt-0 sticky z-10  p-3 rounded-lg   shadow-lg top-0">
             <div className=""> 
                 <p className="mb-0 text-gray-500 ms-2">Images:</p>
             </div>
@@ -193,9 +276,9 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
         </div>
 
         {/* 图片列表区域 */}
-        <div className="flex flex-row  lg:flex-col gap-6 overflow-x-auto">
+        <div ref={imageListRef} className="flex flex-row flex-1 lg:flex-col gap-6 overflow-auto ">
           {images.length === 0 ? (
-            <p className="text-gray-400 text-md text-center italic">No images uploaded yet.</p>
+            <p className="text-gray-400 text-md text-center italic">No images uploaded yet. <br /><span className='text-blue-400 cursor-pointer hover:underline hover:text-blue-600 transition' onClick={loadDefaultImages}>Load default images</span></p>
           ) : (
             images
               .slice()         // 拷贝一份，防止修改原数组
