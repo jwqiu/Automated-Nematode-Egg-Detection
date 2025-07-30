@@ -4,6 +4,7 @@ const useState = React.useState;
 const useEffect = React.useEffect;
 const useRef = React.useRef;
 
+import { decode, decodeImage, toRGBA8 } from "utif";
 
 // React 组件函数，名称为 ImageUploader
 function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
@@ -39,6 +40,69 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
     }, "image/jpeg", 0.9);
   }
 
+  async function convertTifToPng(file) {
+    const name = file.name.toLowerCase();
+    if (!name.endsWith(".tif") && !name.endsWith(".tiff")) {
+      return file;
+    }
+
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const buffer = new Uint8Array(reader.result);
+        const ifds = decode(buffer);
+
+        // 找到包含图像数据的 IFD
+        const validIfd = ifds.find((ifd) => ifd.t273 && ifd.t279);
+        if (!validIfd) {
+          console.error("❌ No usable image data found in any IFD");
+          resolve(file);
+          return;
+        }
+
+        // **关键**：解码压缩数据到像素缓存
+        decodeImage(buffer, validIfd);
+
+        // 取尺寸
+        const width  = validIfd.t256?.[0];
+        const height = validIfd.t257?.[0];
+        if (!width || !height) {
+          console.error("❌ Invalid TIFF dimensions");
+          resolve(file);
+          return;
+        }
+
+        // 真正拿回 RGBA 数组
+        const rgba = toRGBA8(validIfd);
+        if (!rgba.length) {
+          console.error("❌ Failed to decode image pixels.");
+          resolve(file);
+          return;
+        }
+
+        // 绘制到 canvas，再导出 PNG
+        const canvas = document.createElement("canvas");
+        canvas.width  = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        const imgData = ctx.createImageData(width, height);
+        imgData.data.set(rgba);
+        ctx.putImageData(imgData, 0, 0);
+
+        canvas.toBlob((blob) => {
+          const pngFile = new File(
+            [blob],
+            file.name.replace(/\.(tif|tiff)$/i, ".png"),
+            { type: "image/png" }
+          );
+          resolve(pngFile);
+        }, "image/png");
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
   const [isUploading, setIsUploading] = useState(false);
   const imageListRef = useRef(null);
 
@@ -48,7 +112,9 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
     const fileList = event.target.files;
     const files = Array.from(fileList);
 
-    const uploadTasks = files.map((file) => {
+    const uploadTasks = files.map(async (originalFile) => {
+      const file = await convertTifToPng(originalFile);
+
       return new Promise((resolve) => {
       // 🧠 Step 1: 将原始文件转换为 Image 对象
         const img = new Image();
@@ -278,7 +344,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
         {/* 图片列表区域 */}
         <div ref={imageListRef} className="flex flex-row flex-1 lg:flex-col gap-6 overflow-auto ">
           {images.length === 0 ? (
-            <p className="text-gray-400 text-md text-center italic">No images uploaded yet. <br /><span className='text-blue-400 cursor-pointer hover:underline hover:text-blue-600 transition' onClick={loadDefaultImages}>Load default images</span></p>
+            <p className="text-gray-400 text-md text-start lg:text-center italic">No images uploaded yet. <br /><span className='text-blue-400 cursor-pointer hover:underline hover:text-blue-600 transition' onClick={loadDefaultImages}>Load default images</span></p>
           ) : (
             images
               .slice()         // 拷贝一份，防止修改原数组
