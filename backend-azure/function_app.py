@@ -131,8 +131,18 @@ input_name = sess.get_inputs()[0].name
 app = func.FunctionApp()
 
 @app.function_name(name="predict")
-@app.route(route="predict", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST"])
+@app.route(route="predict", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST","OPTIONS"])
 def predict(req: func.HttpRequest) -> func.HttpResponse:
+    if req.method == "OPTIONS":
+        return func.HttpResponse(
+            status_code=204,
+            headers={
+                "Access-Control-Allow-Origin": "*",            # 或者写你的前端域名
+                "Access-Control-Allow-Methods": "POST,OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            }
+        )
+
     try:
         # 1. 解析输入
         data = req.get_json()
