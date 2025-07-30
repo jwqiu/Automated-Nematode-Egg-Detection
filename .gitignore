@@ -21,7 +21,6 @@ faster_rcnn_nematode.pth
 venv 2/
 *.jpg
 *.png
-!my-app/public/static/images/Lincoln University Logo Horizontal_RGB Blue-01.png
 *.jpeg
 *.gif
 *.tiff
@@ -32,6 +31,9 @@ venv 2/
 /model
 /Log
 /OpenCV
+!frontend/public/static/images/*.png
+!frontend/public/static/images/*.jpeg
+**/.DS_Store
 
 2nd lot egg pics/
 Dataset/
