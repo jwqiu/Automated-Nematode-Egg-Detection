@@ -26,7 +26,7 @@
 // }
 
 // export default ImagePreview;
-
+// @ts-ignore
 import React, { useState, useRef, useEffect } from 'react';
 
 function ImagePreview({ selectedImage }) {

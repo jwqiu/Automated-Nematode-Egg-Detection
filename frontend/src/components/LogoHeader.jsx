@@ -32,7 +32,7 @@ function LogoHeader() {
   let dropdownMenu = null;
   if (menuOpen) {
     dropdownMenu = (
-      <div ref={dropdownRef} className="absolute  right-0 z-20 mt-2 w-72 rounded-lg bg-white shadow-xl ring-1 ring-black ring-opacity-5" id="mode-dropdown">
+      <div ref={dropdownRef} className="absolute  right-0 z-20 mt-2 w-64 rounded-lg bg-white shadow-xl ring-1 ring-black ring-opacity-5" id="mode-dropdown">
         <div className="p-4 text-sm text-gray-700">
           <button 
               onClick={() => {
@@ -55,7 +55,7 @@ function LogoHeader() {
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6 group-hover:scale-105">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
             </svg>
-            Batch Mode (Coming Soon)
+            Batch Mode
           </button>
         </div>
       </div>
@@ -70,18 +70,18 @@ function LogoHeader() {
           className="h-[100px] "
           alt="LOGO"
         />
-        <div>
-          <p className="text-gray-700 font-serif hidden lg:block font-bold text-md lg:text-xl  mb-0 text-nowrap">Parasite Detection System</p>
-          {/* <span className='text-gray-400 text-sm text-start mt-0  italic'>*Research Project</span> */}
-        </div>
+
       </div>
     
 
 
-      <div className="flex me-8 items-center gap-4">
-        
+      <div className="flex flex-col me-8 items-end  gap-0">
+        <div>
+          <p className="text-gray-700 font-serif  font-bold text-md lg:text-xl  mb-0 text-nowrap">Parasite Detection System</p>
+          {/* <span className='text-gray-400 text-sm text-start mt-0  italic'>*Research Project</span> */}
+        </div>
         <div className='relative'>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="inline-flex justify-center font-mono items-center  gap-1 px-4 py-2 text-lg  text-gray-600  rounded-md hover:bg-blue-200 hover:text-gray-800  focus:outline-none">
+          <button onClick={() => setMenuOpen(!menuOpen)} className="inline-flex justify-center font-mono items-center  gap-1 px-3 py-1 text-md  text-gray-600  rounded-md hover:bg-blue-200 hover:text-gray-800  focus:outline-none">
               {menuTitle}
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />

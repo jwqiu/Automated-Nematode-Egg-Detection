@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import LogoHeader from '../components/LogoHeader';
 import ImageUploader from '../components/ImageUploader';
+// @ts-ignore
 import ImagePreview from '../components/ImagePreview';
+// @ts-ignore
 import DetectionResult from '../components/DetectionResult'; 
 import ParticlesNetwork from '../components/ParticlesNetwork';
 

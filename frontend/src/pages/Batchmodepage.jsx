@@ -13,7 +13,7 @@ function BatchModePage() {
     <div className='flex flex-col h-screen '>
         <LogoHeader />
         <div className='flex-1 flex flex-col items-center justify-center'>
-            <div className=" w-[800px]  min-h-[550px]  pb-16 ">
+            <div className=" w-full px-8 lg:px-0 lg:w-[800px]  min-h-[550px]  pb-16 ">
                 <ImageUploader
                     images={images}
                     setImages={setImages}
