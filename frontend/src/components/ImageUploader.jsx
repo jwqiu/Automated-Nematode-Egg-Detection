@@ -7,7 +7,7 @@ const useRef = React.useRef;
 import { decode, decodeImage, toRGBA8 } from "utif";
 
 // React 组件函数，名称为 ImageUploader
-function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
+function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bottomButton = false, defaultHints = true,isCard = false }) {
   // 用 useState 创建一个状态变量 images，用于保存上传的图片
   // 初始值是一个空数组 []
   // const [images, setImages] = React.useState([]);
@@ -317,9 +317,9 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
 
   // 返回要渲染的 HTML 结构（JSX）
   return (
-    <div  className="h-full min-h-0 flex flex-col rounded-lg border  px-8 py-6 bg-white shadow-lg ">
+    <div  className="h-full relative min-h-0 flex flex-col rounded-lg border  px-8 py-6 bg-white shadow-lg ">
       {/* 图片上传的 input 元素 */}
-        <div className="flex overflow-auto h-[65px] items-center w-full bg-gray-200/60  justify-between mb-6 mt-0 sticky z-10  p-3 rounded-lg   shadow-lg top-0">
+        <div className="flex overflow-auto h-[65px] items-center w-full shadow-lg bg-gray-200/60 justify-between mb-6 mt-0 sticky z-10  p-3 rounded-lg    top-0">
             <div className=""> 
                 <p className="mb-0 text-gray-500 ms-2">Images:</p>
             </div>
@@ -342,49 +342,85 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage  }) {
         </div>
 
         {/* 图片列表区域 */}
-        <div ref={imageListRef} className="flex flex-row flex-1 lg:flex-col gap-6 overflow-auto ">
-          {images.length === 0 ? (
-            <p className="text-gray-400 text-md text-start lg:text-center italic">No images uploaded yet. <br /><span className='text-blue-400 cursor-pointer hover:underline hover:text-blue-600 transition' onClick={loadDefaultImages}>Load default images</span></p>
+        <div ref={imageListRef} className={
+          ` gap-6 overflow-auto 
+          ${isCard ? 'grid grid-cols-2 gap-6 pb-20 relative'  : 'flex flex-row lg:flex-col'}`
+        }>
+          {images.length === 0 ? 
+          (
+            defaultHints ? ( // ✅ 根据 defaultHints 决定是否显示提示文字
+              <p className="text-gray-400 text-md text-start lg:text-center italic">
+                No images uploaded yet. <br />
+                <span
+                  className="text-blue-400 underline cursor-pointer hover:underline hover:text-blue-600 transition"
+                  onClick={loadDefaultImages}
+                >
+                  Load default images {'>>'}
+                </span>
+              </p>
+            ) : (
+              <p className="absolute  top-0 left-0 text-gray-400 text-md text-start italic">
+                Upload multiple images of the same meat sample and get the <span className="text-blue-400">average number of eggs per image</span>  with just one click.
+              </p>
+            )
           ) : (
             images
-              .slice()         // 拷贝一份，防止修改原数组
-              .reverse()       
+              .slice()
+              .reverse()
               .map((img, index) => {
-              const isSelected = selectedImage?.uid === img.uid; // ✅ 判断选中
+                const isSelected = selectedImage?.uid === img.uid;
 
-              return (
-                <div
-                  key={img.uid}
-                  className={`relative group min-w-[160px] flex-shrink-0 lg:w-full bg-gray-100 hover:bg-gray-300 overflow-hidden rounded cursor-pointer ${
-                    isSelected ? 'border-4 border-blue-500 rounded' : ''
-                  }`}
-                >
-                  {/* ✅ 左上角角标 */}
-                  {isSelected && (
-                    <div className="absolute z-10 top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded shadow">
-                      Selected
-                    </div>
-                  )}
-                  <img
-                    src={img.url}
-                    alt={"preview-" + img.uid}
-                    className="w-full max-w-72 lg:max-w-none h-36 xl:h-55 object-cover transition group-hover:brightness-75"
-                    onClick={() => setSelectedImage(img)}
-                  />
-                  <p className="text-sm ms-2 text-start group-hover:text-gray-800 mt-1 py-1 text-gray-600 truncate">
-                    {img.filename}
-                  </p>
+                return (
+                  <div
+                    key={img.uid}
+                    className={
+                      `
+                        relative group min-w-[160px] flex-shrink-0  bg-gray-100 hover:bg-gray-300 overflow-hidden rounded cursor-pointer 
+                        ${isSelected ? 'border-4 border-blue-500 rounded' : ''}
+                        ${isCard ? '' : 'lg:w-full'}
 
-                  {/* 删除按钮 */}
-                  <button
-                    onClick={() => handleRemove(img.uid)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded px-3 py-1 text-xl opacity-0 group-hover:opacity-100 transition"
+                      `
+                    }
                   >
-                    ×
-                  </button>
-                </div>
-              );
-            })
+                    {/* ✅ 左上角角标 */}
+                    {isSelected && (
+                      <div className="absolute z-10 top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded shadow">
+                        Selected
+                      </div>
+                    )}
+                    <img
+                      src={img.url}
+                      alt={"preview-" + img.uid}
+                      className="w-full max-w-72 lg:max-w-none h-36 xl:h-55 object-cover transition group-hover:brightness-75"
+                      onClick={() => setSelectedImage(img)}
+                    />
+                    <p className="text-sm ms-2 text-start group-hover:text-gray-800 mt-1 py-1 text-gray-600 truncate">
+                      {img.filename}
+                    </p>
+
+                    {/* 删除按钮 */}
+                    <button
+                      onClick={() => handleRemove(img.uid)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded px-3 py-1 text-xl opacity-0 group-hover:opacity-100 transition"
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })
+          )}
+        </div>
+
+        <div className='absolute bottom-6 left-0 right-0 flex px-6 justify-center'>
+          {bottomButton && (
+            <div>
+              <button disabled
+                className="mt-4 w-[400px] font-bold  bg-gray-300 text-white px-4 py-2 rounded-lg cursor-not-allowed"
+              >
+                Get Average Egg Count
+              </button>
+              <p className='text-gray-400 text-sm mt-2 text-center italic mb-0'>⏳ *Feature Coming Soon </p>
+            </div>
           )}
         </div>
     </div>
