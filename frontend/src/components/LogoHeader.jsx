@@ -1,3 +1,4 @@
+// @ts-ignore
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
@@ -25,7 +26,7 @@ function LogoHeader() {
     if (location.pathname.endsWith('/batch')) {
       setMenuTitle('Batch Mode');
     } else {
-      setMenuTitle('Image Mode');
+      setMenuTitle('Single Image Mode');
     }
   }, [location.pathname]);
 

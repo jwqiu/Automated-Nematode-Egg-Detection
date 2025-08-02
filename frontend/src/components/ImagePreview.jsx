@@ -164,7 +164,7 @@ function ImagePreview({ selectedImage }) {
         </div>
       ) : (
         <div className="flex items-center justify-center h-full p-8">
-          <p className="italic text-gray-400">No image selected.</p>
+          <p className="italic text-gray-400">Upload an image to preview it here.</p>
         </div>
       )}
     </div>

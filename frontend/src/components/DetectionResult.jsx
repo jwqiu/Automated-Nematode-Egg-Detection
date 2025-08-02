@@ -87,14 +87,14 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
   if (error) {
     statusMessage = <p className="text-red-500">{error}</p>;
   } else if (!selectedImage) {
-    statusMessage = <p className="italic text-gray-400">Please select an image First.</p>;
+    statusMessage = <p className="italic text-gray-400">Then click “Detect” to see the result here.</p>;
   } else if (loading) {
     statusMessage = <p className="italic text-gray-400">Fetching result...</p>;
   } else if (!selectedImage.detected) {
     // 未点击 Detect 按钮
     statusMessage = (
       <p className="italic text-gray-400">
-        Click detect to get the result.
+        Click  <span className="text-red-400">“Detect”</span> to get the result.
       </p>
     );
   } else if (selectedImage.detected && (!selectedImage.boxes || selectedImage.boxes.length === 0)) {
@@ -114,16 +114,16 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
           <p className="text-gray-500">Detection Result:</p>
         </div>
         <div className='flex items-center gap-2'>
-          <div className="hover:bg-gray-200 bg-gray-100 rounded-lg border p-1  flex items-center gap-1" onClick={() => setShowSettings(true)}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-8 text-gray-400 hover:text-gray-500">
+          <div className="hover:bg-gray-200 bg-gray-100 rounded-lg border p-2  flex items-center gap-1" onClick={() => setShowSettings(true)}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5 text-gray-400 hover:text-gray-500">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
             </svg>
-            <p className="text-gray-400">Setting</p>
+            <p className="text-gray-400 text-sm">Setting</p>
           </div>
           <button
             onClick={handleDetect}
             disabled={!selectedImage || loading}
-            className={`rounded-xl px-4 py-2  text-white font-bold ${
+            className={`rounded-xl px-3 py-2  text-white font-bold ${
               !selectedImage || loading
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-500 hover:bg-blue-600'

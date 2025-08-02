@@ -1,8 +1,14 @@
+// @ts-ignore
 import React from 'react';
 import LogoHeader from '../components/LogoHeader';
+// @ts-ignore
+
 import ImageUploader from '../components/ImageUploader';
+// @ts-ignore
+
 import { useContext } from 'react';
 import { ImageContext } from '../context/ImageContext';
+import DetectionResult from '../components/DetectionResult'; 
 
 
 
@@ -12,8 +18,8 @@ function BatchModePage() {
   return (
     <div className='flex flex-col h-screen '>
         <LogoHeader />
-        <div className='flex-1 flex flex-col items-center justify-center'>
-            <div className=" w-full px-8 lg:px-0 lg:w-[800px]  min-h-[550px]  pb-16 ">
+        <div className='flex-1 flex flex-row items-center justify-center gap-8 pb-12'>
+            <div className=" w-full px-8 lg:px-0  lg:w-[700px] ">
                 <ImageUploader
                     images={images}
                     setImages={setImages}
@@ -24,6 +30,14 @@ function BatchModePage() {
                     isCard={true} // 传递 isCard 属性
                 />  
             </div>
+            {/* <div className=" w-full px-8 lg:px-0 lg:w-[700px] h-[75vh] min-h-[500px]   ">
+              <DetectionResult 
+                  selectedImage={selectedImage} 
+                  setSelectedImage={setSelectedImage}
+                  images={images}
+                  setImages={setImages}
+                />
+            </div> */}
         </div>
 
     </div>

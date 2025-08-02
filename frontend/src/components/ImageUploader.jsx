@@ -317,16 +317,23 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
 
   // 返回要渲染的 HTML 结构（JSX）
   return (
-    <div  className="h-full relative min-h-0 flex flex-col rounded-lg border  px-8 py-6 bg-white shadow-lg ">
+    <div  className={`relative min-h-0 flex flex-col rounded-lg border  px-8 py-6 bg-white shadow-lg
+      ${isCard ? 'h-[75vh] min-h-[300px]'  : 'h-full'}
+    `}>
       {/* 图片上传的 input 元素 */}
-        <div className="flex overflow-auto h-[65px] items-center w-full shadow-lg bg-gray-200/60 justify-between mb-6 mt-0 sticky z-10  p-3 rounded-lg    top-0">
-            <div className=""> 
-                <p className="mb-0 text-gray-500 ms-2">Images:</p>
+        <div className="flex overflow-auto flex-shrink-0 h-[50px] items-center w-full  justify-between mb-3 mt-0 sticky z-10  rounded-lg  top-0">
+            <div className="flex"> 
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6 text-gray-400 me-1">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                </svg>
+                <p className="mb-0 text-gray-500 mt-0">
+                  Image List:
+                </p>
             </div>
             <div>
                 <label
                 htmlFor="upload"
-                className="cursor-pointer font-bold inline-block bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600"
+                className="cursor-pointer font-bold inline-block bg-blue-500 text-white px-3 py-2 rounded-xl hover:bg-blue-600"
                 >
                     Upload
                 </label>
@@ -343,14 +350,14 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
 
         {/* 图片列表区域 */}
         <div ref={imageListRef} className={
-          ` gap-6 overflow-auto 
-          ${isCard ? 'grid grid-cols-2 gap-6 pb-20 relative'  : 'flex flex-row lg:flex-col'}`
+          ` gap-6 overflow-auto
+          ${isCard ? 'grid grid-cols-2 gap-6  relative min-h-32    '  : 'flex flex-row lg:flex-col'}`
         }>
           {images.length === 0 ? 
           (
             defaultHints ? ( // ✅ 根据 defaultHints 决定是否显示提示文字
-              <p className="text-gray-400 text-md text-start lg:text-center italic">
-                No images uploaded yet. <br />
+              <p className="text-gray-400 w-full bg-gray-100 p-5 rounded-lg text-md text-start  italic">
+                Please upload an image to start detection, or <br />
                 <span
                   className="text-blue-400 underline cursor-pointer hover:underline hover:text-blue-600 transition"
                   onClick={loadDefaultImages}
@@ -359,8 +366,14 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
                 </span>
               </p>
             ) : (
-              <p className="absolute  top-0 left-0 text-gray-400 text-md text-start italic">
-                Upload multiple images of the same meat sample and get the <span className="text-blue-400">average number of eggs per image</span>  with just one click.
+              <p className="absolute w-full bg-gray-100 p-4 rounded-lg top-0 left-0 text-gray-400 text-md text-start italic">
+                *Upload multiple images of the same meat sample and get the <span className="text-blue-400">average number of eggs per image</span>  with just one click. <br />
+                *Don’t have any images? <span
+                  className="text-blue-400 underline cursor-pointer hover:underline hover:text-blue-600 transition"
+                  onClick={loadDefaultImages}
+                >
+                  Load default images {'>>'}
+                </span>
               </p>
             )
           ) : (
@@ -375,8 +388,8 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
                     key={img.uid}
                     className={
                       `
-                        relative group min-w-[160px] flex-shrink-0  bg-gray-100 hover:bg-gray-300 overflow-hidden rounded cursor-pointer 
-                        ${isSelected ? 'border-4 border-blue-500 rounded' : ''}
+                        relative group min-w-[160px] flex flex-col h-44 xl:h-52 flex-shrink-0  bg-gray-100 hover:bg-gray-300 overflow-hidden rounded cursor-pointer 
+                        ${isSelected ? 'border-2 border-blue-500 rounded' : ''}
                         ${isCard ? '' : 'lg:w-full'}
 
                       `
@@ -391,10 +404,10 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
                     <img
                       src={img.url}
                       alt={"preview-" + img.uid}
-                      className="w-full max-w-72 lg:max-w-none h-36 xl:h-55 object-cover transition group-hover:brightness-75"
+                      className="w-full max-w-72 lg:max-w-none h-36 xl:h-44 object-cover transition group-hover:brightness-75"
                       onClick={() => setSelectedImage(img)}
                     />
-                    <p className="text-sm ms-2 text-start group-hover:text-gray-800 mt-1 py-1 text-gray-600 truncate">
+                    <p className="text-sm ms-2 text-start group-hover:text-gray-800 mt-0 py-1 text-gray-600 truncate">
                       {img.filename}
                     </p>
 
@@ -414,12 +427,12 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
         <div className='absolute bottom-6 left-0 right-0 flex px-6 justify-center'>
           {bottomButton && (
             <div>
+              <p className='text-gray-400 text-sm mt-2 text-center italic mb-0'>⏳ *Feature Coming Soon </p>
               <button disabled
                 className="mt-4 w-[400px] font-bold  bg-gray-300 text-white px-4 py-2 rounded-lg cursor-not-allowed"
               >
                 Get Average Egg Count
               </button>
-              <p className='text-gray-400 text-sm mt-2 text-center italic mb-0'>⏳ *Feature Coming Soon </p>
             </div>
           )}
         </div>
