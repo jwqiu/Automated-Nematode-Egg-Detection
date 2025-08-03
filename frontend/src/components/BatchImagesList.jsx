@@ -15,7 +15,7 @@ function BatchImagesList() {
           <img
             src={img.url}
             alt={`image-${index}`}
-            className='w-full h-[auto]  rounded-lg'
+            className='w-full h-[auto]  rounded-lg hover:scale-105 transition-transform duration-300'
           />
           <div className='text-gray-700 flex items-center justify-between p-4'>
             <div>

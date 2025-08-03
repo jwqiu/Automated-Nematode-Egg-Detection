@@ -38,22 +38,22 @@ function BatchResult() {
     <div className="p-8  text-gray-700 ">
         <p className='mb-4 '>Key Metrics:</p>
         <div className="grid grid-cols-3 gap-4 mb-8 text-center">
-            <div className='bg-gray-100 w-[100px] rounded-lg shadow-lg p-2'>
+            <div className='bg-gray-100 w-[100px] rounded-lg shadow-lg p-2 hover:scale-105 transition-transform duration-300'>
                 <strong className='text-5xl  text-blue-500 text-center'>{avgEggs}</strong>
                 <p className='text-center text-sm'>Avg. Eggs<br />per Image</p>
             </div>
-            <div className='bg-gray-100 w-[100px] rounded-lg shadow-lg p-2'>
+            <div className='bg-gray-100 w-[100px] rounded-lg shadow-lg p-2 hover:scale-105 transition-transform duration-300'>
                 <strong className='text-5xl  text-blue-500 text-center'>{totalImages}</strong>
                 <p className='text-center text-sm'>Total <br /> Images</p>
             </div>
-            <div className='bg-gray-100 w-[100px] rounded-lg shadow-lg p-2'>
+            <div className='bg-gray-100 w-[100px] rounded-lg shadow-lg p-2 hover:scale-105 transition-transform duration-300'>
                 <strong className='text-5xl  text-blue-500 text-center'>{totalEggs}</strong>
                 <p className='text-center text-sm'>Total Eggs <br /> Detected</p>
             </div>
         </div>
 
         <p className='mb-4'>Egg Count Distribution:</p>
-        <div className="h-[250px] bg-gray-100 p-4 rounded-lg shadow-lg">
+        <div className="h-[250px] bg-gray-100 p-4 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                     <XAxis
