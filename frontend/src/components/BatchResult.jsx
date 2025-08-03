@@ -52,7 +52,7 @@ function BatchResult() {
             </div>
         </div>
 
-        <p className='mb-4'>Image Distribution by Egg Count:</p>
+        <p className='mb-4'>Egg Count Distribution:</p>
         <div className="h-[250px] bg-gray-100 p-4 rounded-lg shadow-lg">
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
@@ -63,7 +63,7 @@ function BatchResult() {
                         axisLine={{ stroke: '#e5e7eb' }}
                     >
                         <Label
-                        value="Images by Egg Count"
+                        value="Eggs per Image"
                         position="bottom"         // ✅ 改为 bottom
                         offset={0}
                         style={{ fill: '#374151', fontSize: 14 }}
