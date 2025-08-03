@@ -6,6 +6,9 @@ import Homepage from './pages/Homepage';
 // @ts-ignore
 import BatchModePage from './pages/Batchmodepage';
 // @ts-ignore
+
+import BatchResultPage from './pages/BatchResultPage';
+// @ts-ignore
 import { ImageProvider } from './context/ImageContext';
 
 
@@ -16,6 +19,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Homepage />} />
           <Route path="/batch" element={<BatchModePage />} />
+          <Route path="/batch/result" element={<BatchResultPage />} />
+
         </Routes>
       </Router>
     </ImageProvider>

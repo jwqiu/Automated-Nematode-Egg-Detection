@@ -1,6 +1,10 @@
 // @ts-ignore
 import React, { useState, useEffect, useRef } from 'react';
+// @ts-ignore
+
 import { useNavigate } from 'react-router-dom';
+// @ts-ignore
+
 import { useLocation } from 'react-router-dom';
 
 function LogoHeader() {
@@ -23,9 +27,9 @@ function LogoHeader() {
   }, []);
 
   useEffect(() => {
-    if (location.pathname.endsWith('/batch')) {
+    if (location.pathname.includes('/batch')) {
       setMenuTitle('Batch Mode');
-    } else {
+    } else {  
       setMenuTitle('Single Image Mode');
     }
   }, [location.pathname]);
