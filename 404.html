@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Redirecting…</title>
+  <script>
+    // 1. 取出用户原本想访问的路径（如 "/Automated-Nematode-Egg-Detection/batch"）
+    const path = window.location.pathname;
+    // 2. 拼到 hash 后面，再跳回应用首页入口
+    window.location.replace(`/Automated-Nematode-Egg-Detection/#${path}`);
+  </script>
+</head>
+<body></body>
+</html>
