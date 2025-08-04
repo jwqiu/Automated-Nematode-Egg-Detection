@@ -21,14 +21,14 @@ function BatchImagesList() {
             <div>
               <p className='text-gray-500'>Filename: {img.filename}</p>
               <p className='text-gray-500'>Status: {img.detected ? '✅ Detected' : '⏳ Pending '}</p>
-              <p className='text-gray-500 '> Wrong results? <span className='text-blue-500 cursor-pointer'>Report it&gt;&gt;</span></p>
+              <p className='text-gray-500 '> Not accurate? <span className='text-blue-500 cursor-pointer'> Report it&gt;&gt;</span></p>
 
             </div>
             <div className='me-4'>
               {img.detected && (
                 <>
                   <p className='text-blue-500 text-center text-3xl bg-gray-100 p-2 mb-1 rounded-lg shadow-lg '> {img.boxes.length} </p>
-                  <span className='text-sm text-gray-500'>Egg Count</span>
+                  <span className='text-sm text-gray-500'>Eggs Found</span>
                 </>
               )}
             </div>
