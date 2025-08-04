@@ -318,10 +318,15 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
     }
   }
 
+  function clearUploads() {
+    setImages([]);
+    setSelectedImage(null);
+  }
+
   // 返回要渲染的 HTML 结构（JSX）
   return (
     <div  className={`relative min-h-0 flex flex-col rounded-lg border  px-8 py-6 bg-white shadow-lg
-      ${isCard ? 'h-[75vh] min-h-[300px]'  : 'h-full'}
+      ${isCard ? 'h-[80vh] min-h-[300px] pb-24 '  : 'h-full'}
     `}>
       {/* 图片上传的 input 元素 */}
         <div className="flex overflow-auto flex-shrink-0 h-[50px] items-center w-full  justify-between mb-3 mt-0 sticky z-10  rounded-lg  top-0">
@@ -353,7 +358,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
 
         {/* 图片列表区域 */}
         <div ref={imageListRef} className={
-          ` gap-6 overflow-auto
+          ` gap-6 overflow-auto 
           ${isCard ? 'grid grid-cols-2 gap-6  relative min-h-32    '  : 'flex flex-row lg:flex-col'}`
         }>
           {images.length === 0 ? 
@@ -429,15 +434,15 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
 
         <div className='absolute bottom-6 left-0 right-0 flex px-6 justify-center'>
           {bottomButton && (
-            <div>
+            <div className='flex flex-col items-center w-full'>
               {/* <p className='text-gray-400 text-sm mt-2 text-center italic mb-0'>⏳ *Feature Coming Soon </p> */}
               <button
                 onClick={() => navigate('/batch/result')}
                 // onClick={() => navigate('/batch/result', { state: { autoDetect: true } })}
-
-                className={`mt-4 w-[400px] font-bold  bg-blue-500 text-white px-4 py-2 hover:bg-blue-600 rounded-lg 
+                disabled={images.length === 0}
+                className={`mt-4 w-[400px] font-bold  bg-blue-500 text-white px-4 py-2 rounded-lg 
                   ${images.length === 0 ? (
-                    'bg-gray-400 cursor-not-allowed'
+                    'bg-gray-300 cursor-not-allowed'
                     ) : (
                       'bg-blue-500 hover:bg-blue-600'
                     )}
@@ -445,6 +450,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
               >
                 Get Average Egg Count
               </button>
+              <button onClick={clearUploads} className=" mt-1 text-sm hover:text-blue-600 text-blue-500 underline">Clear Uploads {'>>'}</button>
             </div>
           )}
         </div>
