@@ -134,7 +134,7 @@ function ImagePreview({ selectedImage }) {
           onTouchMove={e => e.preventDefault()}
         >
           <img
-            src={selectedImage.url}
+            src={selectedImage.annotatedUrl || selectedImage.originalUrl || selectedImage.url}
             alt="Selected or Detection Result"
             draggable={false}
             className="w-full h-auto object-contain"

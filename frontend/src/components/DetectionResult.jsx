@@ -1,10 +1,13 @@
 // @ts-ignore
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { ImageContext } from '../context/ImageContext';
+
 
 function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const { setAnnotateImage } = useContext(ImageContext);
 
   const handleDetect = async () => {
     if (!selectedImage) return;
@@ -56,7 +59,8 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
 
       setSelectedImage({
         ...selectedImage,
-        url: "data:image/png;base64," + resJson.image, // 注意后端是 PNG
+        originalUrl: "data:image/png;base64," + resJson.original_image,
+        annotatedUrl: "data:image/png;base64," + resJson.annotated_image,
         detected: true,
         boxes: resJson.boxes,
       });
@@ -66,7 +70,8 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
           img.uid === selectedImage.uid
             ? {
                 ...img,
-                url: "data:image/png;base64," + resJson.image,
+                originalUrl: "data:image/png;base64," + resJson.original_image,
+                annotatedUrl: "data:image/png;base64," + resJson.annotated_image,
                 detected: true,
                 boxes: resJson.boxes,
               }
@@ -111,7 +116,7 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
 
       <div className="flex w-full justify-between h-[35px]  items-center  gap-2">
         <div>
-          <p className="text-gray-500">Detection Result:</p>
+          <p className="text-lg text-gray-500">Detection Result:</p>
         </div>
         <div className='flex items-center gap-2'>
           <div className="hover:bg-gray-200 bg-gray-100 rounded-lg border p-2  flex items-center gap-1" onClick={() => setShowSettings(true)}>
@@ -123,7 +128,7 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
           <button
             onClick={handleDetect}
             disabled={!selectedImage || loading}
-            className={`rounded-xl px-3 py-2  text-white font-bold ${
+            className={`rounded-xl px-3 py-2 text-white font-bold ${
               !selectedImage || loading
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-500 hover:bg-blue-600'
@@ -136,17 +141,21 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
       {/* {(!selectedImage?.boxes || selectedImage.boxes.length === 0) && (
       )} */}
 
-      <div className='w-full flex justify-center items-center mt-4 overflow-y-auto rounded-lg bg-gray-100 flex-1'>
+      <div
+        className={`w-full flex flex-col  items-center mt-4 overflow-y-auto rounded-lg flex-1 
+          ${selectedImage?.boxes?.length > 0 ? 'justify-start' : 'bg-gray-100 justify-center'}
+        `}
+      >
         {statusMessage}
         {/* 显示 boxes */}
         {selectedImage?.boxes?.length > 0 && (
-          <div className="text-left w-full overflow-y-auto">
-            <ul className=" space-y-1">
+          <div className="text-left w-full  overflow-y-auto">
+            <ul className=" space-y-2">
               {selectedImage.boxes.map((box, index) => {
                 const [x1, y1, x2, y2] = box.bbox;  // ✅ 正确解构
                 const conf = box.confidence;
                 return (
-                  <li key={index} className='bg-gray-100 px-4  py-0 rounded-lg'>
+                  <li key={index} className='bg-gray-100 px-4 py-2 rounded-lg'>
                     <span className="font-semibold">#{index + 1}</span>:
                     x1: {x1.toFixed(1)}, y1: {y1.toFixed(1)},
                     x2: {x2.toFixed(1)}, y2: {y2.toFixed(1)},
@@ -155,6 +164,9 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
                 );
               })}
             </ul>
+            <div className='flex items-center justify-center'>
+              <button onClick={() => setAnnotateImage(selectedImage)} className='text-center text-sm mt-2 text-blue-500 underline'>Flag This Result {'>>'}</button>
+            </div>
           </div>
       )}
       </div>

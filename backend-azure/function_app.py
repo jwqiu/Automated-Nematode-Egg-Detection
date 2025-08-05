@@ -151,8 +151,11 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse("Missing image_base64", status_code=400)
 
         image_bytes = base64.b64decode(image_b64)
+
         pil = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         orig_w, orig_h = pil.size
+        original_pil = pil.copy()
+
 
         # 2. 预处理到 608×608，归一化，NCHW
         img608 = pil.resize((608, 608))
@@ -207,14 +210,33 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
 
 
         # 6. 输出 Base64
-        buf = io.BytesIO()
-        pil.save(buf, format="PNG")
-        result_b64 = base64.b64encode(buf.getvalue()).decode()
+        # buf = io.BytesIO()
+        # pil.save(buf, format="PNG")
+        # result_b64 = base64.b64encode(buf.getvalue()).decode()
+        # 6.1 带框图
+        buf1 = io.BytesIO()
+        pil.save(buf1, format="PNG")
+        annotated_b64 = base64.b64encode(buf1.getvalue()).decode()
 
+        # 6.2 原图（干净图）
+        buf2 = io.BytesIO()
+        original_pil.save(buf2, format="PNG")
+        original_b64 = base64.b64encode(buf2.getvalue()).decode()
+
+
+        # return func.HttpResponse(
+        #     body=json.dumps({"image": result_b64, "boxes": boxes_info}),
+        #     mimetype="application/json"
+        # )
         return func.HttpResponse(
-            body=json.dumps({"image": result_b64, "boxes": boxes_info}),
+            body=json.dumps({
+                "original_image": original_b64,
+                "annotated_image": annotated_b64,
+                "boxes": boxes_info
+            }),
             mimetype="application/json"
         )
+
 
     except Exception as e:
         return func.HttpResponse(f"Predict error: {e}", status_code=500)

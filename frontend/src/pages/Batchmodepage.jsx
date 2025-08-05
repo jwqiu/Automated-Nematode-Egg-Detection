@@ -7,7 +7,11 @@ import ImageUploader from '../components/ImageUploader';
 // @ts-ignore
 
 import { useContext } from 'react';
+// @ts-ignore
+
 import { ImageContext } from '../context/ImageContext';
+// @ts-ignore
+
 import DetectionResult from '../components/DetectionResult'; 
 
 

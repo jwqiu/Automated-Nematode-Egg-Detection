@@ -3,6 +3,10 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import LogoHeader from '../components/LogoHeader';
 import BatchResult from '../components/BatchResult';
 import BatchImagesList from '../components/BatchImagesList';
+import ImageAnnotator from '../components/ImageAnnotator';
+
+// @ts-ignore
+
 import { ImageContext } from '../context/ImageContext';
 // @ts-ignore
 import { useLocation } from 'react-router-dom';
@@ -64,7 +68,9 @@ function BatchResultPage() {
 
             updatedImages.push({
                 ...img,
-                url: "data:image/png;base64," + resJson.image,
+                // url: "data:image/png;base64," + resJson.image,
+                originalUrl: "data:image/png;base64," + resJson.original_image,
+                annotatedUrl: "data:image/png;base64," + resJson.annotated_image,
                 detected: true,
                 boxes: resJson.boxes,
                 egg_count: resJson.egg_count || 0,
@@ -115,12 +121,16 @@ function BatchResultPage() {
                 </div>
             )}
             <LogoHeader />
-            <div className='mx-auto mt-8'>
+            {/* <div className='mx-auto mt-8'>
                 <div className="rounded-lg bg-white/50 hover:bg-blue-100 shadow-lg border border-gray-100  w-[950px] xl:w-[1050px]  py-2 text-blue-500 underline text-center cursor-pointer hover:underline hover:text-blue-700 transition"
                     onClick={() => navigate('/batch')}
                 >
                     Back to Upload
                 </div>
+            </div> */}
+            <div className='mx-auto mt-8 w-[950px] flex items-center justify-between xl:w-[1050px]'>
+                <p className='text-lg text-gray-500 font-medium'>Detection Result for This Image Patch</p>
+                <button className='text-blue-500 underline' onClick={() => navigate('/batch')} >Back to Upload {'>>'}</button>
             </div>
 
             <div className='mx-auto'>
@@ -133,6 +143,7 @@ function BatchResultPage() {
                     </div>
                 </div>
             </div>
+            <ImageAnnotator />
    
         
         </div>

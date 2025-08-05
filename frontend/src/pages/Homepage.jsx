@@ -1,6 +1,8 @@
 // @ts-ignore
 
 import React, { useState } from 'react';
+// @ts-ignore
+
 import LogoHeader from '../components/LogoHeader';
 // @ts-ignore
 
@@ -9,7 +11,10 @@ import ImageUploader from '../components/ImageUploader';
 import ImagePreview from '../components/ImagePreview';
 // @ts-ignore
 import DetectionResult from '../components/DetectionResult'; 
+// @ts-ignore
 import ParticlesNetwork from '../components/ParticlesNetwork';
+// @ts-ignore
+import ImageAnnotator from '../components/ImageAnnotator';
 
 
 function HomePage() {
@@ -47,6 +52,7 @@ function HomePage() {
             </div>
 
         </div>
+        <ImageAnnotator />
       </div>
       
 

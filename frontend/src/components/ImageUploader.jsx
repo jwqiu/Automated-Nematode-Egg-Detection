@@ -1,3 +1,5 @@
+// @ts-ignore
+
 import React from 'react';
 // index.js
 const useState = React.useState;
@@ -145,7 +147,8 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
               setImages((prev) =>
                 prev.concat({
                   file: blob,
-                  url: previewUrl,
+                  originalUrl: previewUrl,
+                  annotatedUrl: null,
                   uid: newUid,
                   filename: file.name,
                   detected: false,
@@ -223,7 +226,8 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
 
           return {
             file: resizedBlob,
-            url: previewUrl,
+            originalUrl: previewUrl,
+            annotatedUrl: null,
             uid: crypto.randomUUID(),
             filename: url.split("/").pop(),
             image_base64: base64,
@@ -359,7 +363,8 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
         {/* 图片列表区域 */}
         <div ref={imageListRef} className={
           ` gap-6 overflow-auto 
-          ${isCard ? 'grid grid-cols-2 gap-6  relative min-h-32    '  : 'flex flex-row lg:flex-col'}`
+          ${isCard ? 'grid grid-cols-2 gap-6  relative min-h-32    '  : 'flex flex-row lg:flex-col'}
+          `
         }>
           {images.length === 0 ? 
           (
@@ -396,7 +401,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
                     key={img.uid}
                     className={
                       `
-                        relative group min-w-[160px] flex flex-col h-44 xl:h-52 flex-shrink-0  bg-gray-100 hover:bg-gray-300 overflow-hidden rounded cursor-pointer 
+                        relative group min-w-[160px] shadow-lg flex flex-col h-44 xl:h-52 flex-shrink-0  bg-gray-100 hover:bg-gray-300 overflow-hidden rounded cursor-pointer 
                         ${isSelected ? 'border-2 border-blue-500 rounded' : ''}
                         ${isCard ? '' : 'lg:w-full'}
 
@@ -410,7 +415,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
                       </div>
                     )}
                     <img
-                      src={img.url}
+                      src={img.annotatedUrl || img.originalUrl || img.url}
                       alt={"preview-" + img.uid}
                       className="w-full max-w-72 lg:max-w-none h-36 xl:h-44 object-cover transition group-hover:brightness-75"
                       onClick={() => setSelectedImage(img)}
@@ -432,7 +437,7 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
           )}
         </div>
 
-        <div className='absolute bottom-6 left-0 right-0 flex px-6 justify-center'>
+        <div className='absolute bottom-4 left-0 right-0 flex px-6 justify-center'>
           {bottomButton && (
             <div className='flex flex-col items-center w-full'>
               {/* <p className='text-gray-400 text-sm mt-2 text-center italic mb-0'>⏳ *Feature Coming Soon </p> */}

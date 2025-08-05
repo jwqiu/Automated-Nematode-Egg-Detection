@@ -1,19 +1,21 @@
 // @ts-ignore
 // @ts-ignore
 import React, { useState, useContext } from 'react';
+// @ts-ignore
 
 import { ImageContext } from '../context/ImageContext';
 
 
 function BatchImagesList() {
   const { images } = useContext(ImageContext);
+  const { setAnnotateImage } = useContext(ImageContext);
 
   return (
     <div className=' space-y-8'>
       {images.map((img, index) => (
         <div key={img.uid || index} className=' shadow-lg rounded-lg bg-white'>
           <img
-            src={img.url}
+            src={img.annotatedUrl || img.originalUrl || img.url}
             alt={`image-${index}`}
             className='w-full h-[auto]  rounded-lg hover:scale-105 transition-transform duration-300'
           />
@@ -21,7 +23,7 @@ function BatchImagesList() {
             <div>
               <p className='text-gray-500'>Filename: {img.filename}</p>
               <p className='text-gray-500'>Status: {img.detected ? '✅ Detected' : '⏳ Pending '}</p>
-              <p className='text-gray-500 '> Not accurate? <span className='text-blue-500 cursor-pointer'> Report it&gt;&gt;</span></p>
+              <p className='text-gray-500 '> Not accurate? <button onClick={() => setAnnotateImage(img)} className='text-blue-500 cursor-pointer'> Flag This Result &gt;&gt;</button></p>
 
             </div>
             <div className='me-4'>

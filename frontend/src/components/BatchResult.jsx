@@ -1,5 +1,7 @@
 // @ts-ignore
 import React, { useContext } from 'react';
+// @ts-ignore
+
 import { ImageContext } from '../context/ImageContext';
 // 如果你想加图表
 // @ts-ignore
