@@ -105,9 +105,14 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
   } else if (selectedImage.detected && (!selectedImage.boxes || selectedImage.boxes.length === 0)) {
     // 点击了 Detect 但没有检测到任何结果
     statusMessage = (
-      <p className="italic text-gray-400">
-        No nematode eggs found.
-      </p>
+      <div>
+        <p className="italic text-center text-gray-400">
+          No nematode eggs found.
+        </p>
+        <button onClick={() => setAnnotateImage(selectedImage)} className='text-center text-sm mt-1 text-blue-500 underline'>Not accurate? Help us correct it {'>>'}</button>
+      </div>
+
+      
     );
   }
 
@@ -165,7 +170,7 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
               })}
             </ul>
             <div className='flex items-center justify-center'>
-              <button onClick={() => setAnnotateImage(selectedImage)} className='text-center text-sm mt-2 text-blue-500 underline'>Flag This Result {'>>'}</button>
+              <button onClick={() => setAnnotateImage(selectedImage)} className='text-center text-sm mt-2 text-blue-500 underline'>Not accurate? Help us correct it {'>>'}</button>
             </div>
           </div>
       )}

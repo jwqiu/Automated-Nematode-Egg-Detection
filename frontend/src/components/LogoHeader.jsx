@@ -70,9 +70,9 @@ function LogoHeader() {
   return (
     <div className="flex-shrink-0 h-[100px] flex justify-between items-center shadow-lg lg:transparent lg:shadow-none">
       <div className='flex items-center gap-2'>
-        <img
+        <img onClick={() => navigate('/')}
           src={`${import.meta.env.BASE_URL}static/images/Lincoln-University-Logo-Horizontal-RGB-Blue-01.png`}
-          className="h-[100px] "
+          className="h-[100px] cursor-pointer"
           alt="LOGO"
         />
 

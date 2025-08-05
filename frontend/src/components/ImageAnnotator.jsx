@@ -90,7 +90,7 @@ function ImageAnnotator() {
                             setTimeout(() => {
                                 setSubmitted(false);
                                 setAnnotateImage(null);
-                            }, 3000); // ✅ 3 秒后自动隐藏
+                            }, 2500); // ✅ 2.5 秒后自动隐藏
 
                         }
                     } className='bg-blue-500 text-white rounded-lg px-4 py-2 hover:bg-blue-600'>Submit</button>

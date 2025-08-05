@@ -23,7 +23,7 @@ function BatchImagesList() {
             <div>
               <p className='text-gray-500'>Filename: {img.filename}</p>
               <p className='text-gray-500'>Status: {img.detected ? '✅ Detected' : '⏳ Pending '}</p>
-              <p className='text-gray-500 '> Not accurate? <button onClick={() => setAnnotateImage(img)} className='text-blue-500 cursor-pointer'> Flag This Result &gt;&gt;</button></p>
+              <p className='text-gray-500 '> Not accurate? <button onClick={() => setAnnotateImage(img)} className='text-blue-500 cursor-pointer'> Help us correct it &gt;&gt;</button></p>
 
             </div>
             <div className='me-4'>
