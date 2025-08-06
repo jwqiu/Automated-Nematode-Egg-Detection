@@ -128,8 +128,8 @@ function BatchResultPage() {
                     Back to Upload
                 </div>
             </div> */}
-            <div className='mx-auto mt-8 w-full lg:w-[950px] flex flex-col lg:flex-row items-center  lg:justify-between xl:w-[1250px]'>
-                <p className='text-lg text-gray-500 font-medium'>Detection Result for This Image Patch</p>
+            <div className='mx-auto mt-8 w-full lg:w-[950px]  flex flex-col lg:flex-row items-center justify-start xl:w-[1250px]'>
+                {/* <p className='text-md text-gray-600 mb-2'>Detection Result for This Image Patch</p> */}
                 <button className='text-blue-500 underline' onClick={() => navigate('/batch')} >Back to Upload {'>>'}</button>
             </div>
 
