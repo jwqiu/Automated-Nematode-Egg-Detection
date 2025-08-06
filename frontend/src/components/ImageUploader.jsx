@@ -315,8 +315,9 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
 
     // 清理 selectedImage（必须在最后执行，不能用旧的 images 判断）
     if (selectedImage?.uid === uidToRemove) {
-      if (selectedImage.url.startsWith("blob:")) {
-        URL.revokeObjectURL(selectedImage.url);
+      const selectedUrl = selectedImage.annotatedUrl || selectedImage.originalUrl;
+      if (typeof selectedUrl === "string" && selectedUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(selectedUrl);
       }
       setSelectedImage(null);
     }

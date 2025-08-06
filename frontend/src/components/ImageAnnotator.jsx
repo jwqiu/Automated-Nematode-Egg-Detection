@@ -13,6 +13,7 @@ function ImageAnnotator() {
     const imageRef = useRef(null);
     const [hasMoved, setHasMoved] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("");
 
 
     if (!annotateImage) return null;
@@ -77,13 +78,21 @@ function ImageAnnotator() {
         .then((msg) => {
             console.log("✅ Done:", msg);
             setSubmitted(true);
+            setErrorMsg(""); // 清除上次的错误
             setTimeout(() => {
                 setSubmitted(false);
                 setAnnotateImage(null);
-            }, 2500);
+            }, 2000);
         })
         .catch((err) => {
             console.error("❌ Failed to Upload:", err);
+            setErrorMsg("❌ Upload failed. Please try again.");
+            setSubmitted(true); // 仍然显示提示区域
+
+            setTimeout(() => {
+                setSubmitted(false);
+                setErrorMsg("");
+            }, 2000);
         });
     };
 
@@ -117,17 +126,20 @@ function ImageAnnotator() {
                             console.log("🖼️ filename:", annotateImage.filename); 
                             handleUpload(); 
                             setBoxes([]); // ✅ 清空所有框
-                            setSubmitted(true);         // ✅ 显示提示
-                            setTimeout(() => {
-                                setSubmitted(false);
-                                setAnnotateImage(null);
-                            }, 2500); // ✅ 2.5 秒后自动隐藏
+                            // setSubmitted(true);         
+                            // setTimeout(() => {
+                            //     setSubmitted(false);
+                            //     setAnnotateImage(null);
+                            // }, 2500); 
 
                         }
                     } className='bg-blue-500 text-white rounded-lg px-4 py-2 hover:bg-blue-600'>Submit</button>
                 </div>
+
                 {submitted && (
-                    <p className="text-green-400 mb-4 text-sm">✅ Submission successful! 🎉 Every label helps us get better. Thank you!</p>
+                    <p className={`mb-4 text-sm ${errorMsg ? 'text-red-400' : 'text-green-400'}`}>
+                        {errorMsg || "✅ Submission successful! 🎉 Every label helps us get better. Thank you!"}
+                    </p>
                 )}
 
                 <div
