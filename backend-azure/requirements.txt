@@ -13,3 +13,4 @@ azure-functions
 numpy==1.24.4
 Pillow
 onnxruntime
+azure-storage-blob

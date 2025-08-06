@@ -128,14 +128,14 @@ function BatchResultPage() {
                     Back to Upload
                 </div>
             </div> */}
-            <div className='mx-auto mt-8 w-[950px] flex items-center justify-between xl:w-[1050px]'>
+            <div className='mx-auto mt-8 w-full lg:w-[950px] flex flex-col lg:flex-row items-center  lg:justify-between xl:w-[1250px]'>
                 <p className='text-lg text-gray-500 font-medium'>Detection Result for This Image Patch</p>
                 <button className='text-blue-500 underline' onClick={() => navigate('/batch')} >Back to Upload {'>>'}</button>
             </div>
 
             <div className='mx-auto'>
-                <div className='flex-1 flex w-[950px] xl:w-[1050px]  items-start justify-center gap-8 pt-6'>
-                    <div className='sticky top-4 h-fit w-[420px] border rounded-lg min-h-[200px] bg-white'>
+                <div className='flex-1 flex flex-col lg:flex-row w-full lg:w-[950px] xl:w-[1250px]  items-start justify-center gap-8 pt-6'>
+                    <div className='lg:sticky lg:top-4 h-fit w-full lg:w-[420px] xl:w-[500px] border rounded-lg min-h-[200px] bg-white'>
                         <BatchResult/>
                     </div>
                     <div className='flex-1 min-h-[400px] pb-12 '>

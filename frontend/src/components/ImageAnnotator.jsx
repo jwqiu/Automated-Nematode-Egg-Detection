@@ -58,6 +58,36 @@ function ImageAnnotator() {
         });
     };
 
+    const handleUpload = () => {
+        if (!annotateImage || !annotateImage.file) {
+            console.error("❌ No image to upload.");
+            return;
+        }
+
+        const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+        const apiBaseUrl = isLocalhost
+            ? "http://localhost:7071/api/upload"
+            : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/upload";
+
+        fetch(`${apiBaseUrl}?filename=${encodeURIComponent(annotateImage.filename)}`, {
+            method: "POST",
+            body: annotateImage.file, // ✅ 上传 blob，不要 headers
+        })
+        .then((res) => res.text())
+        .then((msg) => {
+            console.log("✅ Done:", msg);
+            setSubmitted(true);
+            setTimeout(() => {
+                setSubmitted(false);
+                setAnnotateImage(null);
+            }, 2500);
+        })
+        .catch((err) => {
+            console.error("❌ Failed to Upload:", err);
+        });
+    };
+
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
             <button
@@ -85,6 +115,7 @@ function ImageAnnotator() {
                             }
                             console.log('boxes:', boxes);
                             console.log("🖼️ filename:", annotateImage.filename); 
+                            handleUpload(); 
                             setBoxes([]); // ✅ 清空所有框
                             setSubmitted(true);         // ✅ 显示提示
                             setTimeout(() => {

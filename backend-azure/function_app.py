@@ -113,10 +113,15 @@
 #     return func.HttpResponse(f"The result of 1 + 1 is {result}")
 
 import azure.functions as func
+
+# —— 初始化 FunctionApp —— #
+app = func.FunctionApp()
+
 import json
 import base64
 import io
 import os
+
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -127,8 +132,7 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), "best.onnx")
 sess = ort.InferenceSession(MODEL_PATH, providers=["CPUExecutionProvider"])
 input_name = sess.get_inputs()[0].name
 
-# —— 初始化 FunctionApp —— #
-app = func.FunctionApp()
+
 
 @app.function_name(name="predict")
 @app.route(route="predict", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST","OPTIONS"])
@@ -240,3 +244,6 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
 
     except Exception as e:
         return func.HttpResponse(f"Predict error: {e}", status_code=500)
+    
+
+import upload_image
