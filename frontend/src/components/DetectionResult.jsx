@@ -1,5 +1,7 @@
 // @ts-ignore
 import React, { useState, useContext } from 'react';
+// @ts-ignore
+
 import { ImageContext } from '../context/ImageContext';
 
 

@@ -96,6 +96,53 @@ function ImageAnnotator() {
         });
     };
 
+    const handleBoxUpload = () => {
+        if (!annotateImage || !annotateImage.filename || boxes.length === 0) {
+            console.error("❌ Missing image filename or boxes.");
+            return;
+        }
+
+        const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+        const apiBaseUrl = isLocalhost
+            ? "http://localhost:7071/api/upload_boxes"
+            : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/upload_boxes";
+
+        const payload = {
+            filename: annotateImage.filename,
+            boxes: boxes.map(b => ({
+                bbox: b.bbox,
+                confidence: b.confidence ?? 1.0
+            }))
+        };
+
+        fetch(apiBaseUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.text())
+        .then(msg => {
+            console.log("✅ Box Upload Success:", msg);
+            setSubmitted(true);
+            setErrorMsg("");
+            setTimeout(() => {
+                setSubmitted(false);
+                setAnnotateImage(null);
+            }, 2000);
+        })
+        .catch(err => {
+            console.error("❌ Box Upload Failed:", err);
+            setErrorMsg("❌ Failed to upload boxes.");
+            setSubmitted(true);
+            setTimeout(() => {
+                setSubmitted(false);
+                setErrorMsg("");
+            }, 2000);
+        });
+    };
+
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
@@ -125,6 +172,7 @@ function ImageAnnotator() {
                             console.log('boxes:', boxes);
                             console.log("🖼️ filename:", annotateImage.filename); 
                             handleUpload(); 
+                            handleBoxUpload(); 
                             setBoxes([]); // ✅ 清空所有框
                             // setSubmitted(true);         
                             // setTimeout(() => {

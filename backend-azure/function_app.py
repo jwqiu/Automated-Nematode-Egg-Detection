@@ -247,3 +247,4 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
     
 
 import upload_image
+import upload_boxes
