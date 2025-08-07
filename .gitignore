@@ -1,6 +1,7 @@
 !frontend/package.json
 !frontend/public/static/images/Lincoln-University-Logo-Horizontal-RGB-Blue-01.pngData/
 
+
 Jupyter Notebooks/
 pdf/
 Reports/
@@ -126,3 +127,6 @@ report_image.py
 # Optional: .env 文件（如果你在前端使用了环境变量）
 /my-app/.env
 /my-app/.env.* 
+
+!image.png
+!docs/home_screenshot.png
