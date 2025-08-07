@@ -7,7 +7,7 @@
 
 This project inherits and builds upon the work of [**shion92**](https://github.com/shion92), who created the original model training pipeline, including **DeepLab**, **Faster R-CNN**, **YOLO**, and various helper functions for training and evaluation.
 
-The current version extends the original work by integrating a browser-based frontend (deployed via GitHub Pages), refactoring the backend for ONNX-based inference, and deploying the API via Azure Functions.
+The original work laid a solid foundation with powerful model training tools. I have extended it by developing a full web application — including a React-based frontend, an ONNX backend, and cloud deployment using Azure Functions and GitHub Pages.
 
 ---
 
