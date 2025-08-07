@@ -1,6 +1,9 @@
-# 🥚 Automated Nematode Egg Detection
+# Automated Nematode Egg Detection
 
-**Automated-Nematode-Egg-Detection** is an AI-powered web application that detects nematode eggs in microscopic images using deep learning. It combines image preprocessing, model inference, and a user-friendly frontend to streamline the detection and analysis process for agricultural or biological research. This unified system facilitates easy and accurate nematode egg detection, aiming to bridge research and practical applications in agriculture.
+
+## 📖 About This Project
+
+**Automated-Nematode-Egg-Detection** is an AI-powered web application that detects nematode eggs in microscopic images using deep learning. It combines image preprocessing, model inference, and a user-friendly frontend to streamline the detection and analysis process for agricultural or biological research. 
 
 ![Nematode Egg Detection](./docs/image.png)
 
@@ -22,7 +25,7 @@ Moving forward, the focus will be on improving detection effectiveness in real-w
 ---
 
 ## 🧩 Project Structure & Modules
-
+```bash
 AUTOMATED-NEMATODE-EGG-DETECTION/
 ├── backend-azure/        # Azure Functions backend for ONNX model inference and API deployment
 ├── backend-local/        # Local backend for development/testing (e.g. Flask or raw Python)
@@ -30,19 +33,22 @@ AUTOMATED-NEMATODE-EGG-DETECTION/
 ├── ModelPipeline/        # Core model code: YOLO, DeepLab, Faster R-CNN, helpers, pretrained weights
 ├── docs/                 # Project documentation and screenshots
 ├── Dataset/              # Optional training/evaluation datasets (may not be tracked in Git)
-├── node_modules/         # Frontend dependencies managed via npm (excluded from Git)
+├── node_modules/         # Frontend dependencies (not tracked by Git)
 ├── venv/                 # Python virtual environment (excluded from Git)
 ├── README.md             # Project documentation (you are here)
 ├── requirements.txt      # Python dependencies for backend + model
 ├── .gitignore            # Git ignore rules
 ├── package.json          # Frontend config for npm
 └── package-lock.json     # Exact npm dependency versions
+```
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** React + Tailwind CSS + Vite
+- **Frontend:** React, Tailwind CSS, Vite — deployed via GitHub Pages
 - **Backend (Cloud):** Azure Functions (Python, ONNX Runtime)
-- **Backend (Local):** Flask (for development/testing)
-- **Model Frameworks:** YOLO, DeepLab, Faster R-CNN (PyTorch-based)
+- **Backend (Local):** Flask — for development and testing
+- **Model Frameworks:** YOLO, DeepLab, and Faster R-CNN — all based on PyTorch
+- **Database & Storage:** Azure Blob Storage + Azure Database for PostgreSQL Flexible Server
+
