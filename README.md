@@ -1,5 +1,3 @@
-# Automated Nematode Egg Detection
-
 
 ## 📖 About This Project
 
@@ -11,12 +9,16 @@ This project inherits and builds upon the work of [**shion92**](https://github.c
 
 The current version extends the original work by integrating a browser-based frontend (deployed via GitHub Pages), refactoring the backend for ONNX-based inference, and deploying the API via Azure Functions.
 
+---
+
 ## 🔗 Live Demo
 
 ![HomePage Screenshot](/docs/home_screenshot.png)
 
 👉 Try it out here:  
 [**https://jwqiu.github.io/Automated-Nematode-Egg-Detection/**](https://jwqiu.github.io/Automated-Nematode-Egg-Detection/)
+
+---
 
 ## 🔧 Ongoing Improvements
 
