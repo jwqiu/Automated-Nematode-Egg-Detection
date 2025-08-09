@@ -10,7 +10,9 @@ import cv2
 from datetime import datetime
 # from torch.utils.tensorboard import SummaryWriter
 from torch.utils.tensorboard.writer import SummaryWriter
-
+from convert_xml_2_yolo import safe_int, safe_str_lower
+from typing import cast
+import numpy.typing as npt
 
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
@@ -215,12 +217,17 @@ def load_pascal_voc_ground_truth(folder: str) -> Dict[str, List[List[float]]]:
             root = tree.getroot()
             
             for obj in root.findall('object'):
-                if obj.find('name').text == 'nematode egg':
+                # if obj.find('name').text == 'nematode egg':
+                if safe_str_lower(obj, 'name') == 'nematode egg':
                     bbox = obj.find('bndbox')
-                    x1 = int(bbox.find('xmin').text)
-                    y1 = int(bbox.find('ymin').text)
-                    x2 = int(bbox.find('xmax').text)
-                    y2 = int(bbox.find('ymax').text)
+                    # x1 = int(bbox.find('xmin').text)
+                    # y1 = int(bbox.find('ymin').text)
+                    # x2 = int(bbox.find('xmax').text)
+                    # y2 = int(bbox.find('ymax').text)
+                    x1 = safe_int(bbox, 'xmin')
+                    y1 = safe_int(bbox, 'ymin')
+                    x2 = safe_int(bbox, 'xmax')
+                    y2 = safe_int(bbox, 'ymax') 
                     boxes.append([x1, y1, x2, y2])
         
         except Exception as e:
@@ -329,7 +336,10 @@ def load_binary_mask_png(folder: str) -> Dict[str, np.ndarray]:
     data = {}
     for path in glob.glob(os.path.join(folder, '*.png')):
         key = Path(path).stem
-        mask = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        # mask = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        # data[key] = (mask > 127).astype(np.uint8)
+        mask = cast(npt.NDArray[np.uint8],
+                    np.asarray(cv2.imread(str(path), cv2.IMREAD_GRAYSCALE), dtype=np.uint8))
         data[key] = (mask > 127).astype(np.uint8)
     return data
 
@@ -383,7 +393,7 @@ def load_yolo_segmentation_txt(folder: str, image_dir: str, confidence_thresh=0.
                     for i in range(0, len(coords), 2)
                 ], dtype=np.int32)
 
-                cv2.fillPoly(mask, [points], color=1)  # fill with label 1
+                cv2.fillPoly(mask, [points], color=1)  # fill with label 1 # type: ignore[call-overload]
 
         pred_data[base_name] = mask
 
@@ -512,7 +522,7 @@ def evaluate_segmentation(gt_masks: Dict[str, np.ndarray], pred_masks: Dict[str,
         "Precision": precision,
         "Recall": recall,
         "F1": f1,
-        "IoU": np.mean(ious) if ious else 0.0
+        "IoU": float(np.mean(ious) if ious else 0.0)
     }
 
 def evaluate_model(config: ModelConfig) -> Dict[str, float]:

@@ -30,11 +30,32 @@ CONFIGS = [
     # {"name": "yolov8s_sgd_lr0001_xmosaic_cutout_degree_90", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5}, 
     
     #  === SGD variants - strong augmentation  === https://docs.ultralytics.com/guides/yolo-data-augmentation/#auto-augment-auto_augment 
-    {"name": "yolov8s_adam_lr0001_xmosaic", "optimizer": "Adam", "lr0": 0.001, "mosaic": 0, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5}, 
-    {"name": "yolov8s_sgd_lr0001_xmosaic_cutout_max", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50}, 
+    # {"name": "yolov8s_adam_lr0001_xmosaic", "optimizer": "Adam", "lr0": 0.001, "mosaic": 0, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5}, 
+    # {"name": "yolov8s_sgd_lr0001_xmosaic_cutout_max", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50}, 
     {"name": "yolov8s_sgd_lr0001_max", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},   
-    
-    
+
+    # image size variants
+    {"name": "y8s_sgd_lr0001_max_sz640", "imgsz": 640, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    {"name": "y8s_sgd_lr0001_max_sz768", "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+
+    # === 几何增强对比：减小旋转角度（从90°降到15°） ===
+    {"name": "y8s_sgd_lr0001_max_deg15", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+
+    # === 几何增强对比：减小旋转角度（从90°降到15°） ===
+    {"name": "y8s_sgd_lr0001_xmosaic", "mosaic": 0, "optimizer": "SGD", "lr0": 0.001, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+
+    # === Mosaic 数据增强对比：训练末期关闭 mosaic（最后10个 epoch） ===
+    {"name": "y8s_sgd_lr0001_max_closemos10", "close_mosaic": 10, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+
+    # === 遮挡增强对比：Cutout/Erasing 强度从0.5降到0.2 ===
+    {"name": "y8s_sgd_lr0001_max_erase02", "erasing": 0.2, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+
+    # === 优化器对比：SGD 换为 Adam，其他参数不变 ===
+    {"name": "y8s_adam_lr0001_max", "optimizer": "Adam", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+
+    # === 正则化对比：SGD 加权重衰减（weight_decay=5e-4） ===
+    {"name": "y8s_sgd_lr0001_max_wd5e-4", "weight_decay": 0.0005, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+
     # === Adam variants ===
     # {"name": "yolov8s_adam_lr001", "optimizer": "Adam", "lr0": 0.01, "mosaic": 1, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5, "degrees": 0},
     # {"name": "yolov8s_adam_lr0005", "optimizer": "Adam", "lr0": 0.005, "mosaic": 1, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5, "degrees": 0},
@@ -50,12 +71,12 @@ CONFIGS = [
     # {"name": "yolov8s_adamw_lr0001", "optimizer": "AdamW", "lr0": 0.001, "mosaic": 1, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5}, # best
     
     #  === YOLOv8m (larger object detection model) ===
-    {"name": "yolov8m_sgd_lr0001", "model": "yolov8m.pt", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
-    {"name": "yolov8m_sgd_lr0001_max", "model": "yolov8m.pt", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # {"name": "yolov8m_sgd_lr0001", "model": "yolov8m.pt", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # {"name": "yolov8m_sgd_lr0001_max", "model": "yolov8m.pt", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
     
     # === YOLOv8-seg for instance segmentation ===
-    {"name": "yolov8s_seg_lr0001", "model": "yolov8s-seg.pt", "data": "data_seg.yaml", "task": "segment", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0.0, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 30},
-    {"name": "yolov8s_seg_lr0001_eras", "model": "yolov8s-seg.pt", "data": "data_seg.yaml", "task": "segment", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 30}
+    # {"name": "yolov8s_seg_lr0001", "model": "yolov8s-seg.pt", "data": "data_seg.yaml", "task": "segment", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0.0, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 30},
+    # {"name": "yolov8s_seg_lr0001_eras", "model": "yolov8s-seg.pt", "data": "data_seg.yaml", "task": "segment", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 30}
     
     
 ]
@@ -76,7 +97,7 @@ COMMON_ARGS = {
     "hsv_h": 0.015,
     "hsv_s": 0.7,
     "hsv_v": 0.4,
-    "project": "model/YOLO"
+    "project": "Trained_Models_New/YOLO"
 }
 
 # -------------------------
@@ -138,8 +159,6 @@ def predict_model_for_web(weight_path, config_name, task, source, project, name)
         save=True,
         verbose=False
     )
-
-
 
 
 # -------------------------

@@ -40,7 +40,7 @@ venv 2/
 Dataset/
 March/
 Models/
-ModelPipeline/Trained_Models/
+ModelPipeline/Trained_Models_Legacy/
 node_modules/
 frontend/node_modules/
 predict-backend/best.onnx

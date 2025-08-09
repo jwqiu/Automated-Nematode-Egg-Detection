@@ -1,4 +1,4 @@
-path: /Users/shion/Desktop/COMP693/automated-detection-of-nematode-Eggs-
+path: /Users/chenyuqi/Desktop/Automated-Nematode-Egg-Detection
 train: dataset/train/images
 val: dataset/val/images
 

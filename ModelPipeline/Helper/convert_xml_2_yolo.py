@@ -54,6 +54,19 @@ else:
 # -------------------------
 # 4) Conversion function
 # -------------------------
+
+def safe_int(elem, tag):
+    node = elem.find(tag)
+    if node is None or node.text is None:
+        raise ValueError(f"Missing {tag}")
+    return int(node.text)
+
+def safe_str_lower(elem, tag):
+    node = elem.find(tag)
+    if node is None or node.text is None:
+        raise ValueError(f"Missing {tag}")
+    return node.text.lower()
+
 def convert_voc_to_yolo(xml_file):
     try:
         tree = ET.parse(xml_file)
@@ -65,8 +78,10 @@ def convert_voc_to_yolo(xml_file):
             print(f"ERROR: Missing <size> tag in {xml_file}")
             return
 
-        img_width = int(size.find("width").text)
-        img_height = int(size.find("height").text)
+        # img_width = int(size.find("width").text)
+        # img_height = int(size.find("height").text)
+        img_width = safe_int(size, "width")
+        img_height = safe_int(size, "height")
 
         # YOLO annotation file
         annotation_file = os.path.join(
@@ -75,7 +90,8 @@ def convert_voc_to_yolo(xml_file):
 
         with open(annotation_file, "w") as f:
             for obj in root.findall("object"):
-                class_name = obj.find("name").text.lower()
+                # class_name = obj.find("name").text.lower()
+                class_name = safe_str_lower(obj, "name")
 
                 # Check if the object class is in our predefined mapping
                 if class_name not in CLASS_MAPPING:
@@ -89,10 +105,15 @@ def convert_voc_to_yolo(xml_file):
                     print(f"ERROR: Missing <bndbox> in {xml_file}")
                     continue
 
-                xmin = int(bbox.find("xmin").text)
-                ymin = int(bbox.find("ymin").text)
-                xmax = int(bbox.find("xmax").text)
-                ymax = int(bbox.find("ymax").text)
+                # xmin = int(bbox.find("xmin").text)
+                # ymin = int(bbox.find("ymin").text)
+                # xmax = int(bbox.find("xmax").text)
+                # ymax = int(bbox.find("ymax").text)
+                xmin = safe_int(bbox, "xmin")
+                ymin = safe_int(bbox, "ymin")
+                xmax = safe_int(bbox, "xmax")
+                ymax = safe_int(bbox, "ymax")
+
 
                 # Normalize for YOLO format (values between 0 and 1)
                 x_center = (xmin + xmax) / 2 / img_width
