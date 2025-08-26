@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import LogoHeader from '../components/LogoHeader';
 import BatchResult from '../components/BatchResult';
+// @ts-ignore
+
 import BatchImagesList from '../components/BatchImagesList';
 import ImageAnnotator from '../components/ImageAnnotator';
 
@@ -106,7 +108,7 @@ function BatchResultPage() {
 
 
     return (
-        <div className='flex flex-col h-screen '>
+        <div className='flex flex-col min-h-screen '>
             {loading && (
                 <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center z-50">
                     <div className="w-72 bg-gray-200 rounded-full h-4 mb-4 overflow-hidden shadow-inner">
@@ -128,14 +130,14 @@ function BatchResultPage() {
                     Back to Upload
                 </div>
             </div> */}
-            <div className='mx-auto mt-8 w-full lg:w-[950px]  flex flex-col lg:flex-row items-center justify-start xl:w-[1250px]'>
-                {/* <p className='text-md text-gray-600 mb-2'>Detection Result for This Image Patch</p> */}
+
+            <div className='lg:sticky lg:top-4 mx-auto mt-8 w-full lg:w-[950px]  flex flex-col lg:flex-row items-center justify-start xl:w-[1250px]'>
                 <button className='text-blue-500 underline' onClick={() => navigate('/batch')} >Back to Upload {'>>'}</button>
             </div>
 
             <div className='mx-auto'>
                 <div className='flex-1 flex flex-col lg:flex-row w-full lg:w-[950px] xl:w-[1250px]  items-start justify-center gap-8 pt-6'>
-                    <div className='lg:sticky lg:top-4 h-fit w-full lg:w-[420px] xl:w-[500px] border rounded-lg min-h-[200px] bg-white'>
+                    <div className='lg:sticky lg:top-14 h-fit w-full lg:w-[420px] xl:w-[500px] border rounded-lg min-h-[200px] bg-white'>
                         <BatchResult/>
                     </div>
                     <div className='flex-1 min-h-[400px] pb-12 '>

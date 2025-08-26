@@ -32,29 +32,51 @@ CONFIGS = [
     #  === SGD variants - strong augmentation  === https://docs.ultralytics.com/guides/yolo-data-augmentation/#auto-augment-auto_augment 
     # {"name": "yolov8s_adam_lr0001_xmosaic", "optimizer": "Adam", "lr0": 0.001, "mosaic": 0, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5}, 
     # {"name": "yolov8s_sgd_lr0001_xmosaic_cutout_max", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50}, 
-    {"name": "yolov8s_sgd_lr0001_max", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},   
+
+  
+    # 历史上最好的实验
+    # {"name": "yolov8s_sgd_lr0001_max_E300P50", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},   
+    # 历史上最好的实验，但是epochs和patience减少到50和15，目的是衡量epochs和patience减少的影响，是否是导致现在实验效果和历史最好实验差距的原因
+    # {"name": "yolov8s_sgd_lr0001_max_E50P15", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},   
+    # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment，目的是衡量 RandAugment（及其依赖的 Albumentations 变换）是否在当前环境上没有正确工作，大幅拉低了目前的实验效果
+    # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15,"auto_augment": "none"},   
+    # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment和相关的增强，目的是建立一个更稳定的“纯基线”
+    # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA_pure", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0, "fliplr": 0.0, "flipud": 0.0, "epochs": 50, "patience": 15,"auto_augment": "none"},  
+    # 上次跑实验时最好的两个正向变量叠加
+    # {"name": "y8s_sgd_lr0001_max_sz768_deg15", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
+    
+    # 上次跑实验时最好的两个正向变量叠加+长训
+    # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E300P50", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # 用增强里的 scale 做 ±20% 的轻缩放。
+    # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E50P15_scale02", "degrees": 15, "imgsz": 768, "scale": 0.2, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
+    # 余弦退火 (cosine LR) + 末期关闭 Mosaic
+    # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E50P15_cos_closeM10", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "cos_lr": True, "lrf": 0.01,  "lr0": 0.001, "mosaic": 1, "close_mosaic": 10,"erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 20},
+
+    # {"name": "y8s_sgd_lr0001_max_sz768_deg15", "degrees": 15, "scale": 0.0, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
+    # {"name": "y8s_sgd_lr0001_max_deg15_E300P50", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    {"name": "y8s_sgd_lr0001_max_sz768_deg15_E300P50_cos_closeM10", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "cos_lr": True, "lrf": 0.01,  "lr0": 0.001, "mosaic": 1, "close_mosaic": 10,"erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
 
     # image size variants
-    {"name": "y8s_sgd_lr0001_max_sz640", "imgsz": 640, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
-    {"name": "y8s_sgd_lr0001_max_sz768", "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # {"name": "y8s_sgd_lr0001_max_sz640", "imgsz": 640, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
+    # {"name": "y8s_sgd_lr0001_max_sz768", "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
 
     # === 几何增强对比：减小旋转角度（从90°降到15°） ===
-    {"name": "y8s_sgd_lr0001_max_deg15", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # {"name": "y8s_sgd_lr0001_max_deg15", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
 
-    # === 几何增强对比：减小旋转角度（从90°降到15°） ===
-    {"name": "y8s_sgd_lr0001_xmosaic", "mosaic": 0, "optimizer": "SGD", "lr0": 0.001, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # === Mosaic 数据增强对比：完全关闭 mosaic ===
+    # {"name": "y8s_sgd_lr0001_xmosaic", "mosaic": 0, "optimizer": "SGD", "lr0": 0.001, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
 
     # === Mosaic 数据增强对比：训练末期关闭 mosaic（最后10个 epoch） ===
-    {"name": "y8s_sgd_lr0001_max_closemos10", "close_mosaic": 10, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # {"name": "y8s_sgd_lr0001_max_closemos10", "close_mosaic": 10, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
 
     # === 遮挡增强对比：Cutout/Erasing 强度从0.5降到0.2 ===
-    {"name": "y8s_sgd_lr0001_max_erase02", "erasing": 0.2, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # {"name": "y8s_sgd_lr0001_max_erase02", "erasing": 0.2, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
 
     # === 优化器对比：SGD 换为 Adam，其他参数不变 ===
-    {"name": "y8s_adam_lr0001_max", "optimizer": "Adam", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # {"name": "y8s_adam_lr0001_max", "optimizer": "Adam", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
 
     # === 正则化对比：SGD 加权重衰减（weight_decay=5e-4） ===
-    {"name": "y8s_sgd_lr0001_max_wd5e-4", "weight_decay": 0.0005, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # {"name": "y8s_sgd_lr0001_max_wd5e-4", "weight_decay": 0.0005, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
 
     # === Adam variants ===
     # {"name": "yolov8s_adam_lr001", "optimizer": "Adam", "lr0": 0.01, "mosaic": 1, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5, "degrees": 0},
@@ -83,7 +105,7 @@ CONFIGS = [
 
 COMMON_ARGS = {
     "model": "yolov8s.pt",
-    "data": "data.yaml",
+    "data": "/Users/chenyuqi/Desktop/Automated-Nematode-Egg-Detection/modelpipeline/data.yaml",
     "task": "detect",
     "epochs": 200,
     "imgsz": 608,
@@ -97,8 +119,35 @@ COMMON_ARGS = {
     "hsv_h": 0.015,
     "hsv_s": 0.7,
     "hsv_v": 0.4,
-    "project": "Trained_Models_New/YOLO"
+    "project": "/Users/chenyuqi/Desktop/Automated-Nematode-Egg-Detection/modelpipeline/Trained_Models_New/YOLO",
+    # "workers": 4
 }
+
+# COMMON_ARGS = {
+#     "model": "yolov8s.pt",
+#     "data": "/Users/chenyuqi/Desktop/Automated-Nematode-Egg-Detection/modelpipeline/data.yaml",
+#     "task": "detect",
+#     "epochs": 200,         # 具体每个实验若写了 epochs=50，会覆盖这里
+#     "imgsz": 608,
+#     "batch": -1,           # 改：自动选择最大可用 batch
+#     "patience": 30,
+#     "degrees": 90,
+#     "translate": 0.1,
+#     "scale": 0.2,
+#     "shear": 2,
+#     "perspective": 0.0005,
+#     "hsv_h": 0.015,
+#     "hsv_s": 0.7,
+#     "hsv_v": 0.4,
+#     "project": "/Users/chenyuqi/Desktop/Automated-Nematode-Egg-Detection/modelpipeline/Trained_Models_New/YOLO",
+
+#     # 新增（提速&稳妥）
+#     "cache": True,
+#     "workers": 4,
+#     "device": "mps",       # Apple 芯片可用；若报错就移除此行
+#     "auto_augment": None   # 先关掉以避免 quality_range 兼容问题
+# }
+
 
 # -------------------------
 # Training Function

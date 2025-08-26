@@ -41,6 +41,8 @@ Dataset/
 March/
 Models/
 ModelPipeline/Trained_Models_Legacy/
+ModelPipeline/Trained_Models_New/
+
 node_modules/
 frontend/node_modules/
 predict-backend/best.onnx

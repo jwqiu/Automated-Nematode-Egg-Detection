@@ -82,7 +82,7 @@ function LogoHeader() {
 
       <div className="flex flex-col me-8 items-end  gap-0">
         <div>
-          <p className="text-gray-700 font-serif  font-bold text-md lg:text-xl  mb-0 text-nowrap">Parasite Detection System</p>
+          <p className="text-gray-700 font-serif  font-bold text-md lg:text-xl  mb-0 text-nowrap">Parasite Egg Detection System</p>
           {/* <span className='text-gray-400 text-sm text-start mt-0  italic'>*Research Project</span> */}
         </div>
         <div className='relative'>
