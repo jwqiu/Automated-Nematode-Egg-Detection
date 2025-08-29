@@ -37,7 +37,7 @@ CONFIGS = [
     # 历史上最好的实验
     # {"name": "yolov8s_sgd_lr0001_max_E300P50", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，目的是衡量epochs和patience减少的影响，是否是导致现在实验效果和历史最好实验差距的原因
-    # {"name": "yolov8s_sgd_lr0001_max_E50P15", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},   
+    {"name": "yolov8s_sgd_lr0001_max_E50P15", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment，目的是衡量 RandAugment（及其依赖的 Albumentations 变换）是否在当前环境上没有正确工作，大幅拉低了目前的实验效果
     # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15,"auto_augment": "none"},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment和相关的增强，目的是建立一个更稳定的“纯基线”
@@ -54,7 +54,7 @@ CONFIGS = [
 
     # {"name": "y8s_sgd_lr0001_max_sz768_deg15", "degrees": 15, "scale": 0.0, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
     # {"name": "y8s_sgd_lr0001_max_deg15_E300P50", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
-    {"name": "y8s_sgd_lr0001_max_sz768_deg15_E300P50_cos_closeM10", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "cos_lr": True, "lrf": 0.01,  "lr0": 0.001, "mosaic": 1, "close_mosaic": 10,"erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E300P50_cos_closeM10", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "cos_lr": True, "lrf": 0.01,  "lr0": 0.001, "mosaic": 1, "close_mosaic": 10,"erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
 
     # image size variants
     # {"name": "y8s_sgd_lr0001_max_sz640", "imgsz": 640, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
@@ -148,6 +148,7 @@ COMMON_ARGS = {
 #     "auto_augment": None   # 先关掉以避免 quality_range 兼容问题
 # }
 
+EXP_ROOT = "modelpipeline/Trained_Models_New/YOLO"
 
 # -------------------------
 # Training Function
@@ -155,11 +156,17 @@ COMMON_ARGS = {
 def train_model(config: dict):
     args = COMMON_ARGS.copy()
     args.update(config)
+
+    exp_dir = os.path.join(EXP_ROOT, args["name"])   # 实验根 = Trained_Models_New/YOLO/{实验名}
+    args.update({"project": exp_dir, "name": "train", "exist_ok": True})
+
     model = YOLO(args["model"])
     model.train(**args)
 
     # Return trained model weight path
-    return os.path.join(args["project"], args["name"], "weights", "best.pt")
+    # return os.path.join(args["project"], args["name"], "weights", "best.pt")
+    return os.path.join(exp_dir, "train", "weights", "best.pt")
+
 # -------------------------
 # Evaluation Function
 # -------------------------
@@ -168,7 +175,9 @@ def evaluate_model(weight_path: str, config_name: str,  task: str):
     model.val(
         data=COMMON_ARGS["data"],
         task=task,
-        project=f"Processed_Images/YOLO/{config_name}",
+        # project=f"Processed_Images/YOLO/{config_name}",
+        project=f"{EXP_ROOT}/{config_name}",
+
         name="val",
         exist_ok=True, 
         save_json=True,
@@ -184,8 +193,11 @@ def predict_model(weight_path: str, config_name: str, task: str, name):
     model.predict(
         source=f"dataset/{name}/images",
         task=task,
-        project=f"Processed_Images/YOLO/{config_name}",
-        name = name,
+        # project=f"Processed_Images/YOLO/{config_name}",
+        project=f"{EXP_ROOT}/{config_name}",
+
+        # name = name,
+        name = f"predict_{name}",
         exist_ok=True, 
         save_json=True,
         save_txt=True,
@@ -214,9 +226,10 @@ def predict_model_for_web(weight_path, config_name, task, source, project, name)
 # Main
 # -------------------------
 if __name__ == "__main__":
-    os.makedirs("Log", exist_ok=True)
+    # os.makedirs("Log", exist_ok=True)
+    os.makedirs("modelpipeline/Log", exist_ok=True)
     logging.basicConfig(
-        filename="Log/yolov8s_training.log",
+        filename="modelpipeline/Log/yolov8s_training.log",
         filemode="w",
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(message)s"
