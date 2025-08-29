@@ -37,7 +37,7 @@ CONFIGS = [
     # 历史上最好的实验
     # {"name": "yolov8s_sgd_lr0001_max_E300P50", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，目的是衡量epochs和patience减少的影响，是否是导致现在实验效果和历史最好实验差距的原因
-    {"name": "yolov8s_sgd_lr0001_max_E50P15", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},   
+    {"name": "yolov8s_sgd_lr0001_max_E50P15", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 10, "patience": 5},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment，目的是衡量 RandAugment（及其依赖的 Albumentations 变换）是否在当前环境上没有正确工作，大幅拉低了目前的实验效果
     # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15,"auto_augment": "none"},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment和相关的增强，目的是建立一个更稳定的“纯基线”
