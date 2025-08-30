@@ -6,11 +6,12 @@ from typing import Dict, List, Tuple, Optional
 # -------------------------
 # Configuration
 # -------------------------
-MODEL_NAME = 'yolov8s_sgd_lr0001' # change this 
+MODEL_NAME = 'yolov8s_sgd_lr0001_max' # change this 
 SPLIT = 'val'
 GT_FOLDER = os.path.join('dataset', 'test', 'labels') 
-PRED_FOLDER = os.path.join('Processed_Images', 'YOLO', MODEL_NAME, SPLIT, 'labels')
-OUTPUT_DIR = os.path.join('evaluation', 'YOLO', MODEL_NAME)
+# PRED_FOLDER = os.path.join('Processed_Images', 'YOLO', MODEL_NAME, SPLIT, 'labels')
+PRED_FOLDER = os.path.join('modelpipeline', 'Trained_Models_Legacy', 'YOLO', MODEL_NAME)
+OUTPUT_DIR = os.path.join('modelpipeline','evaluation', 'YOLO', MODEL_NAME)
 TARGET_CLASS = 0
 IOU_THRESHOLDS = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
 
@@ -53,7 +54,8 @@ def load_ground_truth(folder: str) -> Dict[str, List[List[float]]]:
         raise FileNotFoundError(f"Ground truth folder not found: {folder}")
     
     gt_data = {}
-    label_files = glob.glob(os.path.join(folder, '*.txt'))
+    # label_files = glob.glob(os.path.join(folder, '*.txt'))
+    label_files = glob.glob(os.path.join(folder, '*', '*.txt'))
     
     if not label_files:
         print(f"Warning: No label files found in {folder}")
@@ -98,8 +100,9 @@ def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
         raise FileNotFoundError(f"Predictions folder not found: {folder}")
     
     pred_data = {}
-    label_files = glob.glob(os.path.join(folder, '*.txt'))
-    
+    # label_files = glob.glob(os.path.join(folder, '*.txt'))
+    label_files = glob.glob(os.path.join(folder, 'predict_*', 'labels', '*.txt'))
+
     if not label_files:
         print(f"Warning: No prediction files found in {folder}")
         return pred_data

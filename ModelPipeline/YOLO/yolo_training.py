@@ -35,18 +35,18 @@ CONFIGS = [
 
   
     # 历史上最好的实验
-    # {"name": "yolov8s_sgd_lr0001_max_E300P50", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},   
+    {"name": "yolov8s_sgd_lr0001_max_E300P50", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，目的是衡量epochs和patience减少的影响，是否是导致现在实验效果和历史最好实验差距的原因
-    {"name": "yolov8s_sgd_lr0001_max_E50P15", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 10, "patience": 5},   
+    # {"name": "yolov8s_sgd_lr0001_max_E50P15", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 10, "patience": 5},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment，目的是衡量 RandAugment（及其依赖的 Albumentations 变换）是否在当前环境上没有正确工作，大幅拉低了目前的实验效果
     # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15,"auto_augment": "none"},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment和相关的增强，目的是建立一个更稳定的“纯基线”
     # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA_pure", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0, "fliplr": 0.0, "flipud": 0.0, "epochs": 50, "patience": 15,"auto_augment": "none"},  
     # 上次跑实验时最好的两个正向变量叠加
     # {"name": "y8s_sgd_lr0001_max_sz768_deg15", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
-    
+
     # 上次跑实验时最好的两个正向变量叠加+长训
-    # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E300P50", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    {"name": "y8s_sgd_lr0001_max_sz768_deg15_E300P50", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
     # 用增强里的 scale 做 ±20% 的轻缩放。
     # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E50P15_scale02", "degrees": 15, "imgsz": 768, "scale": 0.2, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
     # 余弦退火 (cosine LR) + 末期关闭 Mosaic
@@ -188,23 +188,41 @@ def evaluate_model(weight_path: str, config_name: str,  task: str):
 # -------------------------
 # Prediction Function
 # -------------------------
-def predict_model(weight_path: str, config_name: str, task: str, name):
-    model = YOLO(weight_path)
-    model.predict(
-        source=f"dataset/{name}/images",
-        task=task,
-        # project=f"Processed_Images/YOLO/{config_name}",
-        project=f"{EXP_ROOT}/{config_name}",
+# def predict_model(weight_path: str, config_name: str, task: str, name):
+#     model = YOLO(weight_path)
+#     model.predict(
+#         source=f"dataset/{name}/images",
+#         task=task,
+#         # project=f"Processed_Images/YOLO/{config_name}",
+#         project=f"{EXP_ROOT}/{config_name}",
 
-        # name = name,
-        name = f"predict_{name}",
-        exist_ok=True, 
+#         # name = name,
+#         name = f"predict_{name}",
+#         exist_ok=True, 
+#         save_json=True,
+#         save_txt=True,
+#         save_conf=True,
+#         verbose=True
+#     )
+    
+def predict_model(weight_path: str, config_name: str, task: str, source: str):
+    model = YOLO(weight_path)
+    # 从 source 路径里取最后的目录名当作 run 名称
+    tag = os.path.basename(os.path.normpath(source))
+
+    model.predict(
+        source=source,
+        task=task,
+        project=f"{EXP_ROOT}/{config_name}",
+        name=f"predict_{tag}",   # 输出文件夹带上来源名字
+        exist_ok=True,
         save_json=True,
         save_txt=True,
         save_conf=True,
         verbose=True
     )
-    
+
+
 def predict_model_for_web(weight_path, config_name, task, source, project, name):
 
     model = YOLO(weight_path)
@@ -255,7 +273,17 @@ if __name__ == "__main__":
         evaluate_model(weight_path, config_name, task)
 
         logging.info(f"Predicting test images for: {config_name}")
-        predict_model(weight_path, config_name, task, name = "test")
+        # predict_model(weight_path, config_name, task, name = "test")
+        # predict_model(weight_path, config_name, task,
+        #       "dataset/test/images/data_from_Denise_828")
+        # predict_model(weight_path, config_name, task,
+        #       "dataset/test/images/previous_data")
+        test_root = "dataset/test/images"
+        for sub in os.listdir(test_root):
+            sub_path = os.path.join(test_root, sub)
+            if os.path.isdir(sub_path):
+                predict_model(weight_path, config_name, task, sub_path)
+
 
     total_time = time.time() - start
     logging.info(f"\n✅ All runs complete in {total_time:.1f} seconds")
