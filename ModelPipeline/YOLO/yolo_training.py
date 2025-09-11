@@ -35,33 +35,34 @@ CONFIGS = [
 
   
     # 历史上最好的实验
-    {"name": "yolov8s_sgd_lr0001_max_E300P50", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},   
+    # {"name": "yolov8s_sgd_lr0001_max_E300P50", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，目的是衡量epochs和patience减少的影响，是否是导致现在实验效果和历史最好实验差距的原因
-    # {"name": "yolov8s_sgd_lr0001_max_E50P15", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 10, "patience": 5},   
+    # {"name": "yolov8s_sgd_lr0001_max_E50P15", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment，目的是衡量 RandAugment（及其依赖的 Albumentations 变换）是否在当前环境上没有正确工作，大幅拉低了目前的实验效果
     # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15,"auto_augment": "none"},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment和相关的增强，目的是建立一个更稳定的“纯基线”
-    # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA_pure", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0, "fliplr": 0.0, "flipud": 0.0, "epochs": 50, "patience": 15,"auto_augment": "none"},  
+    # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA_pure", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0, "fliplr": 0.0, "flipud": 0.0, "epochs": 50, "patience": 15,"auto_augment": "none"},
+
     # 上次跑实验时最好的两个正向变量叠加
     # {"name": "y8s_sgd_lr0001_max_sz768_deg15", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
-
-    # 上次跑实验时最好的两个正向变量叠加+长训
-    {"name": "y8s_sgd_lr0001_max_sz768_deg15_E300P50", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # 关闭随机缩放，只保持原图大小
+    # {"name": "y8s_sgd_lr0001_max_sz768_deg15", "degrees": 15, "scale": 0.0, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
     # 用增强里的 scale 做 ±20% 的轻缩放。
     # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E50P15_scale02", "degrees": 15, "imgsz": 768, "scale": 0.2, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
-    # 余弦退火 (cosine LR) + 末期关闭 Mosaic
+    # 继续增加 epochs 和 patience
+    # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E300P50", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 20},
+    # 余弦退火 (cosine LR) + 末期关闭 Mosaic + 长训
+    # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E300P50_cos_closeM10", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "cos_lr": True, "lrf": 0.01,  "lr0": 0.001, "mosaic": 1, "close_mosaic": 10,"erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+    # 余弦退火 (cosine LR) + 末期关闭 Mosaic + 短训
     # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E50P15_cos_closeM10", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "cos_lr": True, "lrf": 0.01,  "lr0": 0.001, "mosaic": 1, "close_mosaic": 10,"erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 20},
 
-    # {"name": "y8s_sgd_lr0001_max_sz768_deg15", "degrees": 15, "scale": 0.0, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
-    # {"name": "y8s_sgd_lr0001_max_deg15_E300P50", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
-    # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E300P50_cos_closeM10", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "cos_lr": True, "lrf": 0.01,  "lr0": 0.001, "mosaic": 1, "close_mosaic": 10,"erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
-
     # image size variants
-    # {"name": "y8s_sgd_lr0001_max_sz640", "imgsz": 640, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
+    {"name": "y8s_sgd_lr0001_max_sz640", "imgsz": 640, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 20},
     # {"name": "y8s_sgd_lr0001_max_sz768", "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
 
     # === 几何增强对比：减小旋转角度（从90°降到15°） ===
-    # {"name": "y8s_sgd_lr0001_max_deg15", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
+    {"name": "y8s_sgd_lr0001_max_deg15", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 20},
+    # {"name": "y8s_sgd_lr0001_max_deg15_E300P50", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
 
     # === Mosaic 数据增强对比：完全关闭 mosaic ===
     # {"name": "y8s_sgd_lr0001_xmosaic", "mosaic": 0, "optimizer": "SGD", "lr0": 0.001, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
@@ -77,6 +78,7 @@ CONFIGS = [
 
     # === 正则化对比：SGD 加权重衰减（weight_decay=5e-4） ===
     # {"name": "y8s_sgd_lr0001_max_wd5e-4", "weight_decay": 0.0005, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
+
 
     # === Adam variants ===
     # {"name": "yolov8s_adam_lr001", "optimizer": "Adam", "lr0": 0.01, "mosaic": 1, "erasing": 0.8, "fliplr": 1.0, "flipud": 0.5, "degrees": 0},

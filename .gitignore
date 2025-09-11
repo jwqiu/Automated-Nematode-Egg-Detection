@@ -9,7 +9,7 @@ Results/
 *.pyc
 __pycache__/
 *.ipynb_checkpoints
-.env
+*.env
 
 venv/
 images/
@@ -45,8 +45,9 @@ ModelPipeline/Trained_Models_New/
 
 node_modules/
 frontend/node_modules/
-predict-backend/best.onnx
+
 !predict-backend/host.json
+*.onnx
 
 # macOS
 .DS_Store
