@@ -1,56 +1,144 @@
-!frontend/package.json
-!frontend/public/static/images/Lincoln-University-Logo-Horizontal-RGB-Blue-01.pngData/
+# !frontend/package.json
+# !frontend/public/static/images/Lincoln-University-Logo-Horizontal-RGB-Blue-01.pngData/
 
 
-Jupyter Notebooks/
-pdf/
-Reports/
-Results/
-*.pyc
-__pycache__/
-*.ipynb_checkpoints
-*.env
+# Jupyter Notebooks/
+# pdf/
+# Reports/
+# Results/
+# *.pyc
+# __pycache__/
+# *.ipynb_checkpoints
+# *.env
 
-venv/
-images/
-runs/
-labels/
-Processed_Images/
-evaluation_outputs/
-dataset/
-faster_rcnn_nematode.pth
-venv 2/
-*.jpg
-*.png
-*.jpeg
-*.gif
-*.tiff
-*.csv
-*.json
-*.xml
-*.pt
-/model
-/Log
-/OpenCV
-!frontend/public/static/images/*.png
-!frontend/public/static/images/*.jpeg
-**/.DS_Store
+# venv/
+# images/
+# runs/
+# labels/
+# Processed_Images/
+# evaluation_outputs/
+# dataset/
+# faster_rcnn_nematode.pth
+# venv 2/
+# *.jpg
+# *.png
+# *.jpeg
+# *.gif
+# *.tiff
+# *.csv
+# *.json
+# *.xml
+# *.pt
+# /model
+# /Log
+# /OpenCV
+# !frontend/public/static/images/*.png
+# !frontend/public/static/images/*.jpeg
+# **/.DS_Store
 
-2nd lot egg pics/
-Dataset/
-March/
-Models/
-ModelPipeline/Trained_Models_Legacy/
-ModelPipeline/Trained_Models_New/
+# 2nd lot egg pics/
+# Dataset/
+# March/
+# Models/
+# ModelPipeline/Trained_Models_Legacy/
+# ModelPipeline/Trained_Models_New/
 
-node_modules/
-frontend/node_modules/
+# node_modules/
+# frontend/node_modules/
 
-!predict-backend/host.json
-*.onnx
+# !predict-backend/host.json
+# *.onnx
 
+# # macOS
+# .DS_Store
+# .AppleDouble
+# .LSOverride
+
+# # Icon must end with two \r
+# Icon
+
+# # Thumbnails
+# ._*
+
+# # Files that might appear on external disk
+# .Spotlight-V100
+# .Trashes
+
+# # macOS 11.0 and above
+# .VolumeIcon.icns
+# .com.apple.timemachine.donotpresent
+
+# # Directories
+# .AppleDB
+# .AppleDesktop
+# Network Trash Folder
+# Temporary Items
+# .apdisk
+# man_label.py
+# /labels/train
+# /labels
+# *.pth
+# yolov5/
+# /YOLO/nematode_yolov5s
+# /YOLO/nematode_yolov5s_train
+# .zshrc
+# /verification_vis
+# verify_open_metric.py
+# faster_rcnn/cv_loss.xlsx
+# faster_rcnn/~$cv_loss.xlsx
+# /Archive
+# *.log
+# deeplab_training.log
+# /Raw_Data
+# faster_rcnn/faster_rcnn_with_cv.py
+# faster_rcnn/faster_rcnn_with_cv.py
+# /YOLO/iteration_1.1
+# /YOLO/iteration_1
+# /dataset_seg
+# /YOLO/summary
+# /Evaluation/tensorboard_logs
+# /Evaluation/tensorboard_logs
+# /Evaluation/overlays
+# report_image.py
+# /Helper/report_image.py
+
+
+
+
+# # React 项目构建目录
+# /my-app/dist/
+# /my-app/.vite/
+# /my-app/.parcel-cache/
+
+# # Node modules
+# /my-app/node_modules/
+
+# /my-app/.DS_Store
+
+# # 日志
+# /my-app/npm-debug.log*
+# /my-app/yarn-debug.log*
+# /my-app/yarn-error.log*
+
+# # Vite preview cache
+# /my-app/.cache/
+# /my-app/.eslintcache
+
+# # VSCode settings (如你不用共享工作区设置)
+# /my-app/.vscode/
+
+# # Optional: .env 文件（如果你在前端使用了环境变量）
+# /my-app/.env
+# /my-app/.env.* 
+
+# !image.png
+# !docs/home_screenshot.png
+################################################################################
+# macOS / 系统杂项
+################################################################################
 # macOS
 .DS_Store
+**/.DS_Store
 .AppleDouble
 .LSOverride
 
@@ -74,36 +162,23 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-man_label.py
-/labels/train
-/labels
-*.pth
-yolov5/
-/YOLO/nematode_yolov5s
-/YOLO/nematode_yolov5s_train
+
+################################################################################
+# Python / Jupyter / 环境
+################################################################################
+*.pyc
+__pycache__/
+*.ipynb_checkpoints
+*.env
+venv/
+venv 2/
 .zshrc
-/verification_vis
-verify_open_metric.py
-faster_rcnn/cv_loss.xlsx
-faster_rcnn/~$cv_loss.xlsx
-/Archive
-*.log
-deeplab_training.log
-/Raw_Data
-faster_rcnn/faster_rcnn_with_cv.py
-faster_rcnn/faster_rcnn_with_cv.py
-/YOLO/iteration_1.1
-/YOLO/iteration_1
-/dataset_seg
-/YOLO/summary
-/Evaluation/tensorboard_logs
-/Evaluation/tensorboard_logs
-/Evaluation/overlays
-report_image.py
-/Helper/report_image.py
 
-
-
+################################################################################
+# Node / 前端构建与依赖
+################################################################################
+node_modules/
+frontend/node_modules/
 
 # React 项目构建目录
 /my-app/dist/
@@ -131,5 +206,79 @@ report_image.py
 /my-app/.env
 /my-app/.env.* 
 
+################################################################################
+# 数据集 / 训练输出 / 项目大文件与目录
+################################################################################
+Jupyter Notebooks/
+pdf/
+Reports/
+Results/
+images/
+runs/
+labels/
+Processed_Images/
+evaluation_outputs/
+dataset/
+faster_rcnn_nematode.pth
+/model
+/Log
+/OpenCV
+
+2nd lot egg pics/
+Dataset/
+March/
+Models/
+ModelPipeline/Trained_Models_Legacy/
+ModelPipeline/Trained_Models_New/
+
+man_label.py
+/labels/train
+/labels
+yolov5/
+/YOLO/nematode_yolov5s
+/YOLO/nematode_yolov5s_train
+/verification_vis
+verify_open_metric.py
+faster_rcnn/cv_loss.xlsx
+faster_rcnn/~$cv_loss.xlsx
+/Archive
+deeplab_training.log
+/Raw_Data
+faster_rcnn/faster_rcnn_with_cv.py
+faster_rcnn/faster_rcnn_with_cv.py
+/YOLO/iteration_1.1
+/YOLO/iteration_1
+/dataset_seg
+/YOLO/summary
+/Evaluation/tensorboard_logs
+/Evaluation/tensorboard_logs
+/Evaluation/overlays
+report_image.py
+/Helper/report_image.py
+
+################################################################################
+# 文件类型（全局忽略）
+################################################################################
+*.jpg
+*.png
+*.jpeg
+*.gif
+*.tiff
+*.csv
+*.json
+*.xml
+*.pt
+*.onnx
+*.pth
+*.log
+
+################################################################################
+# 白名单（需保留的文件/路径）——放在最后，避免与上面规则冲突
+################################################################################
+!frontend/package.json
+!frontend/public/static/images/Lincoln-University-Logo-Horizontal-RGB-Blue-01.pngData/
+!frontend/public/static/images/*.png
+!frontend/public/static/images/*.jpeg
+!predict-backend/host.json
 !image.png
 !docs/home_screenshot.png
