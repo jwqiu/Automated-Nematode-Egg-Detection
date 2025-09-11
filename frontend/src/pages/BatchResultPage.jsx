@@ -1,5 +1,7 @@
 // @ts-ignore
 import React, { useState, useEffect, useContext, useRef } from 'react';
+// @ts-ignore
+
 import LogoHeader from '../components/LogoHeader';
 import BatchResult from '../components/BatchResult';
 // @ts-ignore
@@ -12,7 +14,13 @@ import ImageAnnotator from '../components/ImageAnnotator';
 import { ImageContext } from '../context/ImageContext';
 // @ts-ignore
 import { useLocation } from 'react-router-dom';
+// @ts-ignore
+
 import { useNavigate } from 'react-router-dom';
+// @ts-ignore
+
+import { API_BASE } from '../apiBase'; 
+
 
 
 
@@ -49,13 +57,15 @@ function BatchResultPage() {
                 reader.readAsDataURL(img.file);
             });
 
-            const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+            // const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
-            const apiBaseUrl = isLocalhost
-                ? "http://localhost:7071/api/predict"
-                : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/predict";
+            // const apiBaseUrl = isLocalhost
+            //     ? "http://localhost:7071/api/predict"
+            //     : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/predict";
 
-            const res = await fetch(apiBaseUrl, {
+            // const res = await fetch(apiBaseUrl, {
+            const res = await fetch(`${API_BASE}/predict`, {
+
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

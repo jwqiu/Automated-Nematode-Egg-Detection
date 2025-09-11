@@ -1,8 +1,10 @@
 // @ts-ignore
 import React, { useContext, useRef, useState } from 'react';
 // @ts-ignore
-
 import { ImageContext } from '../context/ImageContext';
+// @ts-ignore
+import { API_BASE } from '../apiBase'; 
+
 
 function ImageAnnotator() {
     const { annotateImage, setAnnotateImage } = useContext(ImageContext);
@@ -59,20 +61,24 @@ function ImageAnnotator() {
         });
     };
 
-    const handleUpload = () => {
+    const handleUpload = async () => {
         if (!annotateImage || !annotateImage.file) {
             console.error("❌ No image to upload.");
             return;
         }
 
-        const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-        const apiBaseUrl = isLocalhost
-            ? "http://localhost:7071/api/upload"
-            : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/upload";
+        // const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+        // const apiBaseUrl = isLocalhost
+        //     ? "http://localhost:7071/api/upload"
+        //     : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/upload";
 
-        fetch(`${apiBaseUrl}?filename=${encodeURIComponent(annotateImage.filename)}`, {
+        // fetch(`${apiBaseUrl}?filename=${encodeURIComponent(annotateImage.filename)}`, {
+        //     method: "POST",
+        //     body: annotateImage.file, // ✅ 上传 blob，不要 headers
+        // })
+        await fetch(`${API_BASE}/upload?filename=${encodeURIComponent(annotateImage.filename)}`, {
             method: "POST",
-            body: annotateImage.file, // ✅ 上传 blob，不要 headers
+            body: annotateImage.file,          // ✅ 传二进制，不加 headers
         })
         .then((res) => res.text())
         .then((msg) => {
@@ -96,16 +102,16 @@ function ImageAnnotator() {
         });
     };
 
-    const handleBoxUpload = () => {
+    const handleBoxUpload = async () => {
         if (!annotateImage || !annotateImage.filename || boxes.length === 0) {
             console.error("❌ Missing image filename or boxes.");
             return;
         }
 
-        const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-        const apiBaseUrl = isLocalhost
-            ? "http://localhost:7071/api/upload_boxes"
-            : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/upload_boxes";
+        // const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+        // const apiBaseUrl = isLocalhost
+        //     ? "http://localhost:7071/api/upload_boxes"
+        //     : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/upload_boxes";
 
         const payload = {
             filename: annotateImage.filename,
@@ -114,8 +120,9 @@ function ImageAnnotator() {
                 confidence: b.confidence ?? 1.0
             }))
         };
-
-        fetch(apiBaseUrl, {
+        
+        await fetch(`${API_BASE}/upload_boxes`, {
+        // fetch(apiBaseUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

@@ -1,5 +1,6 @@
 // @ts-ignore
 import React from 'react';
+// @ts-ignore
 import LogoHeader from '../components/LogoHeader';
 // @ts-ignore
 

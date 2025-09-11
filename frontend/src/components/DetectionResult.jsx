@@ -1,9 +1,9 @@
 // @ts-ignore
 import React, { useState, useContext } from 'react';
 // @ts-ignore
-
 import { ImageContext } from '../context/ImageContext';
-
+// @ts-ignore
+import { API_BASE } from '../apiBase'; 
 
 function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
   const [loading, setLoading] = useState(false);
@@ -30,20 +30,18 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
       });
 
 
-      // 根据当前页面的 host 判断运行环境
-      const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+      // // 根据当前页面的 host 判断运行环境
+      // const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
-      // 设置 API base URL
-      const apiBaseUrl = isLocalhost
-        ? "http://localhost:7071/api/predict"  // 本地 Azure Function 地址
-        // ? "http://127.0.0.1:5001/predict"  // 本地 flask backend 地址
-        : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/predict"; // 替换成你的部署地址
+      // // 设置 API base URL
+      // const apiBaseUrl = isLocalhost
+      //   ? "http://localhost:7071/api/predict"  // 本地 Azure Function 地址
+      //   : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/predict"; // 替换成你的部署地址
 
-      // const res = await fetch("https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/predict", {
 
-      // 调用后端
-      const res = await fetch(`${apiBaseUrl}`, {
-
+      // // 调用后端
+      // const res = await fetch(`${apiBaseUrl}`, {
+      const res = await fetch(`${API_BASE}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
