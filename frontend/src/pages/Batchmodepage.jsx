@@ -13,7 +13,7 @@ import { useContext } from 'react';
 import { ImageContext } from '../context/ImageContext';
 // @ts-ignore
 
-import DetectionResult from '../components/DetectionResult'; 
+
 
 
 
@@ -23,8 +23,8 @@ function BatchModePage() {
   return (
     <div className='flex flex-col h-screen '>
         <LogoHeader />
-        <div className='flex-1 flex flex-row items-center justify-center gap-8 pb-12'>
-            <div className=" w-full px-8 mt-8 lg:mt-0 lg:px-0  lg:w-[800px] ">
+        <div className='px-12 pb-12 pt-6 flex h-full flex-row gap-x-8 mx-auto w-full max-w-[800px] '>
+            <div className=" w-full  ">
                 <ImageUploader
                     images={images}
                     setImages={setImages}
@@ -43,6 +43,7 @@ function BatchModePage() {
                   setImages={setImages}
                 />
             </div> */}
+
         </div>
 
     </div>
