@@ -5,3 +5,4 @@ onnxruntime
 azure-storage-blob
 psycopg2-binary
 python-dotenv
+flask-cors

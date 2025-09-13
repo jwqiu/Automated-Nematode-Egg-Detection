@@ -194,8 +194,12 @@ import base64, io, os, json
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import onnxruntime as ort
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app, resources={r"/predict": {"origins": ["http://localhost:5173"]}},
+     supports_credentials=False, allow_headers=["Content-Type"], methods=["POST", "OPTIONS"])
 
 # —— 全局加载 ONNX 模型 —— #
 RUNTIME_DIR = os.path.join(os.path.dirname(__file__), "runtime_assets")

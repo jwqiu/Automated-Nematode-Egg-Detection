@@ -10,6 +10,57 @@ import { useNavigate } from 'react-router-dom';
 
 import { decode, decodeImage, toRGBA8 } from "utif";
 
+
+// ⬇️ 顶层
+export function resizeAndPadImage(img, callback) {
+  const targetSize = 608;
+  const canvas = document.createElement("canvas");
+  canvas.width = targetSize;
+  canvas.height = targetSize;
+  const ctx = canvas.getContext("2d");
+  const ratio = Math.min(targetSize / img.width, targetSize / img.height);
+  const newWidth = img.width * ratio;
+  const newHeight = img.height * ratio;
+  const dx = (targetSize - newWidth) / 2;
+  const dy = (targetSize - newHeight) / 2;
+  ctx.fillStyle = "#808080";
+  ctx.fillRect(0, 0, targetSize, targetSize);
+  ctx.drawImage(img, dx, dy, newWidth, newHeight);
+  canvas.toBlob((blob) => callback(blob), "image/jpeg", 0.9);
+}
+
+export async function convertTifToPng(file) {
+  const name = file.name.toLowerCase();
+  if (!name.endsWith(".tif") && !name.endsWith(".tiff")) return file;
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const buffer = new Uint8Array(reader.result);
+      const ifds = decode(buffer);
+      const validIfd = ifds.find((ifd) => ifd.t273 && ifd.t279);
+      if (!validIfd) return resolve(file);
+      decodeImage(buffer, validIfd);
+      const width  = validIfd.t256?.[0];
+      const height = validIfd.t257?.[0];
+      if (!width || !height) return resolve(file);
+      const rgba = toRGBA8(validIfd);
+      if (!rgba.length) return resolve(file);
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      const imgData = ctx.createImageData(width, height);
+      imgData.data.set(rgba);
+      ctx.putImageData(imgData, 0, 0);
+      canvas.toBlob((blob) => {
+        const pngFile = new File([blob], file.name.replace(/\.(tif|tiff)$/i, ".png"), { type: "image/png" });
+        resolve(pngFile);
+      }, "image/png");
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+
 // React 组件函数，名称为 ImageUploader
 function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bottomButton = false, defaultHints = true,isCard = false }) {
   // 用 useState 创建一个状态变量 images，用于保存上传的图片
@@ -18,95 +69,95 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
   // const [selectedImage, setSelectedImage] = React.useState(null);
   const navigate = useNavigate();
   
-  function resizeAndPadImage(img, callback) {
-    const targetSize = 608;
-    const canvas = document.createElement("canvas");
-    canvas.width = targetSize;
-    canvas.height = targetSize;
-    const ctx = canvas.getContext("2d");
+  // function resizeAndPadImage(img, callback) {
+  //   const targetSize = 608;
+  //   const canvas = document.createElement("canvas");
+  //   canvas.width = targetSize;
+  //   canvas.height = targetSize;
+  //   const ctx = canvas.getContext("2d");
 
-    // 计算等比缩放尺寸
-    const ratio = Math.min(targetSize / img.width, targetSize / img.height);
-    const newWidth = img.width * ratio;
-    const newHeight = img.height * ratio;
+  //   // 计算等比缩放尺寸
+  //   const ratio = Math.min(targetSize / img.width, targetSize / img.height);
+  //   const newWidth = img.width * ratio;
+  //   const newHeight = img.height * ratio;
 
-    const dx = (targetSize - newWidth) / 2;
-    const dy = (targetSize - newHeight) / 2;
+  //   const dx = (targetSize - newWidth) / 2;
+  //   const dy = (targetSize - newHeight) / 2;
 
-    // 可选：设置背景色为灰色（与 YOLO letterbox 一致）
-    ctx.fillStyle = "#808080";
-    ctx.fillRect(0, 0, targetSize, targetSize);
+  //   // 可选：设置背景色为灰色（与 YOLO letterbox 一致）
+  //   ctx.fillStyle = "#808080";
+  //   ctx.fillRect(0, 0, targetSize, targetSize);
 
-    // 居中绘制缩放后的图像
-    ctx.drawImage(img, dx, dy, newWidth, newHeight);
+  //   // 居中绘制缩放后的图像
+  //   ctx.drawImage(img, dx, dy, newWidth, newHeight);
 
-    canvas.toBlob((blob) => {
-      callback(blob);
-    }, "image/jpeg", 0.9);
-  }
+  //   canvas.toBlob((blob) => {
+  //     callback(blob);
+  //   }, "image/jpeg", 0.9);
+  // }
 
-  async function convertTifToPng(file) {
-    const name = file.name.toLowerCase();
-    if (!name.endsWith(".tif") && !name.endsWith(".tiff")) {
-      return file;
-    }
+  // async function convertTifToPng(file) {
+  //   const name = file.name.toLowerCase();
+  //   if (!name.endsWith(".tif") && !name.endsWith(".tiff")) {
+  //     return file;
+  //   }
 
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const buffer = new Uint8Array(reader.result);
-        const ifds = decode(buffer);
+  //   return new Promise((resolve) => {
+  //     const reader = new FileReader();
+  //     reader.onload = () => {
+  //       const buffer = new Uint8Array(reader.result);
+  //       const ifds = decode(buffer);
 
-        // 找到包含图像数据的 IFD
-        const validIfd = ifds.find((ifd) => ifd.t273 && ifd.t279);
-        if (!validIfd) {
-          console.error("❌ No usable image data found in any IFD");
-          resolve(file);
-          return;
-        }
+  //       // 找到包含图像数据的 IFD
+  //       const validIfd = ifds.find((ifd) => ifd.t273 && ifd.t279);
+  //       if (!validIfd) {
+  //         console.error("❌ No usable image data found in any IFD");
+  //         resolve(file);
+  //         return;
+  //       }
 
-        // **关键**：解码压缩数据到像素缓存
-        decodeImage(buffer, validIfd);
+  //       // **关键**：解码压缩数据到像素缓存
+  //       decodeImage(buffer, validIfd);
 
-        // 取尺寸
-        const width  = validIfd.t256?.[0];
-        const height = validIfd.t257?.[0];
-        if (!width || !height) {
-          console.error("❌ Invalid TIFF dimensions");
-          resolve(file);
-          return;
-        }
+  //       // 取尺寸
+  //       const width  = validIfd.t256?.[0];
+  //       const height = validIfd.t257?.[0];
+  //       if (!width || !height) {
+  //         console.error("❌ Invalid TIFF dimensions");
+  //         resolve(file);
+  //         return;
+  //       }
 
-        // 真正拿回 RGBA 数组
-        const rgba = toRGBA8(validIfd);
-        if (!rgba.length) {
-          console.error("❌ Failed to decode image pixels.");
-          resolve(file);
-          return;
-        }
+  //       // 真正拿回 RGBA 数组
+  //       const rgba = toRGBA8(validIfd);
+  //       if (!rgba.length) {
+  //         console.error("❌ Failed to decode image pixels.");
+  //         resolve(file);
+  //         return;
+  //       }
 
-        // 绘制到 canvas，再导出 PNG
-        const canvas = document.createElement("canvas");
-        canvas.width  = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        const imgData = ctx.createImageData(width, height);
-        imgData.data.set(rgba);
-        ctx.putImageData(imgData, 0, 0);
+  //       // 绘制到 canvas，再导出 PNG
+  //       const canvas = document.createElement("canvas");
+  //       canvas.width  = width;
+  //       canvas.height = height;
+  //       const ctx = canvas.getContext("2d");
+  //       const imgData = ctx.createImageData(width, height);
+  //       imgData.data.set(rgba);
+  //       ctx.putImageData(imgData, 0, 0);
 
-        canvas.toBlob((blob) => {
-          const pngFile = new File(
-            [blob],
-            file.name.replace(/\.(tif|tiff)$/i, ".png"),
-            { type: "image/png" }
-          );
-          resolve(pngFile);
-        }, "image/png");
-      };
+  //       canvas.toBlob((blob) => {
+  //         const pngFile = new File(
+  //           [blob],
+  //           file.name.replace(/\.(tif|tiff)$/i, ".png"),
+  //           { type: "image/png" }
+  //         );
+  //         resolve(pngFile);
+  //       }, "image/png");
+  //     };
 
-      reader.readAsArrayBuffer(file);
-    });
-  }
+  //     reader.readAsArrayBuffer(file);
+  //   });
+  // }
 
   const [isUploading, setIsUploading] = useState(false);
   const imageListRef = useRef(null);

@@ -4,20 +4,45 @@ import React from 'react';
 import LogoHeader from '../components/LogoHeader';
 
 import DetectionResult from '../components/DetectionResult'; 
+// @ts-ignore
+
 import FolderUploader from '../components/FolderUploader';
+
+const useState = React.useState;
+const useEffect = React.useEffect;
+const useRef = React.useRef;
+
+// @ts-ignore
+
 import FolderImagesList from '../components/FolderImagesList';
-import FolderImagesDetectionResult from '../components/FolderImagesDetectionResult';
 
 function FolderModePage() {
+
+    const [folders, setFolders] = useState([]);
+    const [folderImages, setFolderImages] = useState({});
+    const [selectedFolder, setSelectedFolder] = useState(null);
+
 
     return (
         <div className='flex flex-col h-screen '>
             <LogoHeader />
-            <div className='px-12 pb-12 pt-6 flex h-full flex-row gap-x-8 mx-auto w-full max-w-[1200px] '>
-                <FolderUploader />
-                <div className='flex flex-col w-full gap-y-8 '>
-                    <FolderImagesDetectionResult />
-                    <FolderImagesList />
+            <div className='px-12 pb-12 pt-6 flex h-[calc(100vh-100px)] flex-row gap-x-8 mx-auto w-full max-w-[1500px] '>
+                <FolderUploader
+                    folders={folders}
+                    setFolders={setFolders}
+                    folderImages={folderImages}
+                    setFolderImages={setFolderImages}
+                    selectedFolder={selectedFolder}
+                    setSelectedFolder={setSelectedFolder}
+                />
+                <div className=' w-full flex '>
+                    <FolderImagesList
+                        folders={folders}
+                        setFolders={setFolders}
+                        folderImages={folderImages}
+                        setFolderImages={setFolderImages}
+                        selectedFolder={selectedFolder}
+                    />
                 </div>
 
             </div>

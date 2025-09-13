@@ -7,6 +7,8 @@ import BatchResult from '../components/BatchResult';
 // @ts-ignore
 
 import BatchImagesList from '../components/BatchImagesList';
+// @ts-ignore
+
 import ImageAnnotator from '../components/ImageAnnotator';
 
 // @ts-ignore
