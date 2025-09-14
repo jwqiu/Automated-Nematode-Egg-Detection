@@ -198,8 +198,18 @@ from flask_cors import CORS
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/predict": {"origins": ["http://localhost:5173"]}},
-     supports_credentials=False, allow_headers=["Content-Type"], methods=["POST", "OPTIONS"])
+# CORS(app, resources={r"/predict": {"origins": ["http://localhost:5173"]}},
+#      supports_credentials=False, allow_headers=["Content-Type"], methods=["POST", "OPTIONS"])
+
+CORS(app,
+     resources={
+         r"/predict": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]},
+         r"/upload/image": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]},
+     },
+     supports_credentials=False,
+     allow_headers=["Content-Type"],
+     methods=["POST", "OPTIONS"])
+
 
 # —— 全局加载 ONNX 模型 —— #
 RUNTIME_DIR = os.path.join(os.path.dirname(__file__), "runtime_assets")
@@ -290,9 +300,7 @@ def predict():
     except Exception as e:
         return jsonify({"error": f"Predict error: {e}"}), 500
 
-if __name__ == "__main__":
-    # 5178 只是建议端口；与 Electron 里保持一致即可
-    app.run(host="127.0.0.1", port=5178)
+
 
 
 # ===== 上传标注框到 PostgreSQL =====
@@ -352,23 +360,36 @@ AZURE_BLOB_CONN_STR = (
 
 blob_service_client = BlobServiceClient.from_connection_string(AZURE_BLOB_CONN_STR)
 
-@app.post("/upload/image")
+
+@app.route("/upload/image", methods=["POST", "OPTIONS"])
 def upload_image():
+    # 预检：直接 204
+    if request.method == "OPTIONS":
+        return ("", 204)
+
     try:
-        # 原始二进制体（前端用 multipart/form-data 或 application/octet-stream 直传均可）
+        # 二进制体
         image_data = request.get_data(cache=False, as_text=False)
 
-        # 从 querystring 或 body 字段拿文件名，优先 query 参数
+        # 文件名：query 优先，否则生成一个
         filename = request.args.get("filename")
         if not filename:
-            # 若你用 JSON 传 base64，这里要改为解 base64；当前走二进制直传
             filename = f"image_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.png"
 
-        blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER, blob=filename)
+        # 上传
+        blob_client = blob_service_client.get_blob_client(
+            container=BLOB_CONTAINER, blob=filename
+        )
         blob_client.upload_blob(image_data, overwrite=True)
 
-        # 仅返回 blob 路径；如需 SAS 可自己生成
+        # 返回 URL
         url = f"https://{blob_client.account_name}.blob.core.windows.net/{BLOB_CONTAINER}/{filename}"
         return jsonify({"ok": True, "filename": filename, "url": url})
+
     except Exception as e:
         return jsonify({"error": f"Upload failed: {e}"}), 500
+
+
+if __name__ == "__main__":
+    # 5178 只是建议端口；与 Electron 里保持一致即可
+    app.run(host="127.0.0.1", port=5178)

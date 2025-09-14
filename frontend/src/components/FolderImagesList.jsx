@@ -1,5 +1,7 @@
 // @ts-ignore
 import React from 'react';
+import { API_BASE } from '../apiBase';
+
 // index.js
 const useState = React.useState;
 const useEffect = React.useEffect;
@@ -20,6 +22,21 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         return Array.isArray(arr) ? arr : [];
     }, [selectedFolder, folderImages]);
 
+    function dataURLtoBlob(dataUrl) {
+        const [meta, b64] = String(dataUrl).split(',');
+        const mime = /data:(.*?);base64/.exec(meta)?.[1] || 'application/octet-stream';
+        const bin = atob(b64);
+        const u8 = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+        return new Blob([u8], { type: mime });
+    }
+    async function srcToBlob(src) {
+        if (!src) throw new Error('No image src');
+        // dataURL -> Blob；objectURL/普通 URL -> fetch -> Blob
+        return src.startsWith('data:') ? dataURLtoBlob(src) : (await fetch(src)).blob();
+    }
+
+
     const isImage = (name) => /\.(png|jpe?g|gif|bmp|webp|tiff?)$/i.test(name);
     const isPdf = (name) => /\.pdf$/i.test(name);
 
@@ -36,32 +53,82 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         setChoice(Number.isFinite(current) ? current : 0);
     };
 
-    const confirmAdjust = () => {
+    // const confirmAdjust = () => {
+    //     setFolderImages(prev => {
+    //         if (!editingKey) return prev;
+
+    //         // 从 key 里拆出 folder 与 filename
+    //         const [folderName, ...rest] = String(editingKey).split('/');
+    //         const filename = rest.join('/'); // 以防文件名里含 '/'
+
+    //         const arr = Array.isArray(prev?.[folderName]) ? prev[folderName] : [];
+    //         if (!arr.length) return prev;
+
+    //         // 更新该文件
+    //         const newArr = arr.map(it =>
+    //         it.filename === filename ? { ...it, eggfound: choice } : it
+    //         );
+
+    //         const next = { ...prev, [folderName]: newArr };
+
+    //         // 同步更新 folders 的 eggnum
+    //         const total = newArr.reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
+    //         setFolders(fs => fs.map(f => f.name === folderName ? ({ ...f, eggnum: total }) : f));
+
+    //         return next; // 返回对象，而不是数组
+    //     });
+
+    //     setEditingKey(null);
+    // };
+    
+    const confirmAdjust = async () => {
+        if (!editingKey) return;
+
+        // 先解析 key，定位这张图
+        const [folderName, ...rest] = String(editingKey).split('/');
+        const filename = rest.join('/');
+
+        // 拿到“当前这张图”的快照（上传用），优先 annotated_image
+        const beforeArr = Array.isArray(folderImages?.[folderName]) ? folderImages[folderName] : [];
+        const beforeItem = beforeArr.find(it => it.filename === filename);
+
+        // 先更新本地状态（egg 数/汇总）
         setFolderImages(prev => {
-            if (!editingKey) return prev;
-
-            // 从 key 里拆出 folder 与 filename
-            const [folderName, ...rest] = String(editingKey).split('/');
-            const filename = rest.join('/'); // 以防文件名里含 '/'
-
             const arr = Array.isArray(prev?.[folderName]) ? prev[folderName] : [];
             if (!arr.length) return prev;
 
-            // 更新该文件
             const newArr = arr.map(it =>
             it.filename === filename ? { ...it, eggfound: choice } : it
             );
-
             const next = { ...prev, [folderName]: newArr };
 
-            // 同步更新 folders 的 eggnum
             const total = newArr.reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
             setFolders(fs => fs.map(f => f.name === folderName ? ({ ...f, eggnum: total }) : f));
 
-            return next; // 返回对象，而不是数组
+            return next;
         });
 
         setEditingKey(null);
+
+        // 再上传（最简单：annotated 有就传 annotated，没就传 original）
+        try {
+            if (beforeItem) {
+            const src = beforeItem.annotated_image || beforeItem.original_image;
+            const blob = await srcToBlob(src);
+            // 防重名，带上文件夹名
+            const upName = `${folderName}__${filename}`;
+
+            const res = await fetch(
+                `${API_BASE}/upload/image?filename=${encodeURIComponent(upName)}`,
+                { method: 'POST', body: blob } // ✅ 直接传二进制，不加 headers
+            );
+            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json(); // { ok, filename, url }
+            console.log('✅ Uploaded:', data.url);
+            }
+        } catch (err) {
+            console.error('❌ Upload failed:', err);
+        }
     };
 
 

@@ -67,15 +67,6 @@ function ImageAnnotator() {
             return;
         }
 
-        // const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-        // const apiBaseUrl = isLocalhost
-        //     ? "http://localhost:7071/api/upload"
-        //     : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/upload";
-
-        // fetch(`${apiBaseUrl}?filename=${encodeURIComponent(annotateImage.filename)}`, {
-        //     method: "POST",
-        //     body: annotateImage.file, // ✅ 上传 blob，不要 headers
-        // })
         await fetch(`${API_BASE}/upload?filename=${encodeURIComponent(annotateImage.filename)}`, {
             method: "POST",
             body: annotateImage.file,          // ✅ 传二进制，不加 headers
