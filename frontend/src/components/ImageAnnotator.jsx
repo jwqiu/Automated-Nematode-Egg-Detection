@@ -67,7 +67,8 @@ function ImageAnnotator() {
             return;
         }
 
-        await fetch(`${API_BASE}/upload?filename=${encodeURIComponent(annotateImage.filename)}`, {
+        // await fetch(`${API_BASE}/upload?filename=${encodeURIComponent(annotateImage.filename)}`, {
+        await fetch(`${API_BASE}/upload/image?filename=${encodeURIComponent(annotateImage.filename)}`, {
             method: "POST",
             body: annotateImage.file,          // ✅ 传二进制，不加 headers
         })
@@ -112,7 +113,8 @@ function ImageAnnotator() {
             }))
         };
         
-        await fetch(`${API_BASE}/upload_boxes`, {
+        // await fetch(`${API_BASE}/upload_boxes`, {
+        await fetch(`${API_BASE}/upload/boxes`, {
         // fetch(apiBaseUrl, {
             method: "POST",
             headers: {

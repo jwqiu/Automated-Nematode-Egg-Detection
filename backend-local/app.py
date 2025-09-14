@@ -205,6 +205,7 @@ CORS(app,
      resources={
          r"/predict": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]},
          r"/upload/image": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]},
+         r"/upload/boxes": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]},
      },
      supports_credentials=False,
      allow_headers=["Content-Type"],

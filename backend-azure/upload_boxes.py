@@ -17,7 +17,8 @@ DB_CONFIG = {
 }
 
 @app.function_name(name="upload_boxes")
-@app.route(route="upload_boxes", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+# @app.route(route="upload_boxes", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+@app.route(route="upload/boxes", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def upload_boxes(req: func.HttpRequest) -> func.HttpResponse:
     try:
         data = req.get_json()

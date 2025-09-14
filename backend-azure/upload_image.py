@@ -10,7 +10,8 @@ blob_service_client = BlobServiceClient.from_connection_string(conn_str)
 container_name = "images"
 
 @app.function_name(name="upload_image")
-@app.route(route="upload", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST"])
+# @app.route(route="upload", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST"])
+@app.route(route="upload/image", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST","OPTIONS"])
 def upload_image(req: func.HttpRequest) -> func.HttpResponse:
     try:
         # 获取原始二进制 body（即上传的图片）
