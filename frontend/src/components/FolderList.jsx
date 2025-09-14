@@ -31,14 +31,27 @@ function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImag
 
     // ❌ 删除按钮：删除当前 folder + 相关 images + 清空选中
     const handleDelete = (e, name) => {
-        e.stopPropagation(); // 避免触发 select
-        setFolders(prev => prev.filter(f => f.name !== name));          // 删除该 folder
+        e.stopPropagation();
+        setFolders(prev => prev.filter(f => f.name !== name));
+        
         setFolderImages(prev => {
-            const next = { ...prev };
-            delete next[name];                                           // 删除对应的 images
-            return next;
+            // 1) 若是数组，先按 folder 分组为对象
+            const obj = Array.isArray(prev)
+                ? prev.reduce((acc, img) => {
+                    const key = img.folder || 'unknown';
+                    (acc[key] ||= []).push(img);
+                    return acc;
+                }, {})
+                : { ...(prev || {}) }; // 2) 若已是对象，浅拷贝
+
+            // 3) 删除该文件夹
+            delete obj[name];
+            return obj;
         });
-        setSelectedFolder(''); // 清空 selectedFolder
+
+
+    // 只在删除的正是当前选中时才清空
+        setSelectedFolder(prev => (prev === name ? null : prev));
     };
 
     return (

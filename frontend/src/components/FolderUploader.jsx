@@ -14,6 +14,10 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
 
     const inputRef = useRef(null);
 
+    const [loading, setLoading]   = useState(false); // 是否显示浮层
+    const [progress, setProgress] = useState(0);     // 已处理数
+    const [total, setTotal]       = useState(0);     // 待处理总数
+
     // 选择文件夹：按顶层目录分组图片，并更新 folders 与 folderImages
     const handlePick = async (e) => {
         const picked = Array.from(e.target.files || []);
@@ -39,38 +43,16 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
             return;
         }
 
-        // 基于现有状态进行合并
-        const nextImages = Array.isArray(folderImages) ? [...folderImages] : [];
+        // 基于现有状态进行合并（对象模式）
+        const nextFolderImages = Array.isArray(folderImages)
+            ? folderImages.reduce((acc, img) => {
+                (acc[img.folder] ||= []).push(img);
+                return acc;
+                }, {})
+            : { ...(folderImages || {}) };
+
         const folderNameSet = new Set((folders || []).map(f => f.name));
 
-        // picked.forEach((file) => {
-        //     if (!isImg(file.name)) return;
-
-        //     // 关键：从 webkitRelativePath 里取“顶层文件夹名”
-        //     const rel = file.webkitRelativePath || file.name;  // e.g. "FolderA/sub/1.png"
-        //     const top = rel.split('/')[0] || 'Unknown';
-
-        //     folderNameSet.add(top);
-        //     if (!nextFolderImages[top]) nextFolderImages[top] = [];
-        //     nextFolderImages[top].push(file);
-        // });
-
-        // picked.forEach((file) => {
-        //     if (!isImg(file.name)) return;
-        //     const rel = file.webkitRelativePath || file.name;  // e.g. "FolderA/sub/1.png"
-        //     const top = (rel.split('/')[0] || 'Unknown').trim();
-        //     folderNameSet.add(top);
-        //     nextImages.push({
-        //         folder: top,
-        //         filename: file.name,
-        //         original_image: URL.createObjectURL(file), // 上传时设置
-        //         annotated_image: null,                     // 后端返回时再填
-        //         detected: false,
-        //         boxes: []
-        //     });
-        // });
-
-        const newItems = [];
         for (const file of picked) {
             if (!isImageName(file.name)) continue;
 
@@ -81,23 +63,19 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
             const { url, filename } = await preprocessTo608(file);
             folderNameSet.add(top);
 
-            newItems.push({
+            const item = {
                 folder: top,
-                filename,            // 规范为 .png（tif 会被转）
-                original_image: url, // 这里用处理后的 608×608 objectURL
+                filename,
+                original_image: url,
                 detected: false,
                 boxes: [],
                 eggfound: null
-            });
+            };
+            (nextFolderImages[top] ||= []).push(item);
+          
         }
 
-        // setFolderImages(nextFolderImages);
-        // setFolders(Array.from(folderNameSet));
-
-
-        // setFolderImages(nextFolderImages);
-        const mergedImages = nextImages.concat(newItems);
-        setFolderImages(mergedImages);
+        setFolderImages(nextFolderImages);
 
         // 旧状态索引：只按对象读取（不再兼容字符串）
         const statusByName = new Map(
@@ -105,18 +83,13 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         );
         const eggByName    = new Map((folders || []).map(f => [f.name, f.eggnum ?? '-']));
 
-        // 组装对象数组：name / count / status
-        // const nextFolders = Array.from(folderNameSet).map(name => ({
-        // name,
-        // count: nextImages.filter(img => img.folder === name).length,
-        // status: statusByName.get(name) || 'not started'
-        // }));
         const nextFolders = Array.from(folderNameSet).map(name => ({
-            name,
-            count: mergedImages.filter(img => img.folder === name).length,
-            status: statusByName.get(name) || 'not started',
-            eggnum: eggByName.get(name) ?? '-'
+           name,
+           count: (nextFolderImages[name] || []).length,
+           status: statusByName.get(name) || 'not started',
+           eggnum: eggByName.get(name) ?? '-'
         }));
+        
 
         setFolders(nextFolders);
         if (!selectedFolder && nextFolders.length) setSelectedFolder(nextFolders[0].name);
@@ -182,96 +155,101 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
     // 开始检测：若有 selectedFolder 则只跑该文件夹，否则跑全部
     const handleDetection = async () => {
 
-        // const targetFolders = (folders || [])
-        //     .filter(f => {
-        //         const s = (f.status || 'not started').toLowerCase();
-        //         return s === 'not started' || s === 'in progress';
-        //     })
-        //     .map(f => f.name);
-        // if (!targetFolders.length) return;
-  
-
-        // // 将所有 status 为 'not started' 的文件夹标记为 'in progress'
-        // setFolders(prev =>
-        //     prev.map(f =>
-        //         targetFolders.includes(f.name) &&
-        //         (f.status || 'not started').toLowerCase() === 'not started'
-        //             ? { ...f, status: 'in progress' }
-        //             : f
-        //     )
-        // );
-
         const queue = (folders || [])
             .filter(f => (f.status || 'not started').toLowerCase() !== 'completed')
             .map(f => f.name);
         if (!queue.length) return;
 
-        for (const folderName of queue) {
-            setFolders(prev =>
-                prev.map(f => f.name === folderName ? { ...f, status: 'in progress' } : f)
-            );
-            // ↓ 以下现有的 tasks/for 循环与更新逻辑，整体放到这个 for 块里
-
-            const tasks = (folderImages || [])
-                .map((item, idx) => ({ item, idx }))
-                .filter(({ item }) =>
-                    item.folder === folderName &&
-                    isImageName(item.filename) &&
-                    !item.detected
+        // === 新增：预计算总任务数并开启浮层 ===
+        const totalTasks = queue.reduce((sum, folderName) => {
+            const arr = Array.isArray(folderImages?.[folderName]) ? folderImages[folderName] : [];
+            return sum + arr.filter(it => isImageName(it.filename) && !it.detected).length;
+        }, 0);
+        if (!totalTasks) return;
+        setLoading(true);
+        setProgress(0);
+        setTotal(totalTasks);
+        try {
+            for (const folderName of queue) {
+                setFolders(prev =>
+                    prev.map(f => f.name === folderName ? { ...f, status: 'in progress' } : f)
                 );
-            
-            // let eggCount = 0;
+                // ↓ 以下现有的 tasks/for 循环与更新逻辑，整体放到这个 for 块里
 
-            for (const { item, idx } of tasks) {
-                try {
-                const b64 = await objectUrlToBase64(item.original_image);
-                const json = await callPredict(b64, API_BASE);
-                // eggCount += (json.boxes?.length || 0);
+                // const tasks = (folderImages || [])
+                //     .map((item, idx) => ({ item, idx }))
+                //     .filter(({ item }) =>
+                //         item.folder === folderName &&
+                //         isImageName(item.filename) &&
+                //         !item.detected
+                //     );
+
+                const tasks = (folderImages?.[folderName] || [])
+                    .map((item, idx) => ({ item, idx }))
+                    .filter(({ item }) => isImageName(item.filename) && !item.detected);
+                
+                // let eggCount = 0;
+
+                for (const { item, idx } of tasks) {
+                    try {
+                    const b64 = await objectUrlToBase64(item.original_image);
+                    const json = await callPredict(b64, API_BASE);
+                    
+                    setFolderImages(prev => {
+                        const arr = Array.isArray(prev[folderName]) ? prev[folderName] : [];
+                        const cur = arr[idx];
+                        if (!cur) return prev;
+
+                        const updated = {
+                            ...cur,
+                            annotated_image: json.annotated_image ? `data:image/png;base64,${json.annotated_image}` : cur.annotated_image,
+                            detected: true,
+                            boxes: json.boxes || [],
+                            eggfound: (json.boxes?.length || 0),
+                        };
+
+                        const newArr = arr.map((it, i) => (i === idx ? updated : it));
+                        return { ...prev, [folderName]: newArr };
+                    });
+
+                    } catch (e) {
+                    // 失败也标记已处理，避免卡住
+                        // setFolderImages(prev => {
+                        //     const next = [...prev];
+                        //     next[idx] = { ...next[idx], detected: true, boxes: next[idx].boxes || [], eggfound: next[idx].eggfound ?? 0 };
+                        //     return next;
+                        // });
+                        setFolderImages(prev => {
+                            const arr = Array.isArray(prev[folderName]) ? prev[folderName] : [];
+                            const newArr = arr.map((it, i) =>
+                                i === idx ? { ...it, detected: true, boxes: it.boxes || [], eggfound: it.eggfound ?? 0 } : it
+                            );
+                            return { ...prev, [folderName]: newArr };
+                        });
+                    } finally {
+                        // === 新增：每处理完一张，推进进度 ===
+                        setProgress(prev => prev + 1);
+                    }
+                }
 
                 setFolderImages(prev => {
-                    const next = [...prev];
-                    const cur = next[idx];
-                    next[idx] = {
-                    ...cur,
-                    annotated_image: json.annotated_image ? `data:image/png;base64,${json.annotated_image}` : cur.annotated_image,
-                    detected: true,
-                    boxes: json.boxes || [],
-                    eggfound: (json.boxes?.length || 0)
-                    };
+                    const next = { ...prev }; // ✅ 对象浅拷贝
+                    const arr = Array.isArray(next[folderName]) ? next[folderName] : [];
+                    const eggCount = arr.reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
 
-                    // ✅ 若该文件夹所有图片都已检测完，则计算虫卵总数并更新到 folders.eggnum
-                    const folderName = cur.folder;
-                    const allDone = next
-                    .filter(it => it.folder === folderName)
-                    .every(it => it.detected);
-
-                    return next;
+                    setFolders(prevF =>
+                        prevF.map(f =>
+                        f.name === folderName
+                            ? { ...f, status: 'completed', eggnum: eggCount /*, count: arr.length */ }
+                            : f
+                        )
+                    );
+                    return next; // ✅ 不改数据就返回拷贝（或直接 return prev 也行）
                 });
-                } catch (e) {
-                // 失败也标记已处理，避免卡住
-                    setFolderImages(prev => {
-                        const next = [...prev];
-                        next[idx] = { ...next[idx], detected: true, boxes: next[idx].boxes || [], eggfound: next[idx].eggfound ?? 0 };
-                        return next;
-                    });
-                }
             }
-
-            setFolderImages(prev => {
-                const next = [...prev];
-                const eggCount = next
-                    .filter(it => it.folder === folderName)
-                    .reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
-
-                setFolders(prevF =>
-                    prevF.map(f => f.name === folderName
-                    ? { ...f, status: 'completed', eggnum: eggCount }
-                    : f
-                    )
-                );
-                return next;
-            });
-
+        } finally {
+            // === 新增：全部结束后关闭浮层 ===
+            setLoading(false);
         }
 
     };
@@ -279,7 +257,17 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
     const statuses = (folders || []).map(f => (f.status || 'not started').toLowerCase());
     const canStart = (Array.isArray(folders) && folders.length > 0)
         && statuses.includes('not started')
-        && !statuses.includes('in progress');
+        && !statuses.includes('in progress')
+        && !loading; // 新增
+
+
+
+
+
+    
+
+
+
 
     return (
         <div className=" bg-white rounded-lg shadow-lg h-full shrink-0 flex flex-col gap-y-4 w-[350px] p-8 ">
@@ -332,10 +320,22 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                     </button>
                 </div>
             </div>
-           
+            {loading && (
+                <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center z-50">
+                    <div className="w-72 bg-gray-200 rounded-full h-4 mb-4 overflow-hidden shadow-inner">
+                        <div
+                            className="bg-blue-500 h-4 transition-all duration-300"
+                            style={{ width: total ? `${Math.min(100, (progress / total) * 100)}%` : '0%' }}
+                        />
+                        </div>
+                        <div className="text-lg text-gray-700 font-medium">
+                            Detecting images... ({progress} / {total})
+                        </div>
+                </div>
+            )}                    
         </div>
-
     );
+
 }
 
 export default FolderUploader;

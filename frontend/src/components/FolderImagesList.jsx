@@ -6,21 +6,19 @@ const useEffect = React.useEffect;
 const useMemo   = React.useMemo;
 
 function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folders, setFolders }) {
-    // 1) 计算当前要显示的文件列表
-//    const files = useMemo(() => {
-//         if (!selectedFolder) return [];
-//         return folderImages[selectedFolder] || [];
-//     }, [selectedFolder, folderImages]);
+
     const files = useMemo(() => {
-        if (!selectedFolder) return [];
-        return (folderImages || []).filter(item => item.folder === selectedFolder);
+        if (!selectedFolder || !folderImages) return [];
+
+        // 数组模式：全局数组里按 folder 过滤
+        if (Array.isArray(folderImages)) {
+            return folderImages.filter(x => x.folder === selectedFolder);
+        }
+
+        // 对象模式：直接按 key 取
+        const arr = folderImages[selectedFolder];
+        return Array.isArray(arr) ? arr : [];
     }, [selectedFolder, folderImages]);
-
-    // const isImage = (name, type) =>
-    //     type?.startsWith('image/') || /\.(png|jpe?g|gif|bmp|webp|tiff?)$/i.test(name);
-
-    // const isPdf = (name, type) =>
-    //     type === 'application/pdf' || /\.pdf$/i.test(name);
 
     const isImage = (name) => /\.(png|jpe?g|gif|bmp|webp|tiff?)$/i.test(name);
     const isPdf = (name) => /\.pdf$/i.test(name);
@@ -39,27 +37,33 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
     };
 
     const confirmAdjust = () => {
-        let folderNameRef = null;
         setFolderImages(prev => {
-            const next = [...prev];
-            const idx = next.findIndex(it => `${it.folder}/${it.filename}` === editingKey);
-            if (idx >= 0) {
-                const cur = next[idx];
-                folderNameRef = cur.folder;
-                next[idx] = { ...cur, eggfound: choice };
-            }
-            if (folderNameRef) {
-                const total = next
-                    .filter(it => it.folder === folderNameRef)
-                    .reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
-                setFolders(prevF =>
-                    prevF.map(f => f.name === folderNameRef ? { ...f, eggnum: total } : f)
-                );
-            }
-            return next;
+            if (!editingKey) return prev;
+
+            // 从 key 里拆出 folder 与 filename
+            const [folderName, ...rest] = String(editingKey).split('/');
+            const filename = rest.join('/'); // 以防文件名里含 '/'
+
+            const arr = Array.isArray(prev?.[folderName]) ? prev[folderName] : [];
+            if (!arr.length) return prev;
+
+            // 更新该文件
+            const newArr = arr.map(it =>
+            it.filename === filename ? { ...it, eggfound: choice } : it
+            );
+
+            const next = { ...prev, [folderName]: newArr };
+
+            // 同步更新 folders 的 eggnum
+            const total = newArr.reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
+            setFolders(fs => fs.map(f => f.name === folderName ? ({ ...f, eggnum: total }) : f));
+
+            return next; // 返回对象，而不是数组
         });
+
         setEditingKey(null);
     };
+
 
     const cancelAdjust = () => setEditingKey(null);
 
@@ -76,43 +80,38 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
 
     const applySort = (mode) => {
         setSortMode(mode);
-        if (!selectedFolder || !Array.isArray(folderImages) || !setFolderImages) {
-            setSortOpen(false);
-            return;
-        }
+        if (!selectedFolder) { setSortOpen(false); return; }
+
         setFolderImages(prev => {
-            const pairs = prev.map((it, idx) => ({ it, idx }));
-            const selected = pairs.filter(p => p.it.folder === selectedFolder);
+            const arr = Array.isArray(prev?.[selectedFolder]) ? prev[selectedFolder] : [];
+            if (!arr.length) return prev;
 
-            let sortedSel;
-            if (mode === 'noeggs') {
-            // 无蛋图优先（已检测且 boxes.length===0）
-                const score = (img) => (img.detected && (img.boxes?.length || 0) === 0) ? 0 : 1;
-                sortedSel = selected.slice().sort((a, b) => score(a.it) - score(b.it));
-                } else {
-                // 置信度最低的框优先（按最小 confidence 升序；无框视为 +∞ 放后）
-                const metric = (img) => {
-                    const arr = img.boxes || [];
-                    if (!arr.length) return Number.POSITIVE_INFINITY;
-                    let m = Infinity;
-                    for (const b of arr) {
-                    const c = typeof b.confidence === 'number' ? b.confidence : 1;
-                    if (c < m) m = c;
-                    }
-                    return m;
-                };
-                sortedSel = selected.slice().sort((a, b) => metric(a.it) - metric(b.it));
+            const scoreNoEggs = (img) =>
+            (img.detected && (img.boxes?.length || 0) === 0) ? 0 : 1;
+
+            const metricLowest = (img) => {
+            const boxes = img.boxes || [];
+            if (!boxes.length) return Number.POSITIVE_INFINITY;
+            let m = Infinity;
+            for (const b of boxes) {
+                const c = typeof b.confidence === 'number' ? b.confidence : 1;
+                if (c < m) m = c;
             }
+            return m;
+            };
 
-            // 仅在该文件夹内部就地重排，其他文件夹不变
-            const newArr = prev.slice();
-            const indicesAsc = selected.map(p => p.idx).sort((a, b) => a - b);
-            sortedSel.forEach((p, i) => { newArr[indicesAsc[i]] = p.it; });
-            return newArr;
+            const sorted = arr.slice().sort((a, b) =>
+            mode === 'noeggs'
+                ? (scoreNoEggs(a) - scoreNoEggs(b))
+                : (metricLowest(a) - metricLowest(b))
+            );
+
+            return { ...prev, [selectedFolder]: sorted }; // 仅更新该文件夹
         });
 
         setSortOpen(false);
     };
+
 
     const isComplete = !!folders?.some(
         f => f.name === selectedFolder && (f.status || '').toLowerCase() === 'completed'
@@ -120,21 +119,18 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
 
     return (
         <div className='bg-white flex flex-col rounded-lg w-full shadow-lg p-8'>
-            <div className='flex h-[30px] justify-between items-center mb-4'>
+            <div className='flex h-[30px] justify-between items-center mb-2'>
                 <div className='flex flex-col gap-y-0 items-baseline'>
                     <h2 className='font-semibold mb-0'>{title}</h2>
                     {selectedFolder && (
-                    <div className='text-gray-400 flex '>
-                        ( 
-                        {/* <span>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6  text-gray-500">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 12.75c1.148 0 2.278.08 3.383.237 1.037.146 1.866.966 1.866 2.013 0 3.728-2.35 6.75-5.25 6.75S6.75 18.728 6.75 15c0-1.046.83-1.867 1.866-2.013A24.204 24.204 0 0 1 12 12.75Zm0 0c2.883 0 5.647.508 8.207 1.44a23.91 23.91 0 0 1-1.152 6.06M12 12.75c-2.883 0-5.647.508-8.208 1.44.125 2.104.52 4.136 1.153 6.06M12 12.75a2.25 2.25 0 0 0 2.248-2.354M12 12.75a2.25 2.25 0 0 1-2.248-2.354M12 8.25c.995 0 1.971-.08 2.922-.236.403-.066.74-.358.795-.762a3.778 3.778 0 0 0-.399-2.25M12 8.25c-.995 0-1.97-.08-2.922-.236-.402-.066-.74-.358-.795-.762a3.734 3.734 0 0 1 .4-2.253M12 8.25a2.25 2.25 0 0 0-2.248 2.146M12 8.25a2.25 2.25 0 0 1 2.248 2.146M8.683 5a6.032 6.032 0 0 1-1.155-1.002c.07-.63.27-1.222.574-1.747m.581 2.749A3.75 3.75 0 0 1 15.318 5m0 0c.427-.283.815-.62 1.155-.999a4.471 4.471 0 0 0-.575-1.752M4.921 6a24.048 24.048 0 0 0-.392 3.314c1.668.546 3.416.914 5.223 1.082M19.08 6c.205 1.08.337 2.187.392 3.314a23.882 23.882 0 0 1-5.223 1.082" />
-                            </svg>
-                        </span> */}
-                        <span className='font-semibold text-md  text-blue-500 me-2'>{eggnum} </span>
-                     
-                        <span> Eggs Found across {total} files)</span> 
-                    </div>
+                        isComplete ? (
+                            <div className='text-gray-400 flex'>
+                                <span className='font-semibold text-md text-blue-500 me-2'>{eggnum}</span>
+                                <span> Eggs Found across {total} files</span>
+                            </div>
+                        ) : (
+                            <div className='text-gray-400'>{total} files in this folder</div>
+                        )
                     )}
                 </div>
 
@@ -211,19 +207,19 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                     <div className="text-gray-500 text-sm">No preview</div>
                     )}
                     <div>
-                        <div className='flex flex-row items-center justify-between'>
+                        <div className='flex flex-row text-nowrap items-center '>
                             <div className="px-2 py-1 text-md truncate" title={item.filename}>
                                 {item.filename}
                             </div>
                             {item.eggfound != null && (
-                                <span className="f px-2 py-1 text-md">{item.eggfound} eggs</span>
+                                <span className=" me-1 text-sm">({item.eggfound} eggs)</span>
                             )}
                         </div>
                 
                         <div className="px-2 pb-1 text-xs text-gray-600">
                             {item.detected ? (
                             (item.boxes?.length ? (
-                                <div className='flex justify-between items-center'>
+                                <div className='flex flex-col items-start'>
                                     <ul className="space-y-1">
                                         {item.boxes.map((b, idx) => {
                                             const [x1, y1, x2, y2] = b.bbox || [];
@@ -235,12 +231,12 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                             );
                                         })}
                                     </ul>
-                                    <div className="flex items-center">
+                                    <div className="flex items-center mt-1">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-4 text-blue-500 mr-1">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5" />
                                         </svg>
                                         <div className='text-blue-500 cursor-pointer' onClick={() => openAdjust(key, item.eggfound)}>
-                                           Report incorrect detection {">>"}
+                                           Incorrect detection {">>"}
                                         </div>
                                         {editingKey === key && (
                                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
@@ -270,14 +266,14 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                     </div>
                                 </div>
                             ) : (
-                                <div className='flex justify-between items-center'>
-                                    <div className="italic text-gray-400">No eggs found by AI</div>
+                                <div className='flex flex-col items-start'>
+                                    <div className="italic text-gray-400 mb-1">No eggs found by AI</div>
                                     <div className="flex items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-4 text-blue-500 mr-1">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5" />
                                         </svg>
                                         <div className='text-blue-500 cursor-pointer' onClick={() => openAdjust(key, item.eggfound)}>
-                                           Report incorrect detection {">>"}
+                                            Incorrect detection {">>"}
                                         </div>
                                         {editingKey === key && (
                                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">

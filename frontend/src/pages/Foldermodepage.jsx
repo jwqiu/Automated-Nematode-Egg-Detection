@@ -26,7 +26,7 @@ function FolderModePage() {
     return (
         <div className='flex flex-col h-screen '>
             <LogoHeader />
-            <div className='px-12 pb-12 pt-6 flex h-[calc(100vh-100px)] flex-row gap-x-8 mx-auto w-full max-w-[1500px] '>
+            <div className='px-12 pb-12 pt-6 flex h-[calc(100vh-100px)] flex-row gap-x-8 mx-auto w-full max-w-[1400px] '>
                 <FolderUploader
                     folders={folders}
                     setFolders={setFolders}
