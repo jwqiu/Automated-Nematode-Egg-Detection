@@ -397,7 +397,7 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
             <div>
                 <label
                 htmlFor="upload"
-                className="cursor-pointer font-bold inline-block bg-blue-500 text-white px-3 py-2 rounded-xl hover:bg-blue-600"
+                className="cursor-pointer font-bold inline-block bg-white border border-blue-500 text-blue-500 rounded-lg px-3 py-2 rounded-xl hover:bg-blue-500"
                 >
                     Upload
                 </label>
