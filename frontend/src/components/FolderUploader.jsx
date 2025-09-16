@@ -10,13 +10,17 @@ import FolderList from './FolderList';
 // @ts-ignore
 import { resizeAndPadImage, convertTifToPng } from './ImageUploader';
 
-function FolderUploader({ folders, setFolders, folderImages, setFolderImages, selectedFolder, setSelectedFolder }) {
+function FolderUploader({ folders, setFolders, folderImages, setFolderImages, selectedFolder, setSelectedFolder, ready }) {
 
     const inputRef = useRef(null);
 
     const [loading, setLoading]   = useState(false); // 是否显示浮层
     const [progress, setProgress] = useState(0);     // 已处理数
     const [total, setTotal]       = useState(0);     // 待处理总数
+
+    const [uploading, setUploading]   = useState(false);
+    const [uplProgress, setUplProgress] = useState(0);
+    const [uplTotal, setUplTotal]       = useState(0);
 
     // 选择文件夹：按顶层目录分组图片，并更新 folders 与 folderImages
     const handlePick = async (e) => {
@@ -43,6 +47,15 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
             return;
         }
 
+        const toProcess = picked.filter(f => isImg(f.name));
+        if (toProcess.length === 0) {
+            e.target.value = '';
+            return;
+        }
+        setUploading(true);
+        setUplProgress(0);
+        setUplTotal(toProcess.length);
+
         // 基于现有状态进行合并（对象模式）
         const nextFolderImages = Array.isArray(folderImages)
             ? folderImages.reduce((acc, img) => {
@@ -52,27 +65,33 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
             : { ...(folderImages || {}) };
 
         const folderNameSet = new Set((folders || []).map(f => f.name));
+        
+        try 
+        {
+            for (const file of picked) {
+                if (!isImageName(file.name)) continue;
 
-        for (const file of picked) {
-            if (!isImageName(file.name)) continue;
+                const rel = file.webkitRelativePath || file.name;  // e.g. "FolderA/sub/1.png"
+                const top = (rel.split('/')[0] || 'Unknown').trim();
 
-            const rel = file.webkitRelativePath || file.name;  // e.g. "FolderA/sub/1.png"
-            const top = (rel.split('/')[0] || 'Unknown').trim();
+                // 🔧 新增：上传阶段就统一处理成 608×608 PNG
+                const { url, filename } = await preprocessTo608(file);
+                folderNameSet.add(top);
 
-            // 🔧 新增：上传阶段就统一处理成 608×608 PNG
-            const { url, filename } = await preprocessTo608(file);
-            folderNameSet.add(top);
+                const item = {
+                    folder: top,
+                    filename,
+                    original_image: url,
+                    detected: false,
+                    boxes: [],
+                    eggfound: null
+                };
+                (nextFolderImages[top] ||= []).push(item);
+                setUplProgress(prev => prev + 1);
+            }
 
-            const item = {
-                folder: top,
-                filename,
-                original_image: url,
-                detected: false,
-                boxes: [],
-                eggfound: null
-            };
-            (nextFolderImages[top] ||= []).push(item);
-          
+        } finally {
+            setUploading(false);
         }
 
         setFolderImages(nextFolderImages);
@@ -260,15 +279,6 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         && !statuses.includes('in progress')
         && !loading; // 新增
 
-
-
-
-
-    
-
-
-
-
     return (
         <div className=" bg-white rounded-lg shadow-lg h-full shrink-0 flex flex-col gap-y-4 w-[350px] p-8 ">
             <div className='flex flex-row h-[30px] items-center justify-between  gap-x-4 mb-1'>
@@ -310,29 +320,38 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                 <div>
                     <button
                         onClick={handleDetection}
-                        disabled={!canStart}
+                        disabled={!canStart || !ready}
                         className={`w-full px-4 py-2  rounded-lg transition
-                            ${canStart
+                            ${canStart && ready
                             ? 'bg-blue-500 text-white font-semibold hover:bg-blue-600'
                             : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
                         >
-                        Start Detection
+                        { !ready ? 'Starting backend...' : 'Start Detection'}
                     </button>
                 </div>
             </div>
-            {loading && (
+            {(uploading || loading) && (
                 <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center z-50">
                     <div className="w-72 bg-gray-200 rounded-full h-4 mb-4 overflow-hidden shadow-inner">
-                        <div
-                            className="bg-blue-500 h-4 transition-all duration-300"
-                            style={{ width: total ? `${Math.min(100, (progress / total) * 100)}%` : '0%' }}
-                        />
-                        </div>
-                        <div className="text-lg text-gray-700 font-medium">
-                            Detecting images... ({progress} / {total})
-                        </div>
+                    <div
+                        className="bg-blue-500 h-4 transition-all duration-300"
+                        style={{
+                        width: (() => {
+                            const curTotal = uploading ? uplTotal : total;
+                            const curProg  = uploading ? uplProgress : progress;
+                            return curTotal ? `${Math.min(100, (curProg / curTotal) * 100)}%` : '0%';
+                        })()
+                        }}
+                    />
+                    </div>
+                    <div className="text-lg text-gray-700 font-medium">
+                    {uploading
+                        ? `Preparing images... (${uplProgress} / ${uplTotal})`
+                        : `Detecting images... (${progress} / ${total})`}
+                    </div>
                 </div>
-            )}                    
+            )}
+                    
         </div>
     );
 

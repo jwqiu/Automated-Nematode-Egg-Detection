@@ -14,7 +14,7 @@ function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImag
     };
     
     if (!folders.length) {
-        return <p className="text-gray-400 italic">First, please upload the folders with images in them.</p>;
+        return <p className="text-gray-400 bg-gray-100 p-4 rounded-lg italic">First, please upload the folders with images in them.</p>;
     }
 
     const statusBadge = (status) => {

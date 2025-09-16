@@ -14,7 +14,7 @@ import { ImageContext } from '../context/ImageContext';
 
 
 
-function BatchModePage() {
+function BatchModePage( { ready }) {
   const { images, setImages, selectedImage, setSelectedImage } = useContext(ImageContext);
 
   return (
@@ -30,6 +30,7 @@ function BatchModePage() {
                     bottomButton={true} // 传递 bottomButton 属性
                     defaultHints={false} // 传递 defaultHints 属性
                     isCard={true} // 传递 isCard 属性
+                    ready={ready}
                 />  
             </div>
             {/* <div className=" w-full px-8 lg:px-0 lg:w-[700px] h-[75vh] min-h-[500px]   ">

@@ -16,7 +16,7 @@ const useRef = React.useRef;
 
 import FolderImagesList from '../components/FolderImagesList';
 
-function FolderModePage() {
+function FolderModePage({ ready }) {
 
     const [folders, setFolders] = useState([]);
     const [folderImages, setFolderImages] = useState({});
@@ -34,6 +34,7 @@ function FolderModePage() {
                     setFolderImages={setFolderImages}
                     selectedFolder={selectedFolder}
                     setSelectedFolder={setSelectedFolder}
+                    ready={ready}
                 />
                 <div className=' w-full flex '>
                     <FolderImagesList

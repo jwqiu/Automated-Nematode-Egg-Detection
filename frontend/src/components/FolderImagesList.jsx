@@ -193,10 +193,10 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                         isComplete ? (
                             <div className='text-gray-400 flex'>
                                 <span className='font-semibold text-md text-blue-500 me-2'>{eggnum}</span>
-                                <span> Eggs Found across {total} files</span>
+                                <span> Eggs Found across {total} images</span>
                             </div>
                         ) : (
-                            <div className='text-gray-400'>{total} files in this folder</div>
+                            <div className='text-gray-400'>{total} images in this folder</div>
                         )
                     )}
                 </div>
@@ -245,7 +245,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
             )}
 
         {total === 0 ? (
-            <div className=" text-gray-400 italic">No files. Please pick a folder.</div>
+            <div className=" text-gray-400 italic">No images. Please pick a folder with images.</div>
         ) : (
             <div className="overflow-y-auto mt-3 overscroll-y-contain grid grid-cols-1 xl:grid-cols-2 gap-4">
             {files.map((item) => {
@@ -258,7 +258,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                     <img
                         src={url}
                         alt={item.filename}
-                        className="w-full h-[300px]  object-cover rounded"
+                        className="w-full h-auto rounded"
                         loading="lazy"
                     />
                     ) : isPdf(item.filename) ? (

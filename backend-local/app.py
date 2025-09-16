@@ -183,9 +183,13 @@
 
 import os
 from dotenv import load_dotenv
+from utils_path import resource_path
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(BASE_DIR, ".env"))  # 或：load_dotenv(dotenv_path=os.path.join(BASE_DIR, ".env"), override=False)
+load_dotenv(resource_path(".env"))    # 打包后/本地都能找对 .env
+
+
+# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# load_dotenv(os.path.join(BASE_DIR, ".env"))  # 或：load_dotenv(dotenv_path=os.path.join(BASE_DIR, ".env"), override=False)
 
 
 from dotenv import load_dotenv
@@ -213,8 +217,10 @@ CORS(app,
 
 
 # —— 全局加载 ONNX 模型 —— #
-RUNTIME_DIR = os.path.join(os.path.dirname(__file__), "runtime_assets")
-MODEL_PATH  = os.path.join(RUNTIME_DIR, "best.onnx")
+# RUNTIME_DIR = os.path.join(os.path.dirname(__file__), "runtime_assets")
+# MODEL_PATH  = os.path.join(RUNTIME_DIR, "best.onnx")
+RUNTIME_DIR = resource_path("runtime_assets")
+MODEL_PATH  = resource_path("runtime_assets", "best.onnx")
 sess = ort.InferenceSession(MODEL_PATH, providers=["CPUExecutionProvider"])
 input_name = sess.get_inputs()[0].name
 
@@ -394,3 +400,71 @@ def upload_image():
 if __name__ == "__main__":
     # 5178 只是建议端口；与 Electron 里保持一致即可
     app.run(host="127.0.0.1", port=5178)
+
+
+# package.json  —— 同时启动前后端
+# {
+#   "name": "auto-nematode",
+#   "private": true,
+#   "scripts": {
+#     "dev": "concurrently \"cd frontend && npm run dev-frontend\" \"npm run dev-backend\"",
+#     "dev-backend": "cd backend-azure && func start"
+#   },
+#   "devDependencies": {
+#     "concurrently": "^9.2.1",
+#     "cpx": "^1.5.0",
+#     "cross-env": "^10.0.0",
+#     "electron": "^38.1.0",
+#     "electron-builder": "^26.0.12",
+#     "shx": "^0.4.0",
+#     "wait-on": "^8.0.5"
+#   },
+#   "dependencies": {
+#     "react-router-dom": "^7.7.1",
+#     "utif": "^3.1.0"
+#   }
+# }
+
+
+
+# {
+#   "name": "auto-nematode",
+#   "private": true,
+#   "scripts": {
+#     "dev": "concurrently \"cd frontend && npm run dev-frontend\" \"npm run dev-backend\"",
+#     "dev-backend": "cd backend-azure && func start",
+
+#     "dev:frontend": "cd frontend && npm run dev-frontend",
+#     "dev:electron": "wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron electron/main.js",
+#     "dev:desktop": "concurrently -k -n FRONTEND,ELECTRON -c cyan,magenta \"npm:dev:frontend\" \"npm:dev:electron\"",
+
+#     "build:frontend": "cd frontend && npm run build && shx rm -rf ../frontend-dist && shx mkdir -p ../frontend-dist && cpx \"dist/**\" ../frontend-dist",
+#     "dist": "npm run build:frontend && electron-builder",
+#     "dist:mac": "npm run dist -- -m",
+#     "dist:win": "npm run dist -- -w"
+#   },
+#   "devDependencies": {
+#     "concurrently": "^9.2.1",
+#     "cpx": "^1.5.0",
+#     "cross-env": "^10.0.0",
+#     "electron": "^38.1.0",
+#     "electron-builder": "^26.0.12",
+#     "shx": "^0.4.0",
+#     "wait-on": "^8.0.5"
+#   },
+#   "dependencies": {
+#     "react-router-dom": "^7.7.1",
+#     "utif": "^3.1.0"
+#   },
+#   "build": {
+#     "appId": "me.junwen.eggdetector",
+#     "productName": "EggDetector",
+#     "files": [
+#       "electron/**/*",
+#       "frontend-dist/**/*",
+#       "package.json"
+#     ],
+#     "mac": { "target": ["dmg"] },
+#     "win": { "target": ["nsis"] }
+#   }
+# }

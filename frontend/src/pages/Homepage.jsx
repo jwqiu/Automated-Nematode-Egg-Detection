@@ -1,6 +1,6 @@
 // @ts-ignore
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; 
 // @ts-ignore
 
 import LogoHeader from '../components/LogoHeader';
@@ -16,11 +16,10 @@ import ParticlesNetwork from '../components/ParticlesNetwork';
 // @ts-ignore
 import ImageAnnotator from '../components/ImageAnnotator';
 
-
-function HomePage() {
+function HomePage({ ready }) {
   const [images, setImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
-
+  
 
   return (
     <>
@@ -35,6 +34,7 @@ function HomePage() {
                   setImages={setImages}
                   selectedImage={selectedImage}
                   setSelectedImage={setSelectedImage}
+                  ready={ready}
                 />                
               </div>
 
@@ -47,6 +47,7 @@ function HomePage() {
                   setSelectedImage={setSelectedImage}
                   images={images}
                   setImages={setImages}
+                  ready={ready}
                 />
               </div>
             </div>

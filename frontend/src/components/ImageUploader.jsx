@@ -62,7 +62,7 @@ export async function convertTifToPng(file) {
 
 
 // React 组件函数，名称为 ImageUploader
-function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bottomButton = false, defaultHints = true,isCard = false }) {
+function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bottomButton = false, defaultHints = true, isCard = false, ready }) {
   // 用 useState 创建一个状态变量 images，用于保存上传的图片
   // 初始值是一个空数组 []
   // const [images, setImages] = React.useState([]);
@@ -496,16 +496,16 @@ function ImageUploader({ images, setImages, setSelectedImage,selectedImage, bott
               <button
                 onClick={() => navigate('/batch/result')}
                 // onClick={() => navigate('/batch/result', { state: { autoDetect: true } })}
-                disabled={images.length === 0}
-                className={`mt-4 w-[400px] font-bold  bg-blue-500 text-white px-4 py-2 rounded-lg 
-                  ${images.length === 0 ? (
-                    'bg-gray-300 cursor-not-allowed'
+                disabled={images.length === 0 || !ready}
+                className={`mt-4 w-[400px]   bg-blue-500  px-4 py-2 rounded-lg 
+                  ${images.length === 0 || !ready ? (
+                    'bg-gray-200 text-gray-400 cursor-not-allowed'
                     ) : (
-                      'bg-blue-500 hover:bg-blue-600'
+                      'bg-blue-500 hover:bg-blue-600 text-white'
                     )}
                 `}
               >
-                Get Average Egg Count
+                { !ready ? 'Starting backend...' : 'Start Detection'}
               </button>
               <button onClick={clearUploads} className=" mt-1 text-sm hover:text-blue-600 text-blue-500 underline">Clear Uploads {'>>'}</button>
             </div>

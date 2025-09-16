@@ -5,7 +5,7 @@ import { ImageContext } from '../context/ImageContext';
 // @ts-ignore
 import { API_BASE } from '../apiBase'; 
 
-function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
+function DetectionResult({ images,setImages, selectedImage,setSelectedImage, ready }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -132,14 +132,14 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage }) {
           </div>
           <button
             onClick={handleDetect}
-            disabled={!selectedImage || loading}
-            className={`rounded-xl px-3 py-2 text-white font-bold ${
-              !selectedImage || loading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600'
+            disabled={!selectedImage || loading || !ready}
+            className={`rounded-xl px-3 py-2  ${
+              !selectedImage || loading || !ready
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 text-white hover:bg-blue-600'
             }`}
           >
-            {loading ? 'Detecting...' : 'Detect'}
+            { !ready ? 'Starting backend...' : (loading ? 'Detecting...' : 'Detect') }
           </button>
         </div>
       </div>

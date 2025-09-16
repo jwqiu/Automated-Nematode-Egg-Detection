@@ -206,6 +206,13 @@ frontend/node_modules/
 /my-app/.env
 /my-app/.env.* 
 
+# Electron 构建与依赖
+electron/dist/
+electron/frontend-dist/
+electron/backend-bundled/
+electron/pyi-build/
+electron/pyi-spec/    
+
 ################################################################################
 # 数据集 / 训练输出 / 项目大文件与目录
 ################################################################################

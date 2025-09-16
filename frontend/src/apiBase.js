@@ -1,5 +1,5 @@
 // frontend/src/apiBase.js
-function isElectron() {
+export function isElectron() {
   return typeof window !== 'undefined' && (
     window.api ||
     window.process?.type === 'renderer' ||
@@ -19,3 +19,4 @@ export function getApiBase() {
 }
 
 export const API_BASE = getApiBase();
+export const IS_ELECTRON = isElectron();
