@@ -139,7 +139,7 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
                 : 'bg-blue-500 text-white hover:bg-blue-600'
             }`}
           >
-            { !ready ? 'Starting backend...' : (loading ? 'Detecting...' : 'Detect') }
+            { !ready ? 'Starting backend...' : (loading ? 'Detecting...' : 'Start Detection') }
           </button>
         </div>
       </div>

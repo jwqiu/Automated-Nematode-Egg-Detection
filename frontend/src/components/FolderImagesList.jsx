@@ -186,33 +186,31 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
 
     return (
         <div className='bg-white flex flex-col rounded-lg w-full shadow-lg p-8'>
-            <div className='flex h-[30px] justify-between items-center mb-2'>
+            <div className='flex h-[50px] justify-between items-center mb-2'>
                 <div className='flex flex-col gap-y-0 items-baseline'>
-                    <h2 className='font-semibold mb-0'>{title}</h2>
+                    <h2 className='text-xl font-semibold mb-0'>{title}</h2>
                     {selectedFolder && (
-                        isComplete ? (
-                            <div className='text-gray-400 flex'>
-                                <span className='font-semibold text-md text-blue-500 me-2'>{eggnum}</span>
-                                <span> Eggs Found across {total} images</span>
-                            </div>
-                        ) : (
-                            <div className='text-gray-400'>{total} images in this folder</div>
-                        )
+                        <div className='text-gray-400'>{total} images in this folder</div>
                     )}
                 </div>
 
                 { isComplete && (
-                    <button
-                    type="button"
-                    onClick={handleOpenSort}
-                    className="flex items-center gap-x-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-                    >
-                    <div>Sort</div>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                    </button>
-                )}       
+                    <div className='flex items-center gap-x-4'>
+                        <div className='text-gray-400  bg-gray-100  px-4 py-2 rounded-lg'>
+                            <div className='text-gray-500'><span className='font-bold text-lg text-blue-500 me-2'>{eggnum}</span> Eggs Found </div>
+                        </div>
+                        <button
+                        type="button"
+                        onClick={handleOpenSort}
+                        className="flex items-center gap-x-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+                        >
+                        <div>Sort</div>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                        </button>
+                    </div>
+                )}
             </div>
             {sortOpen &&  (
                 <div className="fixed inset-0 z-50" onClick={() => setSortOpen(false)}>
