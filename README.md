@@ -26,6 +26,22 @@ Moving forward, the focus will be on improving detection effectiveness in real-w
 
 ---
 
+## System Architecture
+
+![System Architecture](/docs/System%20Architecture.jpg)
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** React, Tailwind CSS, Vite — deployed via GitHub Pages
+- **Backend (Cloud):** Azure Functions (Python, ONNX Runtime)
+- **Backend (Local):** Flask — for development and testing
+- **Model Frameworks:** YOLO, DeepLab, and Faster R-CNN — all based on PyTorch
+- **Database & Storage:** Azure Blob Storage + Azure Database for PostgreSQL Flexible Server
+
+---
+
 ## 🧩 Project Structure & Modules
 ```bash
 AUTOMATED-NEMATODE-EGG-DETECTION/
@@ -43,14 +59,3 @@ AUTOMATED-NEMATODE-EGG-DETECTION/
 ├── package.json          # Frontend config for npm
 └── package-lock.json     # Exact npm dependency versions
 ```
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend:** React, Tailwind CSS, Vite — deployed via GitHub Pages
-- **Backend (Cloud):** Azure Functions (Python, ONNX Runtime)
-- **Backend (Local):** Flask — for development and testing
-- **Model Frameworks:** YOLO, DeepLab, and Faster R-CNN — all based on PyTorch
-- **Database & Storage:** Azure Blob Storage + Azure Database for PostgreSQL Flexible Server
-
