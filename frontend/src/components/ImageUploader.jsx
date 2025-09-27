@@ -18,15 +18,19 @@ export function resizeAndPadImage(img, callback) {
   canvas.width = targetSize;
   canvas.height = targetSize;
   const ctx = canvas.getContext("2d");
+
   const ratio = Math.min(targetSize / img.width, targetSize / img.height);
   const newWidth = img.width * ratio;
   const newHeight = img.height * ratio;
+
   const dx = (targetSize - newWidth) / 2;
   const dy = (targetSize - newHeight) / 2;
-  ctx.fillStyle = "#808080";
+  ctx.fillStyle = "rgb(114,114,114)";
   ctx.fillRect(0, 0, targetSize, targetSize);
+
   ctx.drawImage(img, dx, dy, newWidth, newHeight);
-  canvas.toBlob((blob) => callback(blob), "image/jpeg", 0.9);
+
+  canvas.toBlob((blob) => callback(blob), "image/png");
 }
 
 export async function convertTifToPng(file) {

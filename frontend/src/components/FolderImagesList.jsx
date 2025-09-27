@@ -186,19 +186,19 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
 
     return (
         <div className='bg-white flex flex-col rounded-lg w-full shadow-lg p-8'>
-            <div className='flex h-[50px] justify-between items-center mb-2'>
-                <div className='flex justify-between gap-y-0 items-center w-full'>
+            <div className='flex h-[65px] xl:h-[50px] justify-between items-center mb-2'>
+                <div className='flex flex-col  gap-y-2 xl:flex-row xl:items-center xl:justify-between xl:gap-y-0  w-full'>
                     <h2 className='text-xl font-semibold mb-0'>{title}</h2>
                     <div className='flex gap-x-4'>
                         {selectedFolder && (
-                            <div className='text-gray-500 px-4 py-2 bg-gray-100 rounded-lg'><span className='font-bold text-md text-blue-500 me-2'>{total}</span> images Found</div>
+                            <div className='text-gray-700 px-4 py-2 bg-gray-100 rounded-lg'><span className='font-bold text-md text-blue-500 me-2'>{total}</span> images Found</div>
 
                         )}
                     
                         { isComplete && (
                             <div className='flex items-center gap-x-4'>
                                 <div className='text-gray-500  bg-gray-100  px-4 py-2 rounded-lg'>
-                                    <div className='text-gray-500'><span className='font-bold text-md text-blue-500 me-2'>{eggnum}</span> Eggs Found </div>
+                                    <div className='text-gray-700'><span className='font-bold text-md text-blue-500 me-2'>{eggnum}</span> Eggs Found </div>
                                 </div>
                                 <button
                                 type="button"

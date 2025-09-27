@@ -42,6 +42,7 @@ CONFIGS = [
     # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15,"auto_augment": "none"},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment和相关的增强，目的是建立一个更稳定的“纯基线”
     # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA_pure", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0, "fliplr": 0.0, "flipud": 0.0, "epochs": 50, "patience": 15,"auto_augment": "none"},
+    {"name": "yolov8s_sgd_lr0001_max_E200P20_AD_0914", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 20},   
 
     # 上次跑实验时最好的两个正向变量叠加
     # {"name": "y8s_sgd_lr0001_max_sz768_deg15", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
@@ -57,11 +58,11 @@ CONFIGS = [
     # {"name": "y8s_sgd_lr0001_max_sz768_deg15_E50P15_cos_closeM10", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "cos_lr": True, "lrf": 0.01,  "lr0": 0.001, "mosaic": 1, "close_mosaic": 10,"erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 20},
 
     # image size variants
-    {"name": "y8s_sgd_lr0001_max_sz640", "imgsz": 640, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 20},
+    # {"name": "y8s_sgd_lr0001_max_sz640", "imgsz": 640, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 20},
     # {"name": "y8s_sgd_lr0001_max_sz768", "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
 
     # === 几何增强对比：减小旋转角度（从90°降到15°） ===
-    {"name": "y8s_sgd_lr0001_max_deg15", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 20},
+    # {"name": "y8s_sgd_lr0001_max_deg15", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 20},
     # {"name": "y8s_sgd_lr0001_max_deg15_E300P50", "degrees": 15, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 300, "patience": 50},
 
     # === Mosaic 数据增强对比：完全关闭 mosaic ===
@@ -107,7 +108,7 @@ CONFIGS = [
 
 COMMON_ARGS = {
     "model": "yolov8s.pt",
-    "data": "/Users/chenyuqi/Desktop/Automated-Nematode-Egg-Detection/modelpipeline/data.yaml",
+    "data": "/Users/chenyuqi/Desktop/Automated-Nematode-Egg-Detection/model_pipeline/data.yaml",
     "task": "detect",
     "epochs": 200,
     "imgsz": 608,
@@ -121,7 +122,8 @@ COMMON_ARGS = {
     "hsv_h": 0.015,
     "hsv_s": 0.7,
     "hsv_v": 0.4,
-    "project": "/Users/chenyuqi/Desktop/Automated-Nematode-Egg-Detection/modelpipeline/Trained_Models_New/YOLO",
+    "project": "/Users/chenyuqi/Desktop/Automated-Nematode-Egg-Detection/model_pipeline/Trained_Models_New/YOLO",
+    "iou": 0.6,
     # "workers": 4
 }
 
@@ -150,7 +152,7 @@ COMMON_ARGS = {
 #     "auto_augment": None   # 先关掉以避免 quality_range 兼容问题
 # }
 
-EXP_ROOT = "modelpipeline/Trained_Models_New/YOLO"
+EXP_ROOT = "model_pipeline/Trained_Models_New/YOLO"
 
 # -------------------------
 # Training Function
@@ -179,12 +181,13 @@ def evaluate_model(weight_path: str, config_name: str,  task: str):
         task=task,
         # project=f"Processed_Images/YOLO/{config_name}",
         project=f"{EXP_ROOT}/{config_name}",
-
         name="val",
         exist_ok=True, 
         save_json=True,
         verbose=True,
-        save_txt=True
+        save_txt=True,
+        iou=0.6
+
     )
 
 # -------------------------
@@ -221,7 +224,9 @@ def predict_model(weight_path: str, config_name: str, task: str, source: str):
         save_json=True,
         save_txt=True,
         save_conf=True,
-        verbose=True
+        verbose=True,
+        agnostic_nms=False, # 与 ONNX 导出一致
+        iou=0.6
     )
 
 
@@ -247,9 +252,9 @@ def predict_model_for_web(weight_path, config_name, task, source, project, name)
 # -------------------------
 if __name__ == "__main__":
     # os.makedirs("Log", exist_ok=True)
-    os.makedirs("modelpipeline/Log", exist_ok=True)
+    os.makedirs("model_pipeline/Log", exist_ok=True)
     logging.basicConfig(
-        filename="modelpipeline/Log/yolov8s_training.log",
+        filename="model_pipeline/Log/yolov8s_training.log",
         filemode="w",
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(message)s"

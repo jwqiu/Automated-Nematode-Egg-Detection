@@ -20,3 +20,11 @@ export function getApiBase() {
 
 export const API_BASE = getApiBase();
 export const IS_ELECTRON = isElectron();
+
+console.log('[API_BASE]', API_BASE, {
+  IS_ELECTRON,
+  MODE: import.meta.env.MODE,
+  VITE_API_BASE_DEV: import.meta.env.VITE_API_BASE_DEV,
+  VITE_API_BASE_PROD: import.meta.env.VITE_API_BASE_PROD,
+  VITE_DESKTOP_API_BASE: import.meta.env.VITE_DESKTOP_API_BASE
+});

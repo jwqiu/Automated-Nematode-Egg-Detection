@@ -244,8 +244,10 @@ def predict():
         original_pil = pil.copy()
 
         # 2. 预处理到 608×608，归一化，NCHW
-        img608 = pil.resize((608, 608))
-        arr = np.array(img608).astype(np.float32) / 255.0
+        # img608 = pil.resize((608, 608))
+        assert pil.size == (608, 608), f"Expect 608x608, got {pil.size}"  # 可选但推荐
+
+        arr = np.array(pil).astype(np.float32) / 255.0
         arr = np.transpose(arr, (2, 0, 1))[None, ...]  # shape (1,3,608,608)
 
         # 3. ONNX 推理

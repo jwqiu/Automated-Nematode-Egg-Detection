@@ -96,8 +96,6 @@ def parse_yolo_line(line, img_width, img_height, task):
 # -------------------------
 
 
-
-
 for image_name in tqdm(os.listdir(IMAGE_DIR), desc="Rendering predictions and annotations"):
     if not image_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff')):
         print(f"Warning: not valid files .png', '.jpg', '.jpeg', '.tif', '.tiff'")

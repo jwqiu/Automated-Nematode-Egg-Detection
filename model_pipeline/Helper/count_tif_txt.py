@@ -1,7 +1,7 @@
 import os
 
 # 要统计的文件夹路径
-folder = "raw_data/OneDrive_1_28-08-2025"
+folder = "raw_data/Bad_Case_914/Case_2"
 
 # 统计数量
 tif_count = len([f for f in os.listdir(folder) if f.lower().endswith(".tif")])

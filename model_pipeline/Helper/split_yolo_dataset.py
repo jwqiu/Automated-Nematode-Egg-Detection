@@ -5,10 +5,10 @@ import random
 # ===============================
 # 配置（改这里）
 # ===============================
-BASE_DIR = "raw_data/OneDrive_1_28-08-2025"  # 原始数据所在目录（包含 .tif & .txt）
-N_TRAIN = 125                        # 训练集数量
-N_VAL   = 40                        # 验证集数量
-N_TEST  = 40                        # 测试集数量
+BASE_DIR = "raw_data/Bad_Case_914/Case_3"  # 原始数据所在目录（包含 .tif & .txt）
+N_TRAIN = 3                        # 训练集数量
+N_VAL   = 1                        # 验证集数量
+N_TEST  = 1                        # 测试集数量
 COPY_CLASSES_TXT = False             # 若根目录有 classes.txt，是否复制到各 split/labels
 # ===============================
 
