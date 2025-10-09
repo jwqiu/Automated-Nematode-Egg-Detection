@@ -6,9 +6,13 @@ import time
 import logging
 from ultralytics import YOLO
 
+
 # -------------------------
 # Configuration 
 # -------------------------
+
+
+
 CONFIGS = [
     #  === Default with mosaic  ===
     # {"name": "yolov8s_default"},
@@ -42,7 +46,21 @@ CONFIGS = [
     # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15,"auto_augment": "none"},   
     # 历史上最好的实验，但是epochs和patience减少到50和15，以及关闭 auto_augment和相关的增强，目的是建立一个更稳定的“纯基线”
     # {"name": "yolov8s_sgd_lr0001_max_E50P15_noAA_pure", "optimizer": "SGD", "lr0": 0.001, "mosaic": 0, "erasing": 0, "fliplr": 0.0, "flipud": 0.0, "epochs": 50, "patience": 15,"auto_augment": "none"},
-    {"name": "yolov8s_sgd_lr0001_max_E200P20_AD_0914", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 20},   
+
+    # {"name": "yolov8s_sgd_lr0001_max_E200P20_AD_0914", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 20},   
+
+    {
+        "name": "yolov8s_sgd_lr0001_max_E200P20_AD_0914_brightness",
+        "optimizer": "SGD",
+        "lr0": 0.001,
+        "mosaic": 1,
+        "erasing": 0.5,
+        "fliplr": 1.0,
+        "flipud": 0.5,
+        "epochs": 200,
+        "patience": 20,
+        "hsv_v": 0.6,  # 增强亮度
+    }
 
     # 上次跑实验时最好的两个正向变量叠加
     # {"name": "y8s_sgd_lr0001_max_sz768_deg15", "degrees": 15, "imgsz": 768, "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 50, "patience": 15},
@@ -157,6 +175,7 @@ EXP_ROOT = "model_pipeline/Trained_Models_New/YOLO"
 # -------------------------
 # Training Function
 # -------------------------
+
 def train_model(config: dict):
     args = COMMON_ARGS.copy()
     args.update(config)
@@ -230,21 +249,21 @@ def predict_model(weight_path: str, config_name: str, task: str, source: str):
     )
 
 
-def predict_model_for_web(weight_path, config_name, task, source, project, name):
+# def predict_model_for_web(weight_path, config_name, task, source, project, name):
 
-    model = YOLO(weight_path)
-    model.predict(
-        source=source,            # 现在是真正的文件路径
-        project=project,
-        name=name,
-        task=task,
-        exist_ok=True,
-        save_json=True,
-        save_txt=False,
-        save_conf=True,
-        save=True,
-        verbose=False
-    )
+#         model = YOLO(weight_path)
+#         model.predict(
+#             source=source,            # 现在是真正的文件路径
+#             project=project,
+#             name=name,
+#             task=task,
+#             exist_ok=True,
+#             save_json=True,
+#             save_txt=False,
+#             save_conf=True,
+#             save=True,
+#             verbose=False
+#     )
 
 
 # -------------------------
@@ -280,11 +299,7 @@ if __name__ == "__main__":
         evaluate_model(weight_path, config_name, task)
 
         logging.info(f"Predicting test images for: {config_name}")
-        # predict_model(weight_path, config_name, task, name = "test")
-        # predict_model(weight_path, config_name, task,
-        #       "dataset/test/images/data_from_Denise_828")
-        # predict_model(weight_path, config_name, task,
-        #       "dataset/test/images/previous_data")
+ 
         test_root = "dataset/test/images"
         for sub in os.listdir(test_root):
             sub_path = os.path.join(test_root, sub)

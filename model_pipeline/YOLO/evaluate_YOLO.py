@@ -7,16 +7,24 @@ from typing import Dict, List, Tuple, Optional
 # -------------------------
 # Configuration
 # -------------------------
-MODEL_NAME = 'yolov8s_sgd_lr0001_max_E200P20_AD_0914' # change this 
-# SPLIT = 'val'
-DATA_TYPE = 'test'
+
+# before starting evaluation, specify the ground truth folder for later comparison.
+DATA_TYPE = 'test' 
 GT_FOLDER = os.path.join('dataset', DATA_TYPE, 'labels') 
-# PRED_FOLDER = os.path.join('Processed_Images', 'YOLO', MODEL_NAME, SPLIT, 'labels')
-PRED_FOLDER = os.path.join('model_pipeline', 'Trained_Models_New', 'YOLO', MODEL_NAME)
+
+# before starting evaluation, specify the prediction files for later comparison.
+MODEL_NAME = 'yolov8s_sgd_lr0001_max_E200P20_AD_0914' # Name of the model which you are going to evaluate
+PRED_FOLDER = os.path.join('model_pipeline', 'Trained_Models_New', 'YOLO', MODEL_NAME) # specify the folder which contains the prediction results of the model you want to evaluate
+
+# specify where to save the evaluation results
 OUTPUT_DIR = os.path.join('model_pipeline', 'evaluation', 'YOLO', MODEL_NAME, DATA_TYPE)
+
+# at the moment, we only evaluate one class (class 0) in detection task.
 TARGET_CLASS = 0
+
 IOU_THRESHOLDS = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
 
+# create output directory if it doesn't exist
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # -------------------------
@@ -43,11 +51,15 @@ def iou(box1: List[float], box2: List[float]) -> float:
     area2 = max(0, (box2[2] - box2[0]) * (box2[3] - box2[1]))
     union_area = area1 + area2 - inter_area
     
+    # the logic here to calculate IOU is to use the intersection area divided by the total area coverd by the two boxes (union area).
+    # another possible way to measure overlap is to use the intersection area divided by each box area, and then take the bigger one as the overlap measure(not the standard IOU).
+
     return inter_area / union_area if union_area > 0 else 0.0
 
 # -------------------------
 # Data loading 
 # -------------------------
+
 def load_ground_truth(folder: str) -> Dict[str, List[List[float]]]:
     """Load ground truth annotations from YOLO format files."""
     print(f"Loading ground truth from: {folder}")
@@ -56,7 +68,8 @@ def load_ground_truth(folder: str) -> Dict[str, List[List[float]]]:
         raise FileNotFoundError(f"Ground truth folder not found: {folder}")
     
     gt_data = {}
-    # label_files = glob.glob(os.path.join(folder, '*.txt'))
+    # Get all label files in the ground-truth folder.
+    # Note: the label files are stored in subfolders, which is why '*' is added between the folder path and '*.txt'.
     label_files = glob.glob(os.path.join(folder, '*', '*.txt'))
     
     if not label_files:
@@ -64,13 +77,14 @@ def load_ground_truth(folder: str) -> Dict[str, List[List[float]]]:
         return gt_data
     
     for file_path in label_files:
-        # filename = os.path.splitext(os.path.basename(file_path))[0]
+        # extract the parent folder name and file stem to form a unique key
         parent  = os.path.basename(os.path.dirname(file_path))        # e.g. data_from_Denise_828
         stem    = os.path.splitext(os.path.basename(file_path))[0]    # e.g. img001
         filename = f"{parent}/{stem}"    
         boxes = []
         
         try:
+            # open and read the label file line by line
             with open(file_path, 'r') as f:
                 for line_num, line in enumerate(f, 1):
                     line = line.strip()
@@ -86,26 +100,28 @@ def load_ground_truth(folder: str) -> Dict[str, List[List[float]]]:
                     if cls != TARGET_CLASS:
                         continue
                     
+                    # convert string coordinates to float and then to xyxy format
                     coords = list(map(float, parts[1:5]))
                     boxes.append(xywh_to_xyxy(coords))
         
         except Exception as e:
             print(f"Error reading {file_path}: {e}")
             continue
-        
+
+        # save ground truth boxes in a dictionary, using filename as the key, and box coordinates as the value
         gt_data[filename] = boxes
 
     return gt_data
 
 def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
-    """Load predictions from YOLO format files with confidence scores."""
+    """Load prediction results from the model you want to evaluate, include YOLO format files with confidence scores."""
     print(f"Loading predictions from: {folder}")
     
     if not os.path.exists(folder):
         raise FileNotFoundError(f"Predictions folder not found: {folder}")
     
     pred_data = {}
-    # label_files = glob.glob(os.path.join(folder, '*.txt'))
+    # the prediction results are stored in several subfolders, all subfolders names start with 'predict_'.
     label_files = glob.glob(os.path.join(folder, 'predict_*', 'labels', '*.txt'))
 
     if not label_files:
@@ -113,10 +129,11 @@ def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
         return pred_data
     
     for file_path in label_files:
-        # filename = os.path.splitext(os.path.basename(file_path))[0]
+        # get the name of the run directory(two levels above the file) and the file stem to form a unique key
         run_dir = os.path.basename(os.path.dirname(os.path.dirname(file_path)))  # predict_data_from_Denise_828
         parent  = run_dir.replace("predict_", "")                                # data_from_Denise_828
         stem    = os.path.splitext(os.path.basename(file_path))[0]               # img001
+        # unique filename key, including the parent folder name to avoid conflicts
         filename = f"{parent}/{stem}"
         detections = []
         
@@ -155,23 +172,21 @@ def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
 # -------------------------
 
 def nms_greedy(
-    dets: List[Tuple[List[float], float]],  # [(bbox_xyxy, score), ...]
-    iou_thr: float = 0.6,
+    dets: List[Tuple[List[float], float]],  # [(bbox_xyxy, score), ...], list of boxes with scores
+    iou_thr: float = 0.6,  # determine how much two boxes can overlap before they are merged
     max_keep: Optional[int] = None
 ) -> List[Tuple[List[float], float]]:
-    """
-    对单张图片的检测结果做 NMS。保留高分，去掉与其 IoU >= iou_thr 的低分框。
-    dets: [( [x1,y1,x2,y2], score ), ...]  (已按 score 从高到低排序更好)
-    """
+    """Greedy Non-Maximum Suppression (NMS) to remove overlapping boxes."""
     if not dets:
         return dets
-
-    # 确保按分数降序
+    
+    # loop through each box, extract the highest score box first, then compare it with the rest boxes, if the IOU is higher than the threshold, remove that box
     dets = sorted(dets, key=lambda x: -x[1])
     keep = []
     removed = [False] * len(dets)
 
-    for i, (bi, si) in enumerate(dets):
+    for i in range(len(dets)):
+        bi, si = dets[i]
         if removed[i]:
             continue
         keep.append((bi, si))
@@ -190,23 +205,26 @@ def nms_greedy(
 # Evaluation function 
 # -------------------------
 def compute_detection_metrics(gt_data: Dict, pred_data: Dict, iou_threshold: float = 0.5) -> Tuple[float, float, float, List[str]]:
-    """Compute precision, recall, and F1-score at a specific IoU threshold.
-       同时返回有问题的图片名。
+    """Compute precision, recall, and F1-score at a specific IoU threshold, also return list of bad cases
     """
     true_positives = false_positives = false_negatives = 0
-    bad_images = []  # 新增
-    
+    bad_images = []  
+
+    # Loop through each image, match predictions to ground truths for each image
     for img_name, gt_boxes in gt_data.items():
         pred_detections = pred_data.get(img_name, [])
-        pred_boxes = [bbox for bbox, _ in pred_detections]
-        
+        pred_boxes = []
+        for bbox, score in pred_detections:
+            pred_boxes.append(bbox)
+
         matched_gt_indices = set()
         
-        # Match predictions to ground truth
+        # loop through each predicted box in the image
         for pred_box in pred_boxes:
             best_iou = 0
             best_gt_idx = -1
-            
+
+            # loop through each ground truth box, match with predicted box, find the best match with highest IOU
             for gt_idx, gt_box in enumerate(gt_boxes):
                 if gt_idx in matched_gt_indices:
                     continue
@@ -215,7 +233,9 @@ def compute_detection_metrics(gt_data: Dict, pred_data: Dict, iou_threshold: flo
                 if current_iou > best_iou:
                     best_iou = current_iou
                     best_gt_idx = gt_idx
-            
+
+            # If we match a predicted box with a ground truth box (greater than the IOU threshold), count as true positive, otherwise false positive
+            # for the bad cases, add the image name to the bad_images list
             if best_iou >= iou_threshold:
                 true_positives += 1
                 matched_gt_indices.add(best_gt_idx)
@@ -233,13 +253,16 @@ def compute_detection_metrics(gt_data: Dict, pred_data: Dict, iou_threshold: flo
     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
 
     return precision, recall, f1_score, sorted(set(bad_images))
-    # return precision, recall, f1_score
 
 def compute_average_precision(gt_data: Dict, pred_data: Dict, iou_threshold: float = 0.5) -> float:
-    """Compute Average Precision (AP) using 11-point interpolation."""
+    """Compute Average Precision (AP) using 11-point interpolation at a certain iou_threshold."""
+    
     # Collect all predictions with their confidence scores
     all_predictions = []
-    total_gt_boxes = sum(len(boxes) for boxes in gt_data.values())
+
+    total_gt_boxes = 0
+    for boxes in gt_data.values():
+        total_gt_boxes = total_gt_boxes + len(boxes)
     
     for img_name, detections in pred_data.items():
         for bbox, confidence in detections:
@@ -249,11 +272,16 @@ def compute_average_precision(gt_data: Dict, pred_data: Dict, iou_threshold: flo
     all_predictions.sort(key=lambda x: -x[2])
     
     # Track matches for each image
-    matched_gt = {img: set() for img in gt_data}
+    matched_gt = {}
+    for img in gt_data:
+        matched_gt[img] = set()
+
     tp_list = []
     fp_list = []
     
+    # loop through each prediction box in image, calculate the IOU with each ground truth box in the same image, find the best match with highest IOU
     for img_name, pred_box, _ in all_predictions:
+
         gt_boxes = gt_data.get(img_name, [])
         best_iou = 0
         best_gt_idx = -1
@@ -314,17 +342,20 @@ def compute_map(gt_data: Dict, pred_data: Dict, iou_thresholds: Optional[List[fl
 
 def print_results(results: Dict) -> None:
     """Print formatted results to console."""
+
     print(f"Detection Metrics @ IoU=0.5:")
     print(f"{'Conf_Thr:':<15}{results['conf_th']:<10.2f}")
     print(f"{'NMS_IoU:':<15}{results['nms_iou']:<10.2f}")
 
     print("-" * 35)
     print(f"{'Metric':<15}{'Value':<10}")
+
     print("-" * 35)
     print(f"{'Precision:':<15}{results['precision']:<10.4f}")
     print(f"{'Recall:':<15}{results['recall']:<10.4f}")
     print(f"{'F1-Score:':<15}{results['f1']:<10.4f}")
     print('\n')
+
     print(f"Average Precision Metrics:")
     print("-" * 35)
     print(f"{'Metric':<15}{'Value':<10}")
@@ -340,32 +371,28 @@ def main():
     gt_data = load_ground_truth(GT_FOLDER)
     pred_data = load_predictions(PRED_FOLDER)
     
-    # === 关键：统一做一遍 NMS 去重（每张图片分别处理） ===
+    # remove overlapping boxes in predictions before evaluation
     APPLY_NMS = True
-    NMS_IOU = 0.6
+    NMS_IOU = 0.4
     if APPLY_NMS:
         for img, dets in pred_data.items():
             pred_data[img] = nms_greedy(dets, iou_thr=NMS_IOU)
 
-    # Compute metrics
     print(f"\nComputing evaluation metrics...")
     
-    # Average Precision metrics
     ap_metrics = compute_map(gt_data, pred_data, IOU_THRESHOLDS)
 
-    # 3) 业务 P/R/F1：在指定 conf 下做过滤（模拟线上阈值）
-    CONF_TH = 0.5  # 你线上打算用的阈值（可改）
-    pred_data_conf = {
-        img: [(b, s) for (b, s) in dets if s >= CONF_TH]
-        for img, dets in pred_data.items()
-    }
-    # precision, recall, f1 = compute_detection_metrics(gt_data, pred_data_conf, iou_threshold=0.5)
+    # filter predictions by confidence threshold before computing metrics
+    CONF_TH = 0.5  
+    pred_data_conf = {}
+    for img, dets in pred_data.items():
+        filtered = []
+        for box, score in dets:
+            if score >= CONF_TH:
+                filtered.append((box, score))
+        pred_data_conf[img] = filtered
+
     precision, recall, f1, bad_images = compute_detection_metrics(gt_data, pred_data_conf, iou_threshold=0.5)
-
-
-    # Basic detection metrics at IoU=0.5
-    # precision, recall, f1 = compute_detection_metrics(gt_data, pred_data, 0.5)
-    
 
     # Organize results
     results = {
@@ -389,7 +416,7 @@ def main():
     
     # Save results as CSV for easy comparison
     csv_file = os.path.join(OUTPUT_DIR, 'metrics_comparison.csv')
-    with open(csv_file, 'w') as f:
+    with open(csv_file, 'a') as f:
         f.write("Model,Conf_for_PRF1,NMS_IoU,Precision,Recall,F1,mAP@0.5,mAP@0.5:0.95\n")
         model_name = os.path.basename(PRED_FOLDER.replace('/labels', ''))
         f.write(
@@ -401,7 +428,6 @@ def main():
         for img in bad_images:
             f.write(f"{img}\n")
 
-    
     print(f"CSV results saved to: {csv_file}")
     print(f"Evaluation completed successfully!")
         

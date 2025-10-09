@@ -133,7 +133,6 @@ sess = ort.InferenceSession(MODEL_PATH, providers=["CPUExecutionProvider"])
 input_name = sess.get_inputs()[0].name
 
 
-
 @app.function_name(name="predict")
 @app.route(route="predict", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST","OPTIONS"])
 def predict(req: func.HttpRequest) -> func.HttpResponse:

@@ -2,6 +2,7 @@
 import React from 'react';
 // @ts-ignore
 import LogoHeader from '../components/LogoHeader';
+// @ts-ignore
 
 import DetectionResult from '../components/DetectionResult'; 
 // @ts-ignore

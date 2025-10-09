@@ -1,5 +1,7 @@
 // @ts-ignore
 import React from 'react';
+// @ts-ignore
+
 import { API_BASE } from '../apiBase';
 
 // index.js

@@ -5,6 +5,8 @@ import React from 'react';
 const useState = React.useState;
 const useEffect = React.useEffect;
 const useRef = React.useRef;
+// @ts-ignore
+
 import { API_BASE } from '../apiBase'; 
 import FolderList from './FolderList';
 // @ts-ignore
