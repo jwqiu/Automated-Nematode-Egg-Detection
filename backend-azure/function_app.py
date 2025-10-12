@@ -122,10 +122,10 @@ import base64
 import io
 import os
 
-
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import onnxruntime as ort
+import cv2
 
 # —— 全局加载 ONNX 模型 —— #
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "best.onnx")
@@ -191,6 +191,39 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
                     "bbox": [int(x1), int(y1), int(x2), int(y2)],
                     "confidence": conf
                 })
+        
+        # # === OpenCV 椭圆形状判断 ===
+        # img_cv = np.array(original_pil)
+        # img_gray = cv2.cvtColor(img_cv, cv2.COLOR_RGB2GRAY)
+
+        # for b in boxes_info:
+        #     x1, y1, x2, y2 = b["bbox"]
+        #     crop = img_gray[y1:y2, x1:x2]
+
+        #     # 二值化
+        #     _, thresh = cv2.threshold(crop, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        #     # 查找轮廓
+        #     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        #     if len(contours) == 0:
+        #         b["ellipse_score"] = 0.0
+        #         continue
+
+        #     # 拟合椭圆（要求至少5个点）
+        #     cnt = max(contours, key=cv2.contourArea)
+        #     if len(cnt) < 5:
+        #         b["ellipse_score"] = 0.0
+        #         continue
+
+        #     ellipse = cv2.fitEllipse(cnt)
+        #     (xc, yc), (MA, ma), angle = ellipse
+
+        #     # 计算长短轴比（越接近1越圆）
+        #     ratio = min(MA, ma) / max(MA, ma)
+        #     b["ellipse_score"] = round(float(ratio), 3)
+
+        #     # 可选：根据椭圆度调整置信度（例如轻微加权）
+        #     b["adjusted_confidence"] = round(b["confidence"] * (0.5 + 0.8 * ratio), 3)
 
         # 5. 用 Pillow 在原图上画框和置信度
         draw = ImageDraw.Draw(pil)

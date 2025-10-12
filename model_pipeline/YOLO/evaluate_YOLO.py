@@ -2,14 +2,15 @@ import os
 import glob
 import numpy as np
 from typing import Dict, List, Tuple, Optional
-
+import cv2
+from PIL import Image
 
 # -------------------------
 # Configuration
 # -------------------------
 
 # before starting evaluation, specify the ground truth folder for later comparison.
-DATA_TYPE = 'test' 
+DATA_TYPE = 'val' 
 GT_FOLDER = os.path.join('dataset', DATA_TYPE, 'labels') 
 
 # before starting evaluation, specify the prediction files for later comparison.
@@ -122,7 +123,8 @@ def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
     
     pred_data = {}
     # the prediction results are stored in several subfolders, all subfolders names start with 'predict_'.
-    label_files = glob.glob(os.path.join(folder, 'predict_*', 'labels', '*.txt'))
+    # label_files = glob.glob(os.path.join(folder, 'predict_*', 'labels', '*.txt'))
+    label_files = glob.glob(os.path.join(folder,'predict_*_val', 'labels', '*.txt'))
 
     if not label_files:
         print(f"Warning: No prediction files found in {folder}")
@@ -131,7 +133,8 @@ def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
     for file_path in label_files:
         # get the name of the run directory(two levels above the file) and the file stem to form a unique key
         run_dir = os.path.basename(os.path.dirname(os.path.dirname(file_path)))  # predict_data_from_Denise_828
-        parent  = run_dir.replace("predict_", "")                                # data_from_Denise_828
+        # parent  = run_dir.replace("predict_", "")                                # data_from_Denise_828
+        parent = run_dir.replace("predict_", "").replace("_val", "")
         stem    = os.path.splitext(os.path.basename(file_path))[0]               # img001
         # unique filename key, including the parent folder name to avoid conflicts
         filename = f"{parent}/{stem}"

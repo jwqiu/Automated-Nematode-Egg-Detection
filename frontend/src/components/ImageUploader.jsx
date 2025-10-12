@@ -174,6 +174,7 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
 
     const uploadTasks = files.map(async (originalFile) => {
       const file = await convertTifToPng(originalFile);
+      // const file = originalFile;
 
       return new Promise((resolve) => {
       // 🧠 Step 1: 将原始文件转换为 Image 对象
@@ -186,19 +187,7 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
             const formData = new FormData();
             formData.append("image", blob, file.name); // 保留原文件名
             const newUid = crypto.randomUUID();
-            // try {
-            //   const res = await fetch("http://127.0.0.1:5001/upload", {
-            //     method: "POST",
-            //     body: formData,
-            //   });
-
-            //   if (!res.ok) {
-            //     const errorText = await res.text();
-            //     throw new Error(`Upload failed: ${res.status} ${errorText}`);
-            //   }
-
-            //   const data = await res.json();
-
+    
               setImages((prev) =>
                 prev.concat({
                   file: blob,
