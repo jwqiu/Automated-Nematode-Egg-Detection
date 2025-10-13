@@ -1,10 +1,16 @@
-import os
 import time
 import logging
 from ultralytics import YOLO
-import cv2
-import numpy as np
+import cv2, numpy as np
 import glob
+import torch
+from PIL import Image
+from torchvision import transforms
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from model_pipeline.YOLO.ellipse.train_cnn_classifier import EllipseCNN, SquarePad
+
+
 
 EXP_ROOT = "model_pipeline/Trained_Models_New/YOLO"
 
@@ -17,7 +23,7 @@ def predict_model(weight_path: str, config_name: str, task: str, source: str):
         source=source,
         task=task,
         project=f"{EXP_ROOT}/{config_name}",
-        name=f"predict_{tag}_val",   # 输出文件夹带上来源名字
+        name=f"predict_{tag}_test",   # 输出文件夹带上来源名字
         exist_ok=True,
         save_json=True,
         save_txt=True,
@@ -25,7 +31,6 @@ def predict_model(weight_path: str, config_name: str, task: str, source: str):
         agnostic_nms=False, # 与 ONNX 导出一致
         verbose=True,
         iou=0.6,
-        conf=0.01 
     )
 
 def load_all_images(test_root):
@@ -48,63 +53,90 @@ def load_all_labels(config_name):
     label_paths = {}
     base = f"model_pipeline/Trained_Models_New/YOLO/{config_name}"
 
-    for label_file in glob.glob(f"{base}/predict_*_val/labels/*.txt"):
+    for label_file in glob.glob(f"{base}/predict_*test/labels/*.txt"):
         parent  = os.path.basename(os.path.dirname(os.path.dirname(label_file)))  # e.g. predict_data_from_Denise_828_val
-        parent  = parent.replace("predict_", "").replace("_val", "")              # 还原为 data_from_Denise_828
+        parent  = parent.replace("predict_", "").replace("_test", "")              # 还原为 data_from_Denise_828
         stem    = os.path.splitext(os.path.basename(label_file))[0]               # e.g. img001
         filename = f"{parent}/{stem}"                                             # key
         label_paths[filename] = label_file
     return label_paths
 
-import cv2, numpy as np
+# ===== 1) 加载分类模型（启动时一次） =====
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+ellipse_model_path = "model_pipeline/YOLO/ellipse/ellipse_cnn.pt"  # ← 你的权重路径
 
-def analyze_and_write_ellipse(img_path, label_path):
+ellipse_model = EllipseCNN(input_size=64, use_sigmoid_in_model=False,
+                           extra_conv_layers=2, use_gap=False)
+ellipse_model.load_state_dict(torch.load(ellipse_model_path, map_location=device))
+ellipse_model.to(device)
+ellipse_model.eval()
+
+val_tf = transforms.Compose([
+    transforms.Grayscale(1),
+    SquarePad(),
+    transforms.Resize(64),
+    transforms.ToTensor(),
+])
+
+@torch.no_grad()
+def classify_crop(crop_np):
+    """返回非椭圆概率 prob_non_ellipse ∈ [0,1]（超简版）"""
+    # ★ 加：推理时也做直方图均衡，和训练保持一致
+    crop_np = cv2.equalizeHist(crop_np)
+
+    pil = Image.fromarray(crop_np).convert("L")  # 明确灰度
+    t = val_tf(pil).unsqueeze(0).to(device)      # [1,1,H,W]
+    logits = ellipse_model(t).squeeze()          # 标量
+    prob_non_ellipse = torch.sigmoid(logits).item()  # 因为模型没带 Sigmoid
+    return prob_non_ellipse
+
+# ===== 2) 只改裁剪→分类→加权→写回 =====
+def analyze_and_write_ellipse(img_path, label_path, k=0.5):
     img = cv2.imread(img_path, 0)
     if img is None:
         return
     H, W = img.shape[:2]
 
     new_lines = []
-    for line in open(label_path):
+    with open(label_path, "r") as f:
+        lines = f.readlines()
+
+    for line in lines:
         parts = line.strip().split()
         if len(parts) < 6:
             continue
+
         cls, xc, yc, w, h, conf = map(float, parts)
         x1, y1 = int((xc - w/2)*W), int((yc - h/2)*H)
         x2, y2 = int((xc + w/2)*W), int((yc + h/2)*H)
-        crop = img[y1:y2, x1:x2]
+        x1c, y1c = max(0, x1), max(0, y1)
+        x2c, y2c = min(W, x2), min(H, y2)
 
-        ratio = 0
-        if crop.size > 0:
-            crop = cv2.equalizeHist(crop)
-            _, th = cv2.threshold(crop, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-            cts, _ = cv2.findContours(th, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            if cts and len(max(cts, key=cv2.contourArea)) >= 5:
-                (x, y), (MA, ma), ang = cv2.fitEllipse(max(cts, key=cv2.contourArea))
-                ratio = round(min(MA, ma)/max(MA, ma), 3)
+        crop = img[y1c:y2c, x1c:x2c]
+        if crop.size == 0:
+            new_lines.append(f"{int(cls)} {xc:.6f} {yc:.6f} {w:.6f} {h:.6f} {conf:.6f} 0.500 {conf:.6f}\n")
+            continue
 
-        if crop.size > 0:
-            # === 保存所有裁图，区分 ratio 是否为 0 ===
-            base_debug_dir = os.path.join("model_pipeline/YOLO/ellipse", "debug_crops")
-            subdir = "zero" if ratio == 0 else "nonzero"
-            debug_dir = os.path.join(base_debug_dir, subdir)
-            os.makedirs(debug_dir, exist_ok=True)
+        # 用分类模型拿“非椭圆概率”
+        prob_non_ellipse = classify_crop(crop)
 
-            crop_name = f"{os.path.basename(img_path).split('.')[0]}_{int(x1)}_{int(y1)}_{ratio:.3f}.png"
-            cv2.imwrite(os.path.join(debug_dir, crop_name), crop)
+        # 动态加权（或用固定±0.2，二选一）
+        conf_final = conf + (0.5 - prob_non_ellipse) * k
+        conf_final = float(np.clip(conf_final, 0.0, 1.0))
 
-        if ratio == 0:
-            factor = 1
-        elif 0.5 <= ratio <= 0.85:
-            factor = 1.5
-        else:
-            factor = 0.5
-        adj = round(conf * factor, 3)
-        new_lines.append(f"{int(cls)} {xc:.6f} {yc:.6f} {w:.6f} {h:.6f} {conf:.6f} {ratio:.3f} {adj:.3f}\n")
+        # 固定±0.2版本（想用就替换上面两行）
+        # delta = 0.2 if prob_non_ellipse < 0.5 else -0.2
+        # conf_final = float(np.clip(conf + delta, 0.0, 1.0))
 
-    open(label_path, "w").writelines(new_lines)
+        # 写回：cls xc yc w h conf_yolo prob_non_ellipse conf_final
+        new_lines.append(
+            f"{int(cls)} {xc:.6f} {yc:.6f} {w:.6f} {h:.6f} "
+            f"{conf:.6f} {prob_non_ellipse:.3f} {conf_final:.3f}\n"
+        )
+
+    with open(label_path, "w") as f:
+        f.writelines(new_lines)
     print(f"✅ updated {label_path}")
-
 
 if __name__ == "__main__":
 
@@ -112,7 +144,7 @@ if __name__ == "__main__":
     config_name = "yolov8s_sgd_lr0001_max_E200P20_AD_0914"
     task = "detect"
 
-    test_root = "dataset/val/images"
+    test_root = "dataset/test/images"
     all_images = load_all_images(test_root)
 
     for sub in os.listdir(test_root):
@@ -124,4 +156,4 @@ if __name__ == "__main__":
 
     for key in all_images:
         if key in label_files:
-            analyze_and_write_ellipse(all_images[key], label_files[key])
+            analyze_and_write_ellipse(all_images[key], label_files[key], k=0.55)
