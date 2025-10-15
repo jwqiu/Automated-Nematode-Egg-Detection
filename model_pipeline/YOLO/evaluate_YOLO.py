@@ -157,8 +157,12 @@ def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
                         continue
                     
                     bbox = list(map(float, parts[1:5]))
-                    # confidence = float(parts[5])
-                    confidence = float(parts[-1])
+
+
+                    # the 6th value is the original confidence score, the last one is the confidence adjusted by ellipse classifier
+                    # for example: 0 0.575149 0.477019 0.184230 0.217452 0.851654 0.000 1.000
+                    # confidence = float(parts[5]) # use this if you want to use the original confidence score
+                    confidence = float(parts[-1]) # use this if you want to use the adjusted confidence score
                     detections.append((xywh_to_xyxy(bbox), confidence))
         
         except Exception as e:
@@ -169,7 +173,6 @@ def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
         pred_data[filename] = sorted(detections, key=lambda x: -x[1])
     
     return pred_data
-
 
 # -------------------------
 # Merge close boxes function 

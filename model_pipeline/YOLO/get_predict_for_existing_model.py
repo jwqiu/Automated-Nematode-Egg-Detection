@@ -30,7 +30,7 @@ def predict_model(weight_path: str, config_name: str, task: str, source: str):
         save_conf=True,
         agnostic_nms=False, # 与 ONNX 导出一致
         verbose=True,
-        iou=0.6,
+        iou=0.2,
     )
 
 def load_all_images(test_root):
