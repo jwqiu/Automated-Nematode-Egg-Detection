@@ -1,17 +1,11 @@
 // @ts-ignore
-
 import React from 'react';
-// index.js
-const useState = React.useState;
-const useEffect = React.useEffect;
-const useRef = React.useRef;
-import { useNavigate } from 'react-router-dom';
 
+// @ts-ignore
+import { useNavigate } from 'react-router-dom';
 
 import { decode, decodeImage, toRGBA8 } from "utif";
 
-
-// ⬇️ 顶层
 export function resizeAndPadImage(img, callback) {
   const targetSize = 608;
   const canvas = document.createElement("canvas");
@@ -67,101 +61,11 @@ export async function convertTifToPng(file) {
 
 // React 组件函数，名称为 ImageUploader
 function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bottomButton = false, defaultHints = true, isCard = false, ready }) {
-  // 用 useState 创建一个状态变量 images，用于保存上传的图片
-  // 初始值是一个空数组 []
-  // const [images, setImages] = React.useState([]);
-  // const [selectedImage, setSelectedImage] = React.useState(null);
+
   const navigate = useNavigate();
-  
-  // function resizeAndPadImage(img, callback) {
-  //   const targetSize = 608;
-  //   const canvas = document.createElement("canvas");
-  //   canvas.width = targetSize;
-  //   canvas.height = targetSize;
-  //   const ctx = canvas.getContext("2d");
-
-  //   // 计算等比缩放尺寸
-  //   const ratio = Math.min(targetSize / img.width, targetSize / img.height);
-  //   const newWidth = img.width * ratio;
-  //   const newHeight = img.height * ratio;
-
-  //   const dx = (targetSize - newWidth) / 2;
-  //   const dy = (targetSize - newHeight) / 2;
-
-  //   // 可选：设置背景色为灰色（与 YOLO letterbox 一致）
-  //   ctx.fillStyle = "#808080";
-  //   ctx.fillRect(0, 0, targetSize, targetSize);
-
-  //   // 居中绘制缩放后的图像
-  //   ctx.drawImage(img, dx, dy, newWidth, newHeight);
-
-  //   canvas.toBlob((blob) => {
-  //     callback(blob);
-  //   }, "image/jpeg", 0.9);
-  // }
-
-  // async function convertTifToPng(file) {
-  //   const name = file.name.toLowerCase();
-  //   if (!name.endsWith(".tif") && !name.endsWith(".tiff")) {
-  //     return file;
-  //   }
-
-  //   return new Promise((resolve) => {
-  //     const reader = new FileReader();
-  //     reader.onload = () => {
-  //       const buffer = new Uint8Array(reader.result);
-  //       const ifds = decode(buffer);
-
-  //       // 找到包含图像数据的 IFD
-  //       const validIfd = ifds.find((ifd) => ifd.t273 && ifd.t279);
-  //       if (!validIfd) {
-  //         console.error("❌ No usable image data found in any IFD");
-  //         resolve(file);
-  //         return;
-  //       }
-
-  //       // **关键**：解码压缩数据到像素缓存
-  //       decodeImage(buffer, validIfd);
-
-  //       // 取尺寸
-  //       const width  = validIfd.t256?.[0];
-  //       const height = validIfd.t257?.[0];
-  //       if (!width || !height) {
-  //         console.error("❌ Invalid TIFF dimensions");
-  //         resolve(file);
-  //         return;
-  //       }
-
-  //       // 真正拿回 RGBA 数组
-  //       const rgba = toRGBA8(validIfd);
-  //       if (!rgba.length) {
-  //         console.error("❌ Failed to decode image pixels.");
-  //         resolve(file);
-  //         return;
-  //       }
-
-  //       // 绘制到 canvas，再导出 PNG
-  //       const canvas = document.createElement("canvas");
-  //       canvas.width  = width;
-  //       canvas.height = height;
-  //       const ctx = canvas.getContext("2d");
-  //       const imgData = ctx.createImageData(width, height);
-  //       imgData.data.set(rgba);
-  //       ctx.putImageData(imgData, 0, 0);
-
-  //       canvas.toBlob((blob) => {
-  //         const pngFile = new File(
-  //           [blob],
-  //           file.name.replace(/\.(tif|tiff)$/i, ".png"),
-  //           { type: "image/png" }
-  //         );
-  //         resolve(pngFile);
-  //       }, "image/png");
-  //     };
-
-  //     reader.readAsArrayBuffer(file);
-  //   });
-  // }
+  const useState = React.useState;
+  const useEffect = React.useEffect;
+  const useRef = React.useRef;
 
   const [isUploading, setIsUploading] = useState(false);
   const imageListRef = useRef(null);
@@ -199,19 +103,7 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
                   boxes: null,
                 })
               );
-              // if (index === files.length - 1) {              
-              //   setSelectedImage({
-              //     file: blob,
-              //     url: previewUrl,
-              //     uid: newUid,
-              //     filename: file.name,
-              //     detected: false,
-              //     boxes: null,
-              //   });
-              // }
-            // } catch (err) {
-            //   console.error("Upload failed:", err);
-            // }
+              
               resolve();
 
           }, "image/jpeg", 1); // 第三个参数为压缩质量（可选）
@@ -301,48 +193,6 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
     });
   }
 
-  // function deleteImageOnServer({ uid, filename }) {
-  //   return fetch("http://127.0.0.1:5001/delete", {
-  //     method: "DELETE",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ uid, filename })
-  //   })
-  //   .then(res => {
-  //     if (!res.ok) throw new Error(`Server returned ${res.status}`);
-  //     return res.json();
-  //   });
-  // }
-
-  
-
-  // function handleRemove(indexToRemove) {
-  //   const img = images[indexToRemove];
-
-  //   // 先调用后端接口
-  //   deleteImageOnServer(img)
-  //     .then((data) => {
-  //       if (data.status !== "success") {
-  //         console.error("删除失败：", data.error);
-  //         return;
-  //       }
-
-  //       // 后端删成功，前端再做清理
-  //       URL.revokeObjectURL(img.url);
-  //       setImages(prev =>
-  //         prev.filter((_, idx) => idx !== indexToRemove)
-  //       );
-  //       if (selectedImage?.uid === img.uid) {
-  //         // 如果是 blob URL，也要 revoke
-  //         if (selectedImage.url.startsWith("blob:")) {
-  //           URL.revokeObjectURL(selectedImage.url);
-  //         }
-  //         setSelectedImage(null);
-  //       }
-  //     })
-  //     .catch(err => {
-  //       console.error("删除过程中出错：", err);
-  //     });
-  // }
 
   function handleRemove(uidToRemove) {
     const imgIndex = images.findIndex(img => img.uid === uidToRemove);

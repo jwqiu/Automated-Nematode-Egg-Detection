@@ -59,7 +59,7 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
 
       setSelectedImage({
         ...selectedImage,
-        originalUrl: "data:image/png;base64," + resJson.original_image,
+        // originalUrl: "data:image/png;base64," + resJson.original_image,
         annotatedUrl: "data:image/png;base64," + resJson.annotated_image,
         detected: true,
         boxes: resJson.boxes,
@@ -70,7 +70,7 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
           img.uid === selectedImage.uid
             ? {
                 ...img,
-                originalUrl: "data:image/png;base64," + resJson.original_image,
+                // originalUrl: "data:image/png;base64," + resJson.original_image,
                 annotatedUrl: "data:image/png;base64," + resJson.annotated_image,
                 detected: true,
                 boxes: resJson.boxes,
@@ -159,12 +159,17 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
               {selectedImage.boxes.map((box, index) => {
                 const [x1, y1, x2, y2] = box.bbox;  // ✅ 正确解构
                 const conf = box.confidence;
+                const ellipse_prob = box.ellipse_prob;
+                const adjusted_conf = box.adjusted_confidence;
+
                 return (
                   <li key={index} className='bg-gray-100 px-4 py-2 rounded-lg'>
                     <span className="font-semibold">#{index + 1}</span>:
                     x1: {x1.toFixed(1)}, y1: {y1.toFixed(1)},
                     x2: {x2.toFixed(1)}, y2: {y2.toFixed(1)},
-                    confidence: {(conf * 100).toFixed(2)}%
+                    confidence: {(conf * 100).toFixed(2)}%,
+                    ellipse_prob: {(ellipse_prob * 100).toFixed(2)}%,
+                    <span className=""> adjusted_conf: {(adjusted_conf * 100).toFixed(2)}%</span>
                   </li>
                 );
               })}

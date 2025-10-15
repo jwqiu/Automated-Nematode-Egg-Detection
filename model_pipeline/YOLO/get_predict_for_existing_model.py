@@ -156,4 +156,4 @@ if __name__ == "__main__":
 
     for key in all_images:
         if key in label_files:
-            analyze_and_write_ellipse(all_images[key], label_files[key], k=0.55)
+            analyze_and_write_ellipse(all_images[key], label_files[key], k=0.5)

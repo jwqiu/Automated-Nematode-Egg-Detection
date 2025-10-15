@@ -13,15 +13,31 @@ from PIL import Image, ImageDraw, ImageFont
 import onnxruntime as ort
 import cv2
 
+# === Load YOLO ===
 # get the full path of the model file
 YOLO_MODEL_PATH = os.path.join(os.path.dirname(__file__), "yolo.onnx")
 # before running inference, you need to load the model into a runtime environment before you can make predictions
 # load the ONNX model and create an inference session using CPU
-sess = ort.InferenceSession(YOLO_MODEL_PATH, providers=["CPUExecutionProvider"])
+yolo_sess = ort.InferenceSession(YOLO_MODEL_PATH, providers=["CPUExecutionProvider"])
 # get the name of the input node
-input_name = sess.get_inputs()[0].name
+yolo_input_name = yolo_sess.get_inputs()[0].name
 # Display only boxes with confidence scores above the defined threshold.
-confidence_threshold = 0.5
+confidence_threshold = 0.25
+
+# === Load CNN ===
+ELLIPSE_MODEL_PATH = os.path.join(os.path.dirname(__file__), "ellipse_cnn.onnx")
+ellipse_sess = ort.InferenceSession(ELLIPSE_MODEL_PATH, providers=["CPUExecutionProvider"])
+ellipse_input_name = ellipse_sess.get_inputs()[0].name
+k = 0.5
+
+def preprocess_ellipse_image(crop_np):
+    """preprocess the cropped image for ellipse classifier"""
+    gray = cv2.cvtColor(crop_np, cv2.COLOR_RGB2GRAY)
+    gray = cv2.equalizeHist(gray)
+    gray = cv2.resize(gray,(64, 64))
+    arr = gray.astype(np.float32) / 255.0
+    arr = np.expand_dims(np.expand_dims(arr, axis=0), axis=0)  # shape (1,1,64,64)
+    return arr
 
 @app.function_name(name="predict")
 @app.route(route="predict", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST","OPTIONS"])
@@ -63,7 +79,7 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
         arr = np.transpose(arr, (2, 0, 1))[None, ...]  # shape (1,3,608,608)
 
         # run the model to get model outputs
-        outputs = sess.run(None, {input_name: arr})
+        outputs = yolo_sess.run(None, {yolo_input_name: arr})
         preds   = outputs[0]   # shape (M,5+num_classes) or (M,6) if nms=True
         
         if preds is None or preds.shape[0] == 0:
@@ -84,9 +100,25 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
         for idx, row in enumerate(preds):
             x1, y1, x2, y2, conf, cls = [float(v) for v in row[:6]]
             if conf > confidence_threshold:
+                # boxes_info.append({
+                #     "bbox": [int(x1), int(y1), int(x2), int(y2)],
+                #     "confidence": conf
+                # })
+                crop = np.array(original_pil)[int(y1):int(y2), int(x1):int(x2)]
+                if crop.size == 0:
+                    continue
+
+                # === 椭圆分类模型 ===
+                arr_cnn = preprocess_ellipse_image(crop)
+                cnn_output = ellipse_sess.run(None, {ellipse_input_name: arr_cnn})[0]
+                logits = float(cnn_output.squeeze())  # 模型输出的是非椭圆概率
+                prob_non_ellipse = 1 / (1 + np.exp(-logits))
+                adjusted_conf = conf + (0.5 - prob_non_ellipse) * k
                 boxes_info.append({
                     "bbox": [int(x1), int(y1), int(x2), int(y2)],
-                    "confidence": conf
+                    "confidence": conf,
+                    "ellipse_prob": 1 - prob_non_ellipse,
+                    "adjusted_confidence": adjusted_conf
                 })
 
         # use PIL to draw boxes and confidence scores on the image
@@ -115,14 +147,14 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
         pil.save(buf1, format="PNG")
         annotated_b64 = base64.b64encode(buf1.getvalue()).decode()
         # encode original image without boxes
-        buf2 = io.BytesIO()
-        original_pil.save(buf2, format="PNG")
-        original_b64 = base64.b64encode(buf2.getvalue()).decode()
+        # buf2 = io.BytesIO()
+        # original_pil.save(buf2, format="PNG")
+        # original_b64 = base64.b64encode(buf2.getvalue()).decode()
 
         # return the annotated image, original image, and boxes info as a json response
         return func.HttpResponse(
             body=json.dumps({
-                "original_image": original_b64,
+                # "original_image": original_b64,
                 "annotated_image": annotated_b64,
                 "boxes": boxes_info
             }),

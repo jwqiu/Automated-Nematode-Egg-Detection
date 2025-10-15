@@ -296,9 +296,11 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                         {item.boxes.map((b, idx) => {
                                             const [x1, y1, x2, y2] = b.bbox || [];
                                             const confPct = ((b.confidence ?? 0) * 100).toFixed(1);
+                                            const ellipsePct = ((b.ellipse_prob ?? 0) * 100).toFixed(1);
+                                            const adjustedPct = ((b.adjusted_confidence ?? 0) * 100).toFixed(1);
                                             return (
                                                 <li key={idx}>
-                                                    #{idx + 1} ({x1},{y1})–({x2},{y2}) — {confPct}%
+                                                    #{idx + 1} ({x1},{y1})–({x2},{y2}),conf:{confPct}%, ellipse:{ellipsePct}%, <span className="font-semibold">adjusted:{adjustedPct}% </span>
                                                 </li>
                                             );
                                         })}
