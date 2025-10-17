@@ -4,3 +4,4 @@ Pillow
 onnxruntime
 azure-storage-blob
 psycopg2-binary
+opencv-python

@@ -22,7 +22,10 @@ function FolderModePage({ ready }) {
     const [folders, setFolders] = useState([]);
     const [folderImages, setFolderImages] = useState({});
     const [selectedFolder, setSelectedFolder] = useState(null);
-
+    const [detectionSettings, setDetectionSettings] = useState({
+        mode: 'original' // 'original' | 'adjusted'
+    });
+    const [Threshold, setThreshold] = useState(0.5);
 
     return (
         <div className='flex flex-col h-screen '>
@@ -36,6 +39,8 @@ function FolderModePage({ ready }) {
                     selectedFolder={selectedFolder}
                     setSelectedFolder={setSelectedFolder}
                     ready={ready}
+                    detectionSettings={detectionSettings}
+                    Threshold={Threshold}
                 />
                 <div className=' w-full flex '>
                     <FolderImagesList
@@ -44,6 +49,9 @@ function FolderModePage({ ready }) {
                         folderImages={folderImages}
                         setFolderImages={setFolderImages}
                         selectedFolder={selectedFolder}
+                        setDetectionSettings={setDetectionSettings}
+                        detectionSettings={detectionSettings}
+                        Threshold={Threshold}
                     />
                 </div>
 

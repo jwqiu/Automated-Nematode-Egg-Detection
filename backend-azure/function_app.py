@@ -124,28 +124,28 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
         # use PIL to draw boxes and confidence scores on the image
         # a more common practice is to draw boxes on the frontend, the backend only returns the box coordinates and confidence scores
         # could move this part to frontend if needed
-        draw = ImageDraw.Draw(pil)
-        font = ImageFont.load_default()
+        # draw = ImageDraw.Draw(pil)
+        # font = ImageFont.load_default()
         
-        for b in boxes_info:
-            x1, y1, x2, y2 = b["bbox"]
-            # draw a red rectangle around the detected object and put the confidence score above it
-            draw.rectangle([x1, y1, x2, y2], outline="red", width=2)
-            text = f"{b['confidence']*100:.1f}%"
-            x, y = x1, y1 - 12  
+        # for b in boxes_info:
+        #     x1, y1, x2, y2 = b["bbox"]
+        #     # draw a red rectangle around the detected object and put the confidence score above it
+        #     draw.rectangle([x1, y1, x2, y2], outline="red", width=2)
+        #     text = f"{b['confidence']*100:.1f}%"
+        #     x, y = x1, y1 - 12  
 
-            # draw a white outline (shadow) around the red text, to make it more visible on different backgrounds
-            for dx in [-1, 0, 1]:
-                for dy in [-1, 0, 1]:
-                    if dx != 0 or dy != 0:
-                        draw.text((x + dx, y + dy), text, font=font, fill="white")
-            draw.text((x, y), text, font=font, fill="red")
+        #     # draw a white outline (shadow) around the red text, to make it more visible on different backgrounds
+        #     for dx in [-1, 0, 1]:
+        #         for dy in [-1, 0, 1]:
+        #             if dx != 0 or dy != 0:
+        #                 draw.text((x + dx, y + dy), text, font=font, fill="white")
+        #     draw.text((x, y), text, font=font, fill="red")
 
         # convert the annotated image with boxes and the original image back to base64 strings to send back to the frontend
         # encode annotated image with boxes
-        buf1 = io.BytesIO()
-        pil.save(buf1, format="PNG")
-        annotated_b64 = base64.b64encode(buf1.getvalue()).decode()
+        # buf1 = io.BytesIO()
+        # pil.save(buf1, format="PNG")
+        # annotated_b64 = base64.b64encode(buf1.getvalue()).decode()
         # encode original image without boxes
         # buf2 = io.BytesIO()
         # original_pil.save(buf2, format="PNG")
@@ -155,7 +155,7 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             body=json.dumps({
                 # "original_image": original_b64,
-                "annotated_image": annotated_b64,
+                # "annotated_image": annotated_b64,
                 "boxes": boxes_info
             }),
             mimetype="application/json"

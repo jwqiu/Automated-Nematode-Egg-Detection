@@ -8,8 +8,69 @@ import { API_BASE } from '../apiBase';
 const useState = React.useState;
 const useEffect = React.useEffect;
 const useMemo   = React.useMemo;
+const useRef = React.useRef;
 
-function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folders, setFolders }) {
+export function drawBoxes(item, detectionSettings) {
+  if (!item?.boxes?.length) return;
+  const img = item.imgRef;
+  const canvas = document.getElementById(`canvas-${item.filename}`);
+  if (!img || !canvas) return;
+
+  const ctx = canvas.getContext("2d");
+
+  // ✅ 获取原始尺寸与显示尺寸
+  const naturalWidth = img.naturalWidth;   // 原始图像宽
+  const naturalHeight = img.naturalHeight; // 原始图像高
+  const displayWidth = img.clientWidth;    // 当前显示宽
+  const displayHeight = img.clientHeight;  // 当前显示高
+
+  // ✅ 计算缩放比例
+  const scaleX = displayWidth / naturalWidth;
+  const scaleY = displayHeight / naturalHeight;
+
+  canvas.width = displayWidth;
+  canvas.height = displayHeight;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.lineWidth = 2;
+  ctx.font = "12px Arial";
+
+  item.boxes.forEach((b) => {
+    const conf =
+      detectionSettings.mode === "adjusted"
+        ? b.adjusted_confidence
+        : b.confidence;
+    if (conf < 0.5) return;
+
+    // ✅ 坐标按比例缩放
+    const [x1, y1, x2, y2] = b.bbox.map((v, i) =>
+      i % 2 === 0 ? v * scaleX : v * scaleY
+    );
+
+    const text = `${(conf * 100).toFixed(1)}%`;
+
+    // ✅ 红框
+    ctx.strokeStyle = "red";
+    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+    // ✅ 白色阴影文字
+    const x = x1;
+    const y = Math.max(10, y1 - 5); // 防止文字超出边界
+    ctx.fillStyle = "white";
+    [-1, 0, 1].forEach((dx) =>
+      [-1, 0, 1].forEach((dy) => {
+        if (dx || dy) ctx.fillText(text, x + dx, y + dy);
+      })
+    );
+
+    // ✅ 主文字
+    ctx.fillStyle = "red";
+    ctx.fillText(text, x, y);
+  });
+}
+
+
+function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folders, setFolders, setDetectionSettings, detectionSettings,Threshold }) {
 
     const files = useMemo(() => {
         if (!selectedFolder || !folderImages) return [];
@@ -32,17 +93,17 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
         return new Blob([u8], { type: mime });
     }
+
     async function srcToBlob(src) {
         if (!src) throw new Error('No image src');
         // dataURL -> Blob；objectURL/普通 URL -> fetch -> Blob
         return src.startsWith('data:') ? dataURLtoBlob(src) : (await fetch(src)).blob();
     }
 
-
     const isImage = (name) => /\.(png|jpe?g|gif|bmp|webp|tiff?)$/i.test(name);
     const isPdf = (name) => /\.pdf$/i.test(name);
 
-    const title = selectedFolder || 'No folder selected';
+    const title = selectedFolder || '';
     const total = files.length;
     const eggnum = folders?.find(f => f.name === selectedFolder)?.eggnum ?? '-';
 
@@ -54,34 +115,6 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         setEditingKey(key);
         setChoice(Number.isFinite(current) ? current : 0);
     };
-
-    // const confirmAdjust = () => {
-    //     setFolderImages(prev => {
-    //         if (!editingKey) return prev;
-
-    //         // 从 key 里拆出 folder 与 filename
-    //         const [folderName, ...rest] = String(editingKey).split('/');
-    //         const filename = rest.join('/'); // 以防文件名里含 '/'
-
-    //         const arr = Array.isArray(prev?.[folderName]) ? prev[folderName] : [];
-    //         if (!arr.length) return prev;
-
-    //         // 更新该文件
-    //         const newArr = arr.map(it =>
-    //         it.filename === filename ? { ...it, eggfound: choice } : it
-    //         );
-
-    //         const next = { ...prev, [folderName]: newArr };
-
-    //         // 同步更新 folders 的 eggnum
-    //         const total = newArr.reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
-    //         setFolders(fs => fs.map(f => f.name === folderName ? ({ ...f, eggnum: total }) : f));
-
-    //         return next; // 返回对象，而不是数组
-    //     });
-
-    //     setEditingKey(null);
-    // };
     
     const confirmAdjust = async () => {
         if (!editingKey) return;
@@ -133,9 +166,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         }
     };
 
-
     const cancelAdjust = () => setEditingKey(null);
-
 
     // 弹层与模式
     const [sortOpen, setSortOpen] = useState(false);
@@ -181,36 +212,37 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         setSortOpen(false);
     };
 
-
     const isComplete = !!folders?.some(
         f => f.name === selectedFolder && (f.status || '').toLowerCase() === 'completed'
     );
 
+
+
     return (
         <div className='bg-white flex flex-col rounded-lg w-full shadow-lg p-8'>
-            <div className='flex h-[65px] xl:h-[50px] justify-between items-center mb-2'>
-                <div className='flex flex-col  gap-y-2 xl:flex-row xl:items-center xl:justify-between xl:gap-y-0  w-full'>
-                    <h2 className='text-xl font-semibold mb-0'>{title}</h2>
+            <div className='flex   justify-between items-center mb-3'>
+                <div className='flex flex-col  gap-y-3 xl:flex-row xl:items-center xl:justify-between xl:gap-y-0  w-full'>
+                    <h2 className='font-semibold mb-0'>{title}</h2>
                     <div className='flex gap-x-4'>
                         {selectedFolder && (
-                            <div className='text-gray-700 px-4 py-2 bg-gray-100 rounded-lg'><span className='font-bold text-md text-blue-500 me-2'>{total}</span> images Found</div>
+                            <div className='text-gray-700 px-4 py-2 bg-gray-100 shadow rounded-lg'><span className='font-bold text-md text-blue-500 me-2'>{total}</span> images Found</div>
 
                         )}
                     
                         { isComplete && (
                             <div className='flex items-center gap-x-4'>
-                                <div className='text-gray-500  bg-gray-100  px-4 py-2 rounded-lg'>
+                                <div className='text-gray-500 bg-gray-100 shadow  px-4 py-2 rounded-lg'>
                                     <div className='text-gray-700'><span className='font-bold text-md text-blue-500 me-2'>{eggnum}</span> Eggs Found </div>
                                 </div>
                                 <button
                                 type="button"
                                 onClick={handleOpenSort}
-                                className="flex items-center gap-x-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                className="flex items-center gap-x-2 px-4 py-2 bg-gray-100 shadow rounded-lg hover:bg-gray-200"
                                 >
-                                <div>Sort</div>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                </svg>
+                                <div>Setting</div>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
                                 </button>
                             </div>
                         )}
@@ -220,37 +252,81 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
 
             </div>
             {sortOpen &&  (
-                <div className="fixed inset-0 z-50" onClick={() => setSortOpen(false)}>
-                    <div
-                    className="fixed bg-white shadow-lg rounded-md border p-6 w-64 -translate-x-full"
-                    style={{ left: sortPos.x, top: sortPos.y }}
-                    onClick={(e) => e.stopPropagation()}
-                    >
-                    <div className="text-md font-medium mb-2">Sort by:</div>
-                    <label className="flex items-center gap-2 py-1 cursor-pointer">
-                        <input
-                        type="radio"
-                        name="sortmode"
-                        checked={sortMode === 'lowest'}
-                        onChange={() => applySort('lowest')}
-                        />
-                        <span>Display lowest-confidence box first</span>
-                    </label>
-                    <label className="flex items-center gap-2 py-1 cursor-pointer">
-                        <input
-                        type="radio"
-                        name="sortmode"
-                        checked={sortMode === 'noeggs'}
-                        onChange={() => applySort('noeggs')}
-                        />
-                        <span>Display no-eggs pictures first</span>
-                    </label>
+
+                <div className="relative inline-block">
+                    <div className="fixed inset-0 z-40" onClick={() => setSortOpen(false)}></div>  {/* ✅ 新增遮罩层 */}
+                    <div className="absolute top-full mt-2 right-0 z-50 bg-white shadow-lg rounded-lg border p-8 w-96 text-gray-700 text-sm" onClick={(e) => e.stopPropagation()} >
+                        <div className='mb-8'>
+                            <div className="text-md font-semibold mb-3">Sort by:</div>
+
+                            <button
+                            onClick={() => applySort('lowest')}
+                            className={`w-full bg-gray-100 group inline-flex justify-start mb-2 items-center gap-2 px-4 py-2 rounded-lg 
+                                hover:bg-blue-100 hover: transition 
+                                ${sortMode === 'lowest' ? '  bg-blue-100 ' : ''}`}
+                            >
+                    
+                            Display lowest-confidence box first
+                            {sortMode === 'lowest' && <span className="ml-auto text-blue-500">✓</span>}
+                            </button>
+
+                            <button
+                            onClick={() => applySort('noeggs')}
+                            className={`w-full bg-gray-100 group inline-flex justify-start items-center gap-2 px-4 py-2 rounded-lg 
+                                hover:bg-blue-100 hover: transition 
+                                ${sortMode === 'noeggs' ? '  bg-blue-100 ' : ''}`}
+                            >
+                    
+                            Display no-eggs pictures first
+                            {sortMode === 'noeggs' && <span className="ml-auto text-blue-500">✓</span>}
+                            </button>
+                        </div>
+                        <div>
+                            <div className="text-md font-semibold  mb-3">How to Identify an Egg:</div>
+                            <button
+                            onClick={() => {
+                                setDetectionSettings({ mode: 'original' });
+                                setSortOpen(false);
+                                files.forEach(item => drawBoxes(item, { mode: 'original' })); // ✅ 立即重绘
+                            }}
+                            className={`w-full bg-gray-100 group inline-flex justify-start mb-2 items-center gap-2 px-4 py-2 rounded-lg 
+                                hover:bg-blue-100 hover: transition 
+                                ${detectionSettings.mode === 'original' ? '  bg-blue-100 ' : ''}`}
+                            >
+
+                            Original Confidence &gt; {Threshold}
+                            {detectionSettings.mode === 'original' && <span className="ml-auto text-blue-500">✓</span>}
+                            </button>
+
+                            <button
+                            onClick={() => {
+                                setDetectionSettings({ mode: 'adjusted' });
+                                setSortOpen(false);
+                                files.forEach(item => drawBoxes(item, { mode: 'adjusted' })); // ✅ 立即重绘
+                            }}
+                            className={`w-full bg-gray-100 group inline-flex justify-start items-center gap-2 px-4 py-2 rounded-lg 
+                                hover:bg-blue-100 hover: transition 
+                                ${detectionSettings.mode === 'adjusted' ? '  bg-blue-100 ' : ''}`}
+                            >
+
+                            Adjusted Confidence &gt; {Threshold}
+                            {detectionSettings.mode === 'adjusted' && <span className="ml-auto text-blue-500">✓</span>}
+                            </button>
+                        </div>
+                        
+                        
                     </div>
+
                 </div>
+
             )}
 
         {total === 0 ? (
-            <div className=" text-gray-400 italic">No images. Please pick a folder with images.</div>
+            <div className="flex h-full justify-center items-center text-gray-400 mb-4 italic">
+                <div>
+                    💡 No folder selected or no images in this folder.
+                </div>
+            </div>
         ) : (
             <div className="overflow-y-auto mt-3 overscroll-y-contain grid grid-cols-1 xl:grid-cols-2 gap-4">
             {files.map((item) => {
@@ -258,14 +334,30 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                 const key = `${item.folder}/${item.filename}`;
 
                 return (
-                <div key={key} className="border relative rounded-lg ">
+                <div key={key} className="border relative rounded-lg " >
                     {isImage(item.filename) ? (
-                    <img
-                        src={url}
-                        alt={item.filename}
-                        className="w-full h-auto rounded"
-                        loading="lazy"
-                    />
+    
+                    <div style={{ position: "relative", display: "inline-block" }}>
+                        <img
+                            ref={(el) => (item.imgRef = el)} // ✅ 保存图片引用
+                            src={url}
+                            alt={item.filename}
+                            className="w-full h-auto rounded"
+                            loading="lazy"
+                            onLoad={() => drawBoxes(item, detectionSettings)} // ✅ 图片加载后画框
+                        />
+                        <canvas
+                            id={`canvas-${item.filename}`}
+                            style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            pointerEvents: "none",
+                            width: "100%",
+                            height: "100%",
+                            }}
+                        />
+                    </div>
                     ) : isPdf(item.filename) ? (
                     <a
                         href={url}
@@ -290,17 +382,29 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                 
                         <div className="px-2 pb-1 text-xs text-gray-600">
                             {item.detected ? (
-                            (item.boxes?.length ? (
+                                (item.boxes?.some(b => {
+                                    const conf = detectionSettings.mode === 'adjusted'
+                                    ? b.adjusted_confidence
+                                    : b.confidence;
+                                    return conf > Threshold;
+                                }) ? (
                                 <div className='flex flex-col items-start'>
                                     <ul className="space-y-1">
-                                        {item.boxes.map((b, idx) => {
+                                        {item.boxes
+                                            ?.filter(b => {
+                                                const conf = detectionSettings.mode === 'adjusted'
+                                                ? b.adjusted_confidence
+                                                : b.confidence;
+                                                return conf > Threshold; // ✅ 阈值判断
+                                            })
+                                            .map((b, idx) => {
                                             const [x1, y1, x2, y2] = b.bbox || [];
                                             const confPct = ((b.confidence ?? 0) * 100).toFixed(1);
                                             const ellipsePct = ((b.ellipse_prob ?? 0) * 100).toFixed(1);
                                             const adjustedPct = ((b.adjusted_confidence ?? 0) * 100).toFixed(1);
                                             return (
                                                 <li key={idx}>
-                                                    #{idx + 1} ({x1},{y1})–({x2},{y2}),conf:{confPct}%, ellipse:{ellipsePct}%, <span className="font-semibold">adjusted:{adjustedPct}% </span>
+                                                    #{idx + 1} ({x1},{y1})–({x2},{y2}),conf:{confPct}%, ellipse:{ellipsePct}%, <span className="">adjusted_conf:{adjustedPct}% </span>
                                                 </li>
                                             );
                                         })}

@@ -57,10 +57,12 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
 
       const resJson = await res.json();
 
+      const annotatedUrl = await drawBoxesOnImage(selectedImage.file, resJson.boxes);
+
       setSelectedImage({
         ...selectedImage,
         // originalUrl: "data:image/png;base64," + resJson.original_image,
-        annotatedUrl: "data:image/png;base64," + resJson.annotated_image,
+        annotatedUrl,
         detected: true,
         boxes: resJson.boxes,
       });
@@ -68,16 +70,11 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
       setImages((prevImages) =>
         prevImages.map((img) =>
           img.uid === selectedImage.uid
-            ? {
-                ...img,
-                // originalUrl: "data:image/png;base64," + resJson.original_image,
-                annotatedUrl: "data:image/png;base64," + resJson.annotated_image,
-                detected: true,
-                boxes: resJson.boxes,
-              }
+            ? { ...img, detected: true, boxes: resJson.boxes, annotatedUrl }
             : img
         )
       );
+      
     } catch (err) {
       console.error(err);
       setError(err.message || "发生错误");
@@ -85,6 +82,56 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
       setLoading(false);
     }
   };
+
+  async function drawBoxesOnImage(imageFile, boxes) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(imageFile);
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        ctx.lineWidth = 2;
+        ctx.font = "12px Arial";
+
+        boxes.forEach((b) => {
+          const [x1, y1, x2, y2] = b.bbox;
+          const confText = `${(b.confidence * 100).toFixed(1)}%`;
+
+          // 红色矩形
+          ctx.strokeStyle = "red";
+          ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+          // 白色阴影文字
+          const textX = x1;
+          const textY = y1 - 5;
+          ctx.fillStyle = "white";
+          [-1, 0, 1].forEach((dx) =>
+            [-1, 0, 1].forEach((dy) => {
+              if (dx || dy) ctx.fillText(confText, textX + dx, textY + dy);
+            })
+          );
+
+          // 红色主文字
+          ctx.fillStyle = "red";
+          ctx.fillText(confText, textX, textY);
+        });
+
+        // 返回带框的 base64 图片
+        resolve(canvas.toDataURL("image/png"));
+      };
+    });
+  }
 
 
   let statusMessage = null;
@@ -124,16 +171,16 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
           <p className="text-lg text-gray-500">Detection Result:</p>
         </div>
         <div className='flex items-center gap-2'>
-          <div className="hover:bg-gray-200 bg-gray-100 rounded-lg border p-2  flex items-center gap-1" onClick={() => setShowSettings(true)}>
+          <div className="hover:bg-gray-200 border rounded-lg  px-3 py-2  flex items-center gap-2" onClick={() => setShowSettings(true)}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5 text-gray-400 hover:text-gray-500">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
             </svg>
-            <p className="text-gray-400 text-sm">Setting</p>
+            <p className="text-gray-400 ">Setting</p>
           </div>
           <button
             onClick={handleDetect}
             disabled={!selectedImage || loading || !ready}
-            className={`rounded-xl px-3 py-2  ${
+            className={`rounded-lg px-3 py-2  ${
               !selectedImage || loading || !ready
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 : 'bg-blue-500 text-white hover:bg-blue-600'

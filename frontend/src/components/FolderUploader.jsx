@@ -11,8 +11,9 @@ import { API_BASE } from '../apiBase';
 import FolderList from './FolderList';
 // @ts-ignore
 import { resizeAndPadImage, convertTifToPng } from './ImageUploader';
+import { drawBoxes } from "./FolderImagesList";
 
-function FolderUploader({ folders, setFolders, folderImages, setFolderImages, selectedFolder, setSelectedFolder, ready }) {
+function FolderUploader({ folders, setFolders, folderImages, setFolderImages, selectedFolder, setSelectedFolder, ready, detectionSettings,Threshold }) {
 
     const inputRef = useRef(null);
 
@@ -173,6 +174,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         return res.json();
     };
 
+    
     // 开始检测：若有 selectedFolder 则只跑该文件夹，否则跑全部
     const handleDetection = async () => {
 
@@ -195,15 +197,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                 setFolders(prev =>
                     prev.map(f => f.name === folderName ? { ...f, status: 'in progress' } : f)
                 );
-                // ↓ 以下现有的 tasks/for 循环与更新逻辑，整体放到这个 for 块里
-
-                // const tasks = (folderImages || [])
-                //     .map((item, idx) => ({ item, idx }))
-                //     .filter(({ item }) =>
-                //         item.folder === folderName &&
-                //         isImageName(item.filename) &&
-                //         !item.detected
-                //     );
+  
 
                 const tasks = (folderImages?.[folderName] || [])
                     .map((item, idx) => ({ item, idx }))
@@ -223,23 +217,23 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
 
                         const updated = {
                             ...cur,
-                            annotated_image: json.annotated_image ? `data:image/png;base64,${json.annotated_image}` : cur.annotated_image,
+                            // annotated_image: json.annotated_image ? `data:image/png;base64,${json.annotated_image}` : cur.annotated_image,
                             detected: true,
                             boxes: json.boxes || [],
                             eggfound: (json.boxes?.length || 0),
                         };
+
+                        // ✅ 立即在前端画框
+                        setTimeout(() => {
+                            drawBoxes(updated, detectionSettings, Threshold);
+                        }, 0);
 
                         const newArr = arr.map((it, i) => (i === idx ? updated : it));
                         return { ...prev, [folderName]: newArr };
                     });
 
                     } catch (e) {
-                    // 失败也标记已处理，避免卡住
-                        // setFolderImages(prev => {
-                        //     const next = [...prev];
-                        //     next[idx] = { ...next[idx], detected: true, boxes: next[idx].boxes || [], eggfound: next[idx].eggfound ?? 0 };
-                        //     return next;
-                        // });
+  
                         setFolderImages(prev => {
                             const arr = Array.isArray(prev[folderName]) ? prev[folderName] : [];
                             const newArr = arr.map((it, i) =>
@@ -256,7 +250,16 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                 setFolderImages(prev => {
                     const next = { ...prev }; // ✅ 对象浅拷贝
                     const arr = Array.isArray(next[folderName]) ? next[folderName] : [];
-                    const eggCount = arr.reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
+
+                    const eggCount = arr.reduce((sum, it) => {
+                        const validBoxes = (it.boxes || []).filter(b => {
+                            const conf = detectionSettings.mode === 'adjusted' 
+                            ? b.adjusted_confidence 
+                            : b.confidence;
+                            return conf > Threshold;
+                        });
+                        return sum + validBoxes.length;
+                    }, 0);
 
                     setFolders(prevF =>
                         prevF.map(f =>
@@ -274,6 +277,24 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         }
 
     };
+
+    useEffect(() => {
+        setFolders(prevFolders => 
+            prevFolders.map(f => {
+                const arr = folderImages?.[f.name] || [];
+                const eggCount = arr.reduce((sum, it) => {
+                    const validBoxes = (it.boxes || []).filter(b => {
+                    const conf = detectionSettings.mode === 'adjusted'
+                        ? b.adjusted_confidence
+                        : b.confidence;
+                    return conf > 0.4;
+                    });
+                    return sum + validBoxes.length;
+                }, 0);
+                return { ...f, eggnum: eggCount };
+            })
+        );
+    }, [detectionSettings.mode, folderImages]);
 
     const statuses = (folders || []).map(f => (f.status || 'not started').toLowerCase());
     const canStart = (Array.isArray(folders) && folders.length > 0)
