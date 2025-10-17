@@ -5,14 +5,18 @@ import React from 'react';
 const useState = React.useState;
 const useEffect = React.useEffect;
 const useRef = React.useRef;
+import { drawBoxes } from "./FolderImagesList";
 
-function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImages, selectedFolder, setSelectedFolder }) {
-    
+
+function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImages, selectedFolder, setSelectedFolder, detectionSettings, Threshold }) {
+
     const handleFolderSelect = (folder) => {
         setSelectedFolder(folder);
 
     };
-    
+
+
+
     if (!folders.length) {
         return <p className="text-gray-400 bg-gray-100 p-4 mt-2 rounded-lg italic">Please upload the folders with images in them</p>;
     }

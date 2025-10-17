@@ -13,7 +13,7 @@ import FolderList from './FolderList';
 import { resizeAndPadImage, convertTifToPng } from './ImageUploader';
 import { drawBoxes } from "./FolderImagesList";
 
-function FolderUploader({ folders, setFolders, folderImages, setFolderImages, selectedFolder, setSelectedFolder, ready, detectionSettings,Threshold }) {
+function FolderUploader({ folders, setFolders, folderImages, setFolderImages, selectedFolder, setSelectedFolder, ready, detectionSettings, Threshold }) {
 
     const inputRef = useRef(null);
 
@@ -120,7 +120,6 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         e.target.value = '';
     };
 
-
     // 新增：File/Blob -> HTMLImageElement
     const fileToImage = (fileOrBlob) => new Promise((resolve, reject) => {
         const url = URL.createObjectURL(fileOrBlob);
@@ -142,7 +141,6 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         const url = URL.createObjectURL(blob); // 供后续直接上传/转base64
         return { url, filename: outName };
     }
-
 
     // 把 objectURL 转成 base64（去掉 data:*;base64, 前缀）
     const objectUrlToBase64 = async (objectUrl) => {
@@ -198,7 +196,6 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                     prev.map(f => f.name === folderName ? { ...f, status: 'in progress' } : f)
                 );
   
-
                 const tasks = (folderImages?.[folderName] || [])
                     .map((item, idx) => ({ item, idx }))
                     .filter(({ item }) => isImageName(item.filename) && !item.detected);
@@ -220,7 +217,13 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                             // annotated_image: json.annotated_image ? `data:image/png;base64,${json.annotated_image}` : cur.annotated_image,
                             detected: true,
                             boxes: json.boxes || [],
-                            eggfound: (json.boxes?.length || 0),
+                            // eggfound: (json.boxes?.length || 0),
+                            eggfound: (json.boxes || []).filter(b => {
+                                const conf = detectionSettings.mode === 'adjusted'
+                                    ? b.adjusted_confidence
+                                    : b.confidence;
+                                return conf > Threshold;
+                            }).length,
                         };
 
                         // ✅ 立即在前端画框
@@ -279,22 +282,70 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
     };
 
     useEffect(() => {
-        setFolders(prevFolders => 
+        // === 1️⃣ 更新 folderImages ===
+        setFolderImages(prev => {
+            const next = {};
+
+            // 遍历每个文件夹
+            for (const folderName in prev) {
+            const arr = prev[folderName];
+            if (!Array.isArray(arr)) continue;
+
+            // 重新计算每张图片的 eggfound
+            next[folderName] = arr.map(it => {
+                const validBoxes = (it.boxes || []).filter(b => {
+                const conf = detectionSettings.mode === 'adjusted'
+                    ? b.adjusted_confidence
+                    : b.confidence;
+                return conf > Threshold;
+                });
+                // 返回新的对象，重置 eggfound
+                return { ...it, eggfound: validBoxes.length };
+            });
+            }
+
+            return next;
+        });
+
+        // === 2️⃣ 更新 folders ===
+        setFolders(prevFolders =>
             prevFolders.map(f => {
-                const arr = folderImages?.[f.name] || [];
-                const eggCount = arr.reduce((sum, it) => {
-                    const validBoxes = (it.boxes || []).filter(b => {
-                    const conf = detectionSettings.mode === 'adjusted'
-                        ? b.adjusted_confidence
-                        : b.confidence;
-                    return conf > 0.4;
-                    });
-                    return sum + validBoxes.length;
-                }, 0);
-                return { ...f, eggnum: eggCount };
+            const arr = folderImages?.[f.name] || [];
+            const eggCount = arr.reduce((sum, it) => {
+                const validBoxes = (it.boxes || []).filter(b => {
+                const conf = detectionSettings.mode === 'adjusted'
+                    ? b.adjusted_confidence
+                    : b.confidence;
+                return conf > Threshold;
+                });
+                return sum + validBoxes.length;
+            }, 0);
+            return { ...f, eggnum: eggCount };
             })
         );
-    }, [detectionSettings.mode, folderImages]);
+    }, [detectionSettings.mode]);
+
+    // useEffect(() => {
+    //     setFolders(prevFolders => 
+    //         prevFolders.map(f => {
+    //         const arr = folderImages?.[f.name] || [];
+    //         const eggCount = arr.reduce((sum, it) => {
+    //             // 如果 eggfound 是人工设定的数字，则跳过自动计算
+    //             if (typeof it.eggfound === 'number') return sum + it.eggfound;
+
+    //             const validBoxes = (it.boxes || []).filter(b => {
+    //             const conf = detectionSettings.mode === 'adjusted'
+    //                 ? b.adjusted_confidence
+    //                 : b.confidence;
+    //             return conf > Threshold;
+    //             });
+    //             return sum + validBoxes.length;
+    //         }, 0);
+    //         return { ...f, eggnum: eggCount };
+    //         })
+    //     );
+    // }, [detectionSettings.mode, folderImages]);
+
 
     const statuses = (folders || []).map(f => (f.status || 'not started').toLowerCase());
     const canStart = (Array.isArray(folders) && folders.length > 0)
@@ -336,6 +387,8 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                     setFolderImages={setFolderImages}
                     selectedFolder={selectedFolder}
                     setSelectedFolder={setSelectedFolder}
+                    detectionSettings={detectionSettings}
+                    Threshold={Threshold}
   
                 />
             </div>

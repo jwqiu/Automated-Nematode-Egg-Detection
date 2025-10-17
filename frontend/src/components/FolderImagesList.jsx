@@ -10,7 +10,7 @@ const useEffect = React.useEffect;
 const useMemo   = React.useMemo;
 const useRef = React.useRef;
 
-export function drawBoxes(item, detectionSettings) {
+export function drawBoxes(item, detectionSettings,Threshold) {
   if (!item?.boxes?.length) return;
   const img = item.imgRef;
   const canvas = document.getElementById(`canvas-${item.filename}`);
@@ -40,7 +40,7 @@ export function drawBoxes(item, detectionSettings) {
       detectionSettings.mode === "adjusted"
         ? b.adjusted_confidence
         : b.confidence;
-    if (conf < 0.5) return;
+    if (Number(conf) < Number(Threshold)) return;
 
     // ✅ 坐标按比例缩放
     const [x1, y1, x2, y2] = b.bbox.map((v, i) =>
@@ -69,7 +69,6 @@ export function drawBoxes(item, detectionSettings) {
   });
 }
 
-
 function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folders, setFolders, setDetectionSettings, detectionSettings,Threshold }) {
 
     const files = useMemo(() => {
@@ -84,6 +83,25 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         const arr = folderImages[selectedFolder];
         return Array.isArray(arr) ? arr : [];
     }, [selectedFolder, folderImages]);
+
+    // useEffect(() => {
+    //     if (!selectedFolder || !Array.isArray(files) || !files.length) return;
+
+    //     // 逐张图片执行绘制
+    //     files.forEach(item => {
+    //         const canvas = document.getElementById(`canvas-${item.filename}`);
+    //         if (!canvas) return;
+            
+    //         const ctx = canvas.getContext("2d");
+    //         // ⚠️ 清空旧框，防止残影
+    //         canvas.width = canvas.clientWidth;
+    //         canvas.height = canvas.clientHeight;
+    //         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    //         // ✅ 调用 drawBoxes 绘制（带当前 detectionSettings / 阈值）
+    //         drawBoxes(item, detectionSettings, Threshold);
+    //     });
+    // }, [selectedFolder]);
 
     function dataURLtoBlob(dataUrl) {
         const [meta, b64] = String(dataUrl).split(',');
@@ -128,17 +146,34 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         const beforeItem = beforeArr.find(it => it.filename === filename);
 
         // 先更新本地状态（egg 数/汇总）
+        // setFolderImages(prev => {
+        //     const arr = Array.isArray(prev?.[folderName]) ? prev[folderName] : [];
+        //     if (!arr.length) return prev;
+
+        //     const newArr = arr.map(it =>
+        //     it.filename === filename ? { ...it, eggfound: choice } : it
+        //     );
+        //     const next = { ...prev, [folderName]: newArr };
+
+        //     const total = newArr.reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
+        //     setFolders(fs => fs.map(f => f.name === folderName ? ({ ...f, eggnum: total }) : f));
+
+        //     return next;
+        // });
         setFolderImages(prev => {
             const arr = Array.isArray(prev?.[folderName]) ? prev[folderName] : [];
             if (!arr.length) return prev;
 
             const newArr = arr.map(it =>
-            it.filename === filename ? { ...it, eggfound: choice } : it
+                it.filename === filename ? { ...it, eggfound: choice } : it
             );
             const next = { ...prev, [folderName]: newArr };
 
+            // ✅ 这里直接更新 folders，而不是等 folderImages 异步更新完
             const total = newArr.reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
-            setFolders(fs => fs.map(f => f.name === folderName ? ({ ...f, eggnum: total }) : f));
+            setFolders(fs => fs.map(f =>
+                f.name === folderName ? ({ ...f, eggnum: total }) : f
+            ));
 
             return next;
         });
@@ -146,24 +181,24 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         setEditingKey(null);
 
         // 再上传（最简单：annotated 有就传 annotated，没就传 original）
-        try {
-            if (beforeItem) {
-            const src = beforeItem.annotated_image || beforeItem.original_image;
-            const blob = await srcToBlob(src);
-            // 防重名，带上文件夹名
-            const upName = `${folderName}__${filename}`;
+        // try {
+        //     if (beforeItem) {
+        //     const src = beforeItem.original_image || beforeItem.annotated_image;
+        //     const blob = await srcToBlob(src);
+        //     // 防重名，带上文件夹名
+        //     const upName = `${folderName}__${filename}`;
 
-            const res = await fetch(
-                `${API_BASE}/upload/image?filename=${encodeURIComponent(upName)}`,
-                { method: 'POST', body: blob } // ✅ 直接传二进制，不加 headers
-            );
-            if (!res.ok) throw new Error(await res.text());
-            const data = await res.json(); // { ok, filename, url }
-            console.log('✅ Uploaded:', data.url);
-            }
-        } catch (err) {
-            console.error('❌ Upload failed:', err);
-        }
+        //     const res = await fetch(
+        //         `${API_BASE}/upload/image?filename=${encodeURIComponent(upName)}`,
+        //         { method: 'POST', body: blob } // ✅ 直接传二进制，不加 headers
+        //     );
+        //     if (!res.ok) throw new Error(await res.text());
+        //     const data = await res.json(); // { ok, filename, url }
+        //     console.log('✅ Uploaded:', data.url);
+        //     }
+        // } catch (err) {
+        //     console.error('❌ Upload failed:', err);
+        // }
     };
 
     const cancelAdjust = () => setEditingKey(null);
@@ -287,7 +322,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                             onClick={() => {
                                 setDetectionSettings({ mode: 'original' });
                                 setSortOpen(false);
-                                files.forEach(item => drawBoxes(item, { mode: 'original' })); // ✅ 立即重绘
+                                files.forEach(item => drawBoxes(item, { mode: 'original' }, Threshold)); // ✅ 立即重绘
                             }}
                             className={`w-full bg-gray-100 group inline-flex justify-start mb-2 items-center gap-2 px-4 py-2 rounded-lg 
                                 hover:bg-blue-100 hover: transition 
@@ -302,7 +337,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                             onClick={() => {
                                 setDetectionSettings({ mode: 'adjusted' });
                                 setSortOpen(false);
-                                files.forEach(item => drawBoxes(item, { mode: 'adjusted' })); // ✅ 立即重绘
+                                files.forEach(item => drawBoxes(item, { mode: 'adjusted' }, Threshold)); // ✅ 立即重绘
                             }}
                             className={`w-full bg-gray-100 group inline-flex justify-start items-center gap-2 px-4 py-2 rounded-lg 
                                 hover:bg-blue-100 hover: transition 
@@ -344,7 +379,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                             alt={item.filename}
                             className="w-full h-auto rounded"
                             loading="lazy"
-                            onLoad={() => drawBoxes(item, detectionSettings)} // ✅ 图片加载后画框
+                            onLoad={() => drawBoxes(item, detectionSettings, Threshold)} // ✅ 图片加载后画框
                         />
                         <canvas
                             id={`canvas-${item.filename}`}
