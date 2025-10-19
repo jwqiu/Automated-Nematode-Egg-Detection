@@ -2,8 +2,11 @@ import azure.functions as func
 import os
 from azure.storage.blob import BlobServiceClient
 from datetime import datetime
+from function_app import app  
 
-from function_app import app  # 导入 app 对象
+# -------------------------------------------------------------
+# the API endpoint to upload images to Azure Blob Storage
+# -------------------------------------------------------------
 
 conn_str = os.environ["AzureWebJobsStorage"]
 blob_service_client = BlobServiceClient.from_connection_string(conn_str)

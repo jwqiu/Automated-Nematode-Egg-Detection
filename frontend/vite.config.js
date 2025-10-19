@@ -1,5 +1,7 @@
 // frontend/vite.config.js
+// @ts-ignore
 import { defineConfig } from 'vite'
+// @ts-ignore
 import react from '@vitejs/plugin-react'
 
 // 桌面构建用相对路径(file:// 可加载)，网页仍用你的子路径

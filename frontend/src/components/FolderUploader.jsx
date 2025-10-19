@@ -25,14 +25,14 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
     const [uplProgress, setUplProgress] = useState(0);
     const [uplTotal, setUplTotal]       = useState(0);
 
-    // 选择文件夹：按顶层目录分组图片，并更新 folders 与 folderImages
+    // handle folder upload
     const handlePick = async (e) => {
         const picked = Array.from(e.target.files || []);
         if (!picked.length) return;
 
         const isImg = (name) => /\.(png|jpe?g|gif|bmp|pdf|webp|tiff?)$/i.test(name);
 
-        // 先做重名校验（忽略大小写）
+        // check for duplicate folder
         const existing = new Set((folders || []).map(f => f.name.toLowerCase()));
         const pickedTopNames = new Set();
 
@@ -45,21 +45,24 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
 
         const dupes = [...pickedTopNames].filter(name => existing.has(name));
         if (dupes.length) {
-            alert('已存在同名文件夹，禁止重复上传：' + dupes.join(', '));
+            alert('Duplicate folders found: ' + dupes.join(', '));
             e.target.value = '';
             return;
         }
 
+        // filter only image files
         const toProcess = picked.filter(f => isImg(f.name));
         if (toProcess.length === 0) {
             e.target.value = '';
             return;
         }
+
+        // set up uploading state and progress
         setUploading(true);
         setUplProgress(0);
         setUplTotal(toProcess.length);
 
-        // 基于现有状态进行合并（对象模式）
+        // group images by folder
         const nextFolderImages = Array.isArray(folderImages)
             ? folderImages.reduce((acc, img) => {
                 (acc[img.folder] ||= []).push(img);
@@ -73,14 +76,16 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         {
             for (const file of picked) {
                 if (!isImageName(file.name)) continue;
-
+                
+                // Get the top-level folder name from the file's relative path
                 const rel = file.webkitRelativePath || file.name;  // e.g. "FolderA/sub/1.png"
                 const top = (rel.split('/')[0] || 'Unknown').trim();
 
-                // 🔧 新增：上传阶段就统一处理成 608×608 PNG
+                // preprocess all images to 608x608 PNG
                 const { url, filename } = await preprocessTo608(file);
                 folderNameSet.add(top);
 
+                // create image item and store image info, add to folderImages
                 const item = {
                     folder: top,
                     filename,
@@ -94,12 +99,13 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
             }
 
         } finally {
+            // finalize uploading state
             setUploading(false);
         }
-
+        // add new images to state
         setFolderImages(nextFolderImages);
 
-        // 旧状态索引：只按对象读取（不再兼容字符串）
+        // update folders list
         const statusByName = new Map(
         (folders || []).map(f => [f.name, f.status || 'not started'])
         );
@@ -112,15 +118,14 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
            eggnum: eggByName.get(name) ?? '-'
         }));
         
-
+        // update folders state
         setFolders(nextFolders);
         if (!selectedFolder && nextFolders.length) setSelectedFolder(nextFolders[0].name);
 
-        // 允许用户再次选择同一目录（清空 value）
         e.target.value = '';
     };
 
-    // 新增：File/Blob -> HTMLImageElement
+    // helper: file/blob to Image object
     const fileToImage = (fileOrBlob) => new Promise((resolve, reject) => {
         const url = URL.createObjectURL(fileOrBlob);
         const img = new Image();
@@ -129,7 +134,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         img.src = url;
     });
 
-    // 新增：预处理（TIF->PNG + 按你已有的 resizeAndPadImage 变 608×608 PNG）
+    // preprocess image to 608x608 PNG, return { url, filename }
     async function preprocessTo608(file) {
         const maybePng = /\.(tif|tiff)$/i.test(file.name) ? await convertTifToPng(file) : file;
         const img = await fileToImage(maybePng);
@@ -142,7 +147,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         return { url, filename: outName };
     }
 
-    // 把 objectURL 转成 base64（去掉 data:*;base64, 前缀）
+    // Convert object URL to Base64 for easier handling on the backend
     const objectUrlToBase64 = async (objectUrl) => {
         const res = await fetch(objectUrl);
         const blob = await res.blob();
@@ -158,10 +163,10 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         });
     };
 
-    // 简单的图片后缀判断（跳过 pdf 等）
+    // simple image name checker
     const isImageName = (name) => /\.(png|jpe?g|gif|bmp|webp|tiff?)$/i.test(name);
 
-    // 调后端
+    // call backend
     const callPredict = async (image_base64, API_BASE) => {
         const res = await fetch(`${API_BASE}/predict`, {
             method: 'POST',
@@ -172,8 +177,8 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         return res.json();
     };
 
-    
-    // 开始检测：若有 selectedFolder 则只跑该文件夹，否则跑全部
+
+    // handle detection
     const handleDetection = async () => {
 
         const queue = (folders || [])
@@ -181,7 +186,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
             .map(f => f.name);
         if (!queue.length) return;
 
-        // === 新增：预计算总任务数并开启浮层 ===
+        // pre-calculate total tasks and show overlay
         const totalTasks = queue.reduce((sum, folderName) => {
             const arr = Array.isArray(folderImages?.[folderName]) ? folderImages[folderName] : [];
             return sum + arr.filter(it => isImageName(it.filename) && !it.detected).length;
@@ -190,23 +195,32 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         setLoading(true);
         setProgress(0);
         setTotal(totalTasks);
+
+        // process each folder one by one
         try {
             for (const folderName of queue) {
+                // set folder status to in progress
                 setFolders(prev =>
                     prev.map(f => f.name === folderName ? { ...f, status: 'in progress' } : f)
                 );
-  
+                
+                // create task list for this folder
                 const tasks = (folderImages?.[folderName] || [])
                     .map((item, idx) => ({ item, idx }))
                     .filter(({ item }) => isImageName(item.filename) && !item.detected);
                 
                 // let eggCount = 0;
 
+                // process each image sequentially to avoid exceeding processing time limits
                 for (const { item, idx } of tasks) {
                     try {
+
+                    // convert the images to base64 before sending to backend
                     const b64 = await objectUrlToBase64(item.original_image);
+                    // call backend API and store result to json
                     const json = await callPredict(b64, API_BASE);
                     
+                    // update folderImages with detection result
                     setFolderImages(prev => {
                         const arr = Array.isArray(prev[folderName]) ? prev[folderName] : [];
                         const cur = arr[idx];
@@ -218,6 +232,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                             detected: true,
                             boxes: json.boxes || [],
                             // eggfound: (json.boxes?.length || 0),
+                            // the count of boxes depending on which confidence mode user selected
                             eggfound: (json.boxes || []).filter(b => {
                                 const conf = detectionSettings.mode === 'adjusted'
                                     ? b.adjusted_confidence
@@ -226,7 +241,8 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                             }).length,
                         };
 
-                        // ✅ 立即在前端画框
+                        // after receiving boxes, draw them on the image
+                        // drawBoxes is a function imported from FolderImagesList.jsx
                         setTimeout(() => {
                             drawBoxes(updated, detectionSettings, Threshold);
                         }, 0);
@@ -245,11 +261,12 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                             return { ...prev, [folderName]: newArr };
                         });
                     } finally {
-                        // === 新增：每处理完一张，推进进度 ===
+                        // update progress bar
                         setProgress(prev => prev + 1);
                     }
                 }
 
+                // after completed detection for all images in this folder, count the total eggs found in this folder and update folder status
                 setFolderImages(prev => {
                     const next = { ...prev }; // ✅ 对象浅拷贝
                     const arr = Array.isArray(next[folderName]) ? next[folderName] : [];
@@ -275,18 +292,18 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                 });
             }
         } finally {
-            // === 新增：全部结束后关闭浮层 ===
+            // close loading overlay
             setLoading(false);
         }
 
     };
 
+    // whenever detectionsetting changes, recalculate eggfound for all images and folders
     useEffect(() => {
-        // === 1️⃣ 更新 folderImages ===
         setFolderImages(prev => {
             const next = {};
 
-            // 遍历每个文件夹
+            // recalculate eggfound for each image
             for (const folderName in prev) {
             const arr = prev[folderName];
             if (!Array.isArray(arr)) continue;
@@ -307,7 +324,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
             return next;
         });
 
-        // === 2️⃣ 更新 folders ===
+        // recalculate eggnum for each folder
         setFolders(prevFolders =>
             prevFolders.map(f => {
             const arr = folderImages?.[f.name] || [];
@@ -325,28 +342,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         );
     }, [detectionSettings.mode]);
 
-    // useEffect(() => {
-    //     setFolders(prevFolders => 
-    //         prevFolders.map(f => {
-    //         const arr = folderImages?.[f.name] || [];
-    //         const eggCount = arr.reduce((sum, it) => {
-    //             // 如果 eggfound 是人工设定的数字，则跳过自动计算
-    //             if (typeof it.eggfound === 'number') return sum + it.eggfound;
-
-    //             const validBoxes = (it.boxes || []).filter(b => {
-    //             const conf = detectionSettings.mode === 'adjusted'
-    //                 ? b.adjusted_confidence
-    //                 : b.confidence;
-    //             return conf > Threshold;
-    //             });
-    //             return sum + validBoxes.length;
-    //         }, 0);
-    //         return { ...f, eggnum: eggCount };
-    //         })
-    //     );
-    // }, [detectionSettings.mode, folderImages]);
-
-
+    // determine if detection can be started
     const statuses = (folders || []).map(f => (f.status || 'not started').toLowerCase());
     const canStart = (Array.isArray(folders) && folders.length > 0)
         && statuses.includes('not started')

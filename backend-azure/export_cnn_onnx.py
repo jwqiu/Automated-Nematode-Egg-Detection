@@ -2,6 +2,10 @@ import torch
 import torch.onnx
 import sys, os
 
+# --------------------------------------------------------------------------------------------------
+# this script exports the trained ellipse CNN model to ONNX format for use in Azure Function backend
+# --------------------------------------------------------------------------------------------------
+
 # ✅ 加入上级目录，方便导入 model_pipeline
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 

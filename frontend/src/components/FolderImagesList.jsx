@@ -10,6 +10,7 @@ const useEffect = React.useEffect;
 const useMemo   = React.useMemo;
 const useRef = React.useRef;
 
+// this function used to draw boxes on the image canvas after receiving boxes from backend
 export function drawBoxes(item, detectionSettings,Threshold) {
   if (!item?.boxes?.length) return;
   const img = item.imgRef;
@@ -35,6 +36,7 @@ export function drawBoxes(item, detectionSettings,Threshold) {
   ctx.lineWidth = 2;
   ctx.font = "12px Arial";
 
+  // determine which confidence to use and the boxes to draw, depending on detectionSettings and conf threshold value
   item.boxes.forEach((b) => {
     const conf =
       detectionSettings.mode === "adjusted"
@@ -49,6 +51,7 @@ export function drawBoxes(item, detectionSettings,Threshold) {
 
     const text = `${(conf * 100).toFixed(1)}%`;
 
+    // draw boxes, confidence text with white shadow and red text
     // ✅ 红框
     ctx.strokeStyle = "red";
     ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
@@ -71,6 +74,7 @@ export function drawBoxes(item, detectionSettings,Threshold) {
 
 function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folders, setFolders, setDetectionSettings, detectionSettings,Threshold }) {
 
+    // Get and memoize images of the selected folder
     const files = useMemo(() => {
         if (!selectedFolder || !folderImages) return [];
 
@@ -84,25 +88,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         return Array.isArray(arr) ? arr : [];
     }, [selectedFolder, folderImages]);
 
-    // useEffect(() => {
-    //     if (!selectedFolder || !Array.isArray(files) || !files.length) return;
-
-    //     // 逐张图片执行绘制
-    //     files.forEach(item => {
-    //         const canvas = document.getElementById(`canvas-${item.filename}`);
-    //         if (!canvas) return;
-            
-    //         const ctx = canvas.getContext("2d");
-    //         // ⚠️ 清空旧框，防止残影
-    //         canvas.width = canvas.clientWidth;
-    //         canvas.height = canvas.clientHeight;
-    //         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    //         // ✅ 调用 drawBoxes 绘制（带当前 detectionSettings / 阈值）
-    //         drawBoxes(item, detectionSettings, Threshold);
-    //     });
-    // }, [selectedFolder]);
-
+    // Convert a Base64 image string (from backend) into a Blob so it can be displayed or downloaded in the browser
     function dataURLtoBlob(dataUrl) {
         const [meta, b64] = String(dataUrl).split(',');
         const mime = /data:(.*?);base64/.exec(meta)?.[1] || 'application/octet-stream';
@@ -118,6 +104,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         return src.startsWith('data:') ? dataURLtoBlob(src) : (await fetch(src)).blob();
     }
 
+    // helpers to identify file types
     const isImage = (name) => /\.(png|jpe?g|gif|bmp|webp|tiff?)$/i.test(name);
     const isPdf = (name) => /\.pdf$/i.test(name);
 
@@ -129,11 +116,13 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
     const [editingKey, setEditingKey] = useState(null);
     const [choice, setChoice] = useState(0);
 
+    // set up adjust egg found modal
     const openAdjust = (key, current) => {
         setEditingKey(key);
         setChoice(Number.isFinite(current) ? current : 0);
     };
     
+    // handle confirm adjust and update folderimages and folders state
     const confirmAdjust = async () => {
         if (!editingKey) return;
 
@@ -145,21 +134,6 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         const beforeArr = Array.isArray(folderImages?.[folderName]) ? folderImages[folderName] : [];
         const beforeItem = beforeArr.find(it => it.filename === filename);
 
-        // 先更新本地状态（egg 数/汇总）
-        // setFolderImages(prev => {
-        //     const arr = Array.isArray(prev?.[folderName]) ? prev[folderName] : [];
-        //     if (!arr.length) return prev;
-
-        //     const newArr = arr.map(it =>
-        //     it.filename === filename ? { ...it, eggfound: choice } : it
-        //     );
-        //     const next = { ...prev, [folderName]: newArr };
-
-        //     const total = newArr.reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
-        //     setFolders(fs => fs.map(f => f.name === folderName ? ({ ...f, eggnum: total }) : f));
-
-        //     return next;
-        // });
         setFolderImages(prev => {
             const arr = Array.isArray(prev?.[folderName]) ? prev[folderName] : [];
             if (!arr.length) return prev;
@@ -179,26 +153,6 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         });
 
         setEditingKey(null);
-
-        // 再上传（最简单：annotated 有就传 annotated，没就传 original）
-        // try {
-        //     if (beforeItem) {
-        //     const src = beforeItem.original_image || beforeItem.annotated_image;
-        //     const blob = await srcToBlob(src);
-        //     // 防重名，带上文件夹名
-        //     const upName = `${folderName}__${filename}`;
-
-        //     const res = await fetch(
-        //         `${API_BASE}/upload/image?filename=${encodeURIComponent(upName)}`,
-        //         { method: 'POST', body: blob } // ✅ 直接传二进制，不加 headers
-        //     );
-        //     if (!res.ok) throw new Error(await res.text());
-        //     const data = await res.json(); // { ok, filename, url }
-        //     console.log('✅ Uploaded:', data.url);
-        //     }
-        // } catch (err) {
-        //     console.error('❌ Upload failed:', err);
-        // }
     };
 
     const cancelAdjust = () => setEditingKey(null);
@@ -208,11 +162,13 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
     const [sortPos, setSortPos] = useState({ x: 0, y: 0 });
     const [sortMode, setSortMode] = useState(null); // 'lowest' | 'noeggs'
 
+    // set up sort modal
     const handleOpenSort = (e) => {
         setSortPos({ x: e.clientX, y: e.clientY });
         setSortOpen(true);
     };
 
+    // apply sorting to images in the selected folder
     const applySort = (mode) => {
         setSortMode(mode);
         if (!selectedFolder) { setSortOpen(false); return; }
@@ -247,11 +203,10 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         setSortOpen(false);
     };
 
+    // check if the selected folder is complete
     const isComplete = !!folders?.some(
         f => f.name === selectedFolder && (f.status || '').toLowerCase() === 'completed'
     );
-
-
 
     return (
         <div className='bg-white flex flex-col rounded-lg w-full shadow-lg p-8'>

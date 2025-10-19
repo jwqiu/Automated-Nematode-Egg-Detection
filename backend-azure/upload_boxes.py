@@ -3,14 +3,17 @@ import psycopg2
 import json
 import os
 from datetime import datetime
+from function_app import app  
 
-from function_app import app  # 👈 保证 function_app/__init__.py 里定义了 app
+# -------------------------------------------------------------
+# the API endpoint to upload drawn boxes to PostgreSQL database
+# -------------------------------------------------------------
 
-# PostgreSQL 连接配置
+# PostgreSQL configuration from environment variables
 DB_CONFIG = {
-    "host": os.environ["DB_HOST"],       # 设置成你的 PostgreSQL Server 地址
+    "host": os.environ["DB_HOST"],       
     "port": 5432,
-    "dbname": os.environ["DB_NAME"],     # 你创建的 database 名
+    "dbname": os.environ["DB_NAME"],     
     "user": os.environ["DB_USER"],
     "password": os.environ["DB_PASSWORD"],
     "sslmode": "require",

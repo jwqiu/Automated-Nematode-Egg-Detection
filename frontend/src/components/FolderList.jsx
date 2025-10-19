@@ -10,17 +10,18 @@ import { drawBoxes } from "./FolderImagesList";
 
 function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImages, selectedFolder, setSelectedFolder, detectionSettings, Threshold }) {
 
+    // handle folder selection
     const handleFolderSelect = (folder) => {
         setSelectedFolder(folder);
 
     };
 
-
-
+    // handle empty state
     if (!folders.length) {
         return <p className="text-gray-400 bg-gray-100 p-4 mt-2 rounded-lg italic">Please upload the folders with images in them</p>;
     }
 
+    // folder status badge
     const statusBadge = (status) => {
         switch ((status || 'not started').toLowerCase()) {
             case 'in progress':
@@ -32,8 +33,7 @@ function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImag
         }
     };
 
-
-    // ❌ 删除按钮：删除当前 folder + 相关 images + 清空选中
+    // handle folder deletion
     const handleDelete = (e, name) => {
         e.stopPropagation();
         setFolders(prev => prev.filter(f => f.name !== name));
@@ -53,8 +53,7 @@ function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImag
             return obj;
         });
 
-
-    // 只在删除的正是当前选中时才清空
+        // remove selected folder after deletion
         setSelectedFolder(prev => (prev === name ? null : prev));
     };
 

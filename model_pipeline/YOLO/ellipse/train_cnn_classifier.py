@@ -6,10 +6,10 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import torchvision.transforms.functional as F
-import shutil  # ✅ 用于复制和删除文件夹
+import shutil  
 import random
 import numpy as np
-# 正方形填充（不变形） 
+
 
 def set_seed(seed=42):
     """Set random seed for full reproducibility."""
@@ -18,7 +18,6 @@ def set_seed(seed=42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    # 保证 CuDNN 可复现（会稍微降低速度）
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
@@ -27,7 +26,6 @@ def set_seed(seed=42):
     print(f"🔒 Random seed set to {seed}")
     print("")
 
-# 调用
 set_seed(42)
 
 class SquarePad:
@@ -84,25 +82,18 @@ class EllipseCNN(nn.Module):
     def __init__(self, input_size=96, dropout=0.4, use_sigmoid_in_model=False,
                  extra_conv_layers=0, use_gap=False):
         """
-        升级版 EllipseCNN
-        -----------------
-        参数:
-          input_size: 输入图片尺寸 (默认96)
-          dropout: Dropout 比例
-          use_sigmoid_in_model: 是否在模型中加 Sigmoid
-          extra_conv_layers: 额外增加的卷积层数量（默认0不加）
-          use_gap: 是否使用 Global Average Pooling 替代 Flatten
+        define a CNN model for ellipse vs non-ellipse classification
         """
         super().__init__()
 
-        # ======== 基础卷积层 ========
+        # main network layers
         conv_blocks = [
             nn.Conv2d(1, 8, 3, 1, 1), nn.BatchNorm2d(8), nn.ReLU(), nn.MaxPool2d(2),
             nn.Conv2d(8, 16, 3, 1, 1), nn.BatchNorm2d(16), nn.ReLU(), nn.MaxPool2d(2),
             nn.Conv2d(16, 32, 3, 1, 1), nn.BatchNorm2d(32), nn.ReLU(), nn.MaxPool2d(2)
         ]
 
-        # ======== 动态增加卷积层 ========
+        # add extra conv layers if needed
         in_channels = 32
         for i in range(extra_conv_layers):
             out_channels = in_channels * 2 if in_channels < 256 else in_channels
@@ -116,10 +107,10 @@ class EllipseCNN(nn.Module):
 
         layers = conv_blocks
 
-        # ======== 全连接部分 ========
+        # fully connected layers
         if use_gap:
             layers += [
-                nn.AdaptiveAvgPool2d(1),  # GAP 层
+                nn.AdaptiveAvgPool2d(1),  # GAP layer
                 nn.Flatten(),
                 nn.Linear(in_channels, 64), nn.ReLU(),
                 nn.Dropout(dropout),
@@ -134,10 +125,11 @@ class EllipseCNN(nn.Module):
                 nn.Linear(64, 1)
             ]
 
-        # ======== 输出层 ========
+        # final activation
         if use_sigmoid_in_model:
             layers.append(nn.Sigmoid())
 
+        # assemble the model
         self.net = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -149,7 +141,7 @@ def get_training_components(model, lr=5e-4, use_logits_loss=True, pos_weight=Non
     """
     Initialize model, criterion, optimizer, and scheduler.
     """
-    # 查找 Dropout 层（如果存在）
+
     dropout_layers = [m for m in model.modules() if isinstance(m, nn.Dropout)]
     dropout_value = dropout_layers[0].p if dropout_layers else "N/A"
 
@@ -161,7 +153,7 @@ def get_training_components(model, lr=5e-4, use_logits_loss=True, pos_weight=Non
     print("==================================")
     print("")
 
-    # ====== Loss 函数 ======
+    # determine loss function based on use_logits_loss input
     if use_logits_loss:
         if pos_weight is not None:
             pos_weight = torch.tensor([pos_weight])
@@ -182,14 +174,12 @@ def get_training_components(model, lr=5e-4, use_logits_loss=True, pos_weight=Non
     return model, criterion, optimizer, scheduler
 
 
-# ========= 4) 训练 + 验证（含早停，格式保持原样） =========
-
-# ========= 1️⃣ 定义 train_one_epoch =========
 def train_one_epoch(model, train_loader, criterion, optimizer, use_sigmoid):
-    """单轮训练，返回 train_acc, train_loss"""
+    """train for one epoch, return train_acc and loss_sum"""
     model.train()
     total, correct, loss_sum = 0, 0, 0.0
 
+    # loop over batches in train_loader
     for imgs, labels in train_loader:
         preds = model(imgs).squeeze(1)
         loss = criterion(preds, labels.float())
@@ -201,7 +191,7 @@ def train_one_epoch(model, train_loader, criterion, optimizer, use_sigmoid):
         loss_sum += loss.item()
         total += labels.size(0)
 
-        # ✅ 动态判断是否需要 sigmoid（只用于计算准确率，不影响 loss）
+        # determine predicted classes
         if use_sigmoid:
             probs = torch.sigmoid(preds)
         else:
@@ -213,9 +203,8 @@ def train_one_epoch(model, train_loader, criterion, optimizer, use_sigmoid):
     train_acc = correct / total if total else 0.0
     return train_acc, loss_sum
 
-# ========= 2️⃣ 定义 validate_one_epoch =========
 def validate_one_epoch(model, val_loader, criterion, use_sigmoid=False):
-    """单轮验证，返回 val_acc, val_loss, recall, f1, bad_cases, val_logits_list, val_labels_list"""
+    """validate for one epoch, return val_acc, val_loss, recall, f1, bad_cases, val_logits_list, val_labels_list"""
     model.eval()
     vtotal, vcorrect = 0, 0
     bad_cases = []  # [(path, prob, true_label, pred_label)]
@@ -249,7 +238,6 @@ def validate_one_epoch(model, val_loader, criterion, use_sigmoid=False):
             vcorrect += (pred_classes == labels).sum().item()
             vtotal += labels.size(0)
 
-            # 错误样本
             batch_start = vtotal - labels.size(0)
             for i in range(len(labels)):
                 if pred_classes[i] != labels[i]:
@@ -267,10 +255,9 @@ def validate_one_epoch(model, val_loader, criterion, use_sigmoid=False):
 
 def save_bad_cases(bad_cases, badcase_dir):
     """
-    保存错误预测样本到指定目录。
-    文件名格式示例: img001_0.43_T1_P0.png
+    Save bad cases (misclassified samples) to specified directory.
     """
-    # 清空旧目录
+    # Clear old directory
     if os.path.exists(badcase_dir):
         shutil.rmtree(badcase_dir)
     os.makedirs(badcase_dir, exist_ok=True)
@@ -284,9 +271,9 @@ def save_bad_cases(bad_cases, badcase_dir):
     print(f"📂 Saved {len(bad_cases)} bad cases to {badcase_dir} (after training)")
 
 
-# ========= 3️⃣ 训练主循环（含早停） =========
+# main training configuration
 
-# 数据路径
+# data paths
 train_dir = "model_pipeline/YOLO/ellipse/train"
 val_dir   = "model_pipeline/YOLO/ellipse/val"
 model_path = "model_pipeline/YOLO/ellipse/ellipse_cnn.pt"
@@ -320,6 +307,7 @@ best_bad_cases = []      # 存储最佳模型下的错误样本
 
 if __name__ == "__main__":  
 
+    # initialize data loaders and model
     transform_train, transform_val = get_transforms(image_size=input_size, use_blur=use_blur, brightness=brightness, contrast=contrast)
 
     train_data = datasets.ImageFolder(root=train_dir, transform=transform_train)
@@ -327,8 +315,6 @@ if __name__ == "__main__":
 
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     val_loader   = DataLoader(val_data,   batch_size=batch_size, shuffle=False)
-
-    # print("Class mapping:", train_data.class_to_idx)  # {'ellipse': 0, 'non_ellipse': 1}
 
     model = EllipseCNN(input_size=input_size, dropout=dropout, use_sigmoid_in_model=use_sigmoid_in_model,
                     extra_conv_layers=extra_conv_layers, use_gap=use_gap)
@@ -340,6 +326,7 @@ if __name__ == "__main__":
         pos_weight=pos_weight
     )
 
+    # start training and evaluation loop
     for epoch in range(1, epochs + 1):
         # ===== train =====
         train_acc, loss_sum = train_one_epoch(model, train_loader, criterion, optimizer, use_sigmoid=use_sigmoid_in_eval)
@@ -347,12 +334,13 @@ if __name__ == "__main__":
         # ===== val =====
         val_acc, val_loss, recall, f1, bad_cases, val_preds_logits_list, val_labels_list = validate_one_epoch(model, val_loader, criterion, use_sigmoid=use_sigmoid_in_eval)
 
+        # print epoch results
         print(f"Epoch {epoch:2d}: "
             f"TrainAcc={train_acc:.3f}  ValAcc={val_acc:.3f}  "
             f"ValLoss={val_loss:.4f}  Recall={recall:.3f}  F1={f1:.3f}  LossSum={loss_sum:.3f}")
         scheduler.step(val_loss)
 
-        # ===== early stopping & 保存最佳模型的错误样本（监控 val_loss 越小越好）=====
+        # ===== early stopping check =====
         if best_val == 0.0 or val_loss < best_val:
             best_val = val_loss
             best_f1 = f1
@@ -369,7 +357,7 @@ if __name__ == "__main__":
                 break
 
 
-    # ===== 训练结束或早停后处理 bad cases =====
+    # save bad cases from best epoch
     save_bad_cases(best_bad_cases, badcase_dir)
 
 

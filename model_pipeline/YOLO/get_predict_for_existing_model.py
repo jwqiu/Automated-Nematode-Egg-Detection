@@ -85,23 +85,27 @@ val_tf = transforms.Compose([
 
 @torch.no_grad()
 def classify_crop(crop_np):
-    """返回非椭圆概率 prob_non_ellipse ∈ [0,1]（超简版）"""
-    # ★ 加：推理时也做直方图均衡，和训练保持一致
-    crop_np = cv2.equalizeHist(crop_np)
+    """classify a cropped image patch(numpy array), return the probability of being non-ellipse"""
 
-    pil = Image.fromarray(crop_np).convert("L")  # 明确灰度
+    # preprocess the crop before inference 
+    crop_np = cv2.equalizeHist(crop_np)
+    pil = Image.fromarray(crop_np).convert("L")  
     t = val_tf(pil).unsqueeze(0).to(device)      # [1,1,H,W]
-    logits = ellipse_model(t).squeeze()          # 标量
-    prob_non_ellipse = torch.sigmoid(logits).item()  # 因为模型没带 Sigmoid
+
+    # get logits value from model, then use sigmoid to convert to probability
+    logits = ellipse_model(t).squeeze()          
+    prob_non_ellipse = torch.sigmoid(logits).item()  
     return prob_non_ellipse
 
-# ===== 2) 只改裁剪→分类→加权→写回 =====
+
 def analyze_and_write_ellipse(img_path, label_path, k=0.5):
+    # load the image in grayscale mode and get its height and width
     img = cv2.imread(img_path, 0)
     if img is None:
         return
     H, W = img.shape[:2]
 
+    # read label file line by line, analyze each bounding box, classify the cropped patch
     new_lines = []
     with open(label_path, "r") as f:
         lines = f.readlines()
@@ -121,19 +125,15 @@ def analyze_and_write_ellipse(img_path, label_path, k=0.5):
         if crop.size == 0:
             new_lines.append(f"{int(cls)} {xc:.6f} {yc:.6f} {w:.6f} {h:.6f} {conf:.6f} 0.500 {conf:.6f}\n")
             continue
-
-        # 用分类模型拿“非椭圆概率”
+        
+        # use the ellipse classifier to get probability of being non-ellipse
         prob_non_ellipse = classify_crop(crop)
-
-        # 动态加权（或用固定±0.2，二选一）
+        
+        # adjust the original confidence score based on the probability and weight k
         conf_final = conf + (0.5 - prob_non_ellipse) * k
         conf_final = float(np.clip(conf_final, 0.0, 1.0))
 
-        # 固定±0.2版本（想用就替换上面两行）
-        # delta = 0.2 if prob_non_ellipse < 0.5 else -0.2
-        # conf_final = float(np.clip(conf + delta, 0.0, 1.0))
-
-        # 写回：cls xc yc w h conf_yolo prob_non_ellipse conf_final
+        # write back the updated and adjusted confidence scores 
         new_lines.append(
             f"{int(cls)} {xc:.6f} {yc:.6f} {w:.6f} {h:.6f} "
             f"{conf:.6f} {prob_non_ellipse:.3f} {conf_final:.3f}\n"
@@ -163,6 +163,7 @@ if __name__ == "__main__":
 
     all_images = load_all_images(test_root)
 
+    # run prediction for each subfolder under test_root
     for sub in os.listdir(test_root):
         sub_path = os.path.join(test_root, sub)
         if os.path.isdir(sub_path):
@@ -170,6 +171,7 @@ if __name__ == "__main__":
 
     label_files = load_all_labels(config_name, data_type=DATA_TYPE)
 
+    # for each image and its corresponding label file, crop patches and analyze with ellipse classifier
     for key in all_images:
         if key in label_files:
             analyze_and_write_ellipse(all_images[key], label_files[key], k=k)
