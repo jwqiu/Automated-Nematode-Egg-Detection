@@ -6,29 +6,6 @@ import cv2
 from PIL import Image
 
 # -------------------------
-# Configuration
-# -------------------------
-
-# before starting evaluation, specify the ground truth folder for later comparison.
-DATA_TYPE = 'test' 
-GT_FOLDER = os.path.join('dataset', DATA_TYPE, 'labels') 
-
-# before starting evaluation, specify the prediction files for later comparison.
-MODEL_NAME = 'yolov8s_sgd_lr0001_max_E200P20_AD_0914' # Name of the model which you are going to evaluate
-PRED_FOLDER = os.path.join('model_pipeline', 'Trained_Models_New', 'YOLO', MODEL_NAME) # specify the folder which contains the prediction results of the model you want to evaluate
-
-# specify where to save the evaluation results
-OUTPUT_DIR = os.path.join('model_pipeline', 'evaluation', 'YOLO', MODEL_NAME, DATA_TYPE)
-
-# at the moment, we only evaluate one class (class 0) in detection task.
-TARGET_CLASS = 0
-
-IOU_THRESHOLDS = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
-
-# create output directory if it doesn't exist
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-# -------------------------
 # Helper function 
 # -------------------------
 
@@ -114,7 +91,7 @@ def load_ground_truth(folder: str) -> Dict[str, List[List[float]]]:
 
     return gt_data
 
-def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
+def load_predictions(folder: str, conf_type: str, data_type: str) -> Dict[str, List[Tuple[List[float], float]]]:
     """Load prediction results from the model you want to evaluate, include YOLO format files with confidence scores."""
     print(f"Loading predictions from: {folder}")
     
@@ -122,9 +99,10 @@ def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
         raise FileNotFoundError(f"Predictions folder not found: {folder}")
     
     pred_data = {}
-    # the prediction results are stored in several subfolders, all subfolders names start with 'predict_'.
-    # label_files = glob.glob(os.path.join(folder, 'predict_*', 'labels', '*.txt'))
-    label_files = glob.glob(os.path.join(folder,'predict_*_test', 'labels', '*.txt'))
+
+    # label_files = glob.glob(os.path.join(folder,'predict_*_test', 'labels', '*.txt'))
+    label_files = glob.glob(os.path.join(folder, 'predict_for_' + data_type, '*', 'labels', '*.txt'))
+
 
     if not label_files:
         print(f"Warning: No prediction files found in {folder}")
@@ -132,9 +110,10 @@ def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
     
     for file_path in label_files:
         # get the name of the run directory(two levels above the file) and the file stem to form a unique key
-        run_dir = os.path.basename(os.path.dirname(os.path.dirname(file_path)))  # predict_data_from_Denise_828
+        # run_dir = os.path.basename(os.path.dirname(os.path.dirname(file_path)))  # predict_data_from_Denise_828
         # parent  = run_dir.replace("predict_", "")                                # data_from_Denise_828
-        parent = run_dir.replace("predict_", "").replace("_test", "")
+        # parent = run_dir.replace("predict_", "").replace("_test", "")
+        parent = os.path.basename(os.path.dirname(os.path.dirname(file_path)))
         stem    = os.path.splitext(os.path.basename(file_path))[0]               # img001
         # unique filename key, including the parent folder name to avoid conflicts
         filename = f"{parent}/{stem}"
@@ -158,11 +137,15 @@ def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
                     
                     bbox = list(map(float, parts[1:5]))
 
-
+                    # depending on the conf_type parameter, choose which confidence score to use
                     # the 6th value is the original confidence score, the last one is the confidence adjusted by ellipse classifier
                     # for example: 0 0.575149 0.477019 0.184230 0.217452 0.851654 0.000 1.000
-                    # confidence = float(parts[5]) # use this if you want to use the original confidence score
-                    confidence = float(parts[-1]) # use this if you want to use the adjusted confidence score
+
+                    if conf_type == "original":
+                        confidence = float(parts[5]) # original confidence score means the score given by YOLO model
+                    else:
+                        confidence = float(parts[-1]) # adjusted confidence score means the score after being adjusted by ellipse classifier
+
                     detections.append((xywh_to_xyxy(bbox), confidence))
         
         except Exception as e:
@@ -180,7 +163,7 @@ def load_predictions(folder: str) -> Dict[str, List[Tuple[List[float], float]]]:
 
 def nms_greedy(
     dets: List[Tuple[List[float], float]],  # [(bbox_xyxy, score), ...], list of boxes with scores
-    iou_thr: float = 0.6,  # determine how much two boxes can overlap before they are merged
+    iou_thr: float = 0.2,  # determine how much two boxes can overlap before they are merged
     max_keep: Optional[int] = None
 ) -> List[Tuple[List[float], float]]:
     """Greedy Non-Maximum Suppression (NMS) to remove overlapping boxes."""
@@ -350,7 +333,8 @@ def compute_map(gt_data: Dict, pred_data: Dict, iou_thresholds: Optional[List[fl
 def print_results(results: Dict) -> None:
     """Print formatted results to console."""
 
-    print(f"Detection Metrics @ IoU=0.5:")
+    print(f"Detection Metrics @ IoU={results['iou_threshold']:.2f}:")
+    print(f"{'Conf_Type:':<15}{results['conf_type']}")
     print(f"{'Conf_Thr:':<15}{results['conf_th']:<10.2f}")
     print(f"{'NMS_IoU:':<15}{results['nms_iou']:<10.2f}")
 
@@ -370,27 +354,57 @@ def print_results(results: Dict) -> None:
     for metric, value in results['ap_metrics'].items():
         print(f"{metric + ':':<15}{value:<10.4f}")
 
+
+
+# -------------------------
+# Configuration
+# -------------------------
+
+# before starting evaluation, specify the ground truth folder for later comparison.
+DATA_TYPE = 'test' 
+GT_FOLDER = os.path.join('dataset', DATA_TYPE, 'labels') 
+
+# before starting evaluation, specify the prediction files for later comparison.
+MODEL_NAME = 'yolov8s_sgd_lr0001_max_E200P20_AD914_OS68' # Name of the model which you are going to evaluate
+PRED_FOLDER = os.path.join('model_pipeline', 'Trained_Models_New', 'YOLO', MODEL_NAME) # specify the folder which contains the prediction results of the model you want to evaluate
+
+# specify where to save the evaluation results
+OUTPUT_DIR = os.path.join('model_pipeline', 'evaluation', 'YOLO', MODEL_NAME, DATA_TYPE)
+
+# at the moment, we only evaluate one class (class 0) in detection task.
+TARGET_CLASS = 0
+
+IOU_THRESHOLDS = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+
+# create output directory if it doesn't exist
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+APPLY_NMS = True # whether to merge overlapping boxes in predictions
+NMS_IOU = 0.2 # for boxes in predictions, how much two boxes can overlap before they are merged
+CONF_TYPE = "adjusted" # original or adjusted confidence score
+CONF_TH = 0.5 # only use predictions with confidence score higher than this threshold for evaluation
+iou_threshold = 0.5 # when comparing predicted boxes with ground truth boxes, only those with IOU higher than this threshold are considered a match
+
 # -------------------------
 # Main
 # -------------------------
+
 def main():
     # Load data
     gt_data = load_ground_truth(GT_FOLDER)
-    pred_data = load_predictions(PRED_FOLDER)
-    
+    pred_data = load_predictions(PRED_FOLDER, CONF_TYPE, DATA_TYPE)
+
     # remove overlapping boxes in predictions before evaluation
-    APPLY_NMS = True
-    NMS_IOU = 0.4
     if APPLY_NMS:
         for img, dets in pred_data.items():
             pred_data[img] = nms_greedy(dets, iou_thr=NMS_IOU)
 
     print(f"\nComputing evaluation metrics...")
     
+    # compute mAP metrics at multiple iou thresholds
     ap_metrics = compute_map(gt_data, pred_data, IOU_THRESHOLDS)
 
     # filter predictions by confidence threshold before computing metrics
-    CONF_TH = 0.5  
     pred_data_conf = {}
     for img, dets in pred_data.items():
         filtered = []
@@ -399,7 +413,8 @@ def main():
                 filtered.append((box, score))
         pred_data_conf[img] = filtered
 
-    precision, recall, f1, bad_images = compute_detection_metrics(gt_data, pred_data_conf, iou_threshold=0.5)
+    # compute precision, recall, f1-score at the specified iou_threshold
+    precision, recall, f1, bad_images = compute_detection_metrics(gt_data, pred_data_conf, iou_threshold)
 
     # Organize results
     results = {
@@ -409,7 +424,9 @@ def main():
         'ap_metrics': ap_metrics,
         'conf_th': CONF_TH,
         'nms_iou': NMS_IOU if APPLY_NMS else None,
-        'bad_images': bad_images
+        'bad_images': bad_images,
+        'iou_threshold': iou_threshold,
+        'conf_type': CONF_TYPE
     }
     
     # Display results
@@ -424,10 +441,10 @@ def main():
     # Save results as CSV for easy comparison
     csv_file = os.path.join(OUTPUT_DIR, 'metrics_comparison.csv')
     with open(csv_file, 'a') as f:
-        f.write("Model,Conf_for_PRF1,NMS_IoU,Precision,Recall,F1,mAP@0.5,mAP@0.5:0.95\n")
+        f.write("Model,ConfType,Conf_for_PRF1,NMS_IoU,Precision,Recall,F1,mAP@0.5,mAP@0.5:0.95\n")
         model_name = os.path.basename(PRED_FOLDER.replace('/labels', ''))
         f.write(
-                    f"{model_name},{CONF_TH:.2f},{NMS_IOU:.2f},"
+                    f"{model_name},{CONF_TYPE},{CONF_TH:.2f},{NMS_IOU:.2f},"
                     f"{precision:.4f},{recall:.4f},{f1:.4f},"
                     f"{ap_metrics.get('AP@0.50', 0):.4f},"
                     f"{ap_metrics.get('mAP@0.5:0.95', 0):.4f}\n"

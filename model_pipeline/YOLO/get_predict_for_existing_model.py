@@ -10,20 +10,18 @@ import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from model_pipeline.YOLO.ellipse.train_cnn_classifier import EllipseCNN, SquarePad
 
-
-
-EXP_ROOT = "model_pipeline/Trained_Models_New/YOLO"
-
-def predict_model(weight_path: str, config_name: str, task: str, source: str):
+# get prediction for existing model, save the results to a folder named predict_for_{data_type} under the model folder
+def predict_model(weight_path: str, config_name: str, task: str, source: str, data_type: str = "test"):
     model = YOLO(weight_path)
-    # 从 source 路径里取最后的目录名当作 run 名称
     tag = os.path.basename(os.path.normpath(source))
 
     model.predict(
         source=source,
         task=task,
-        project=f"{EXP_ROOT}/{config_name}",
-        name=f"predict_{tag}_test",   # 输出文件夹带上来源名字
+        # project=f"{EXP_ROOT}/{config_name}",
+        # name=f"predict_{tag}_test",   
+        project=f"{EXP_ROOT}/{config_name}/predict_for_{data_type}",
+        name=tag,
         exist_ok=True,
         save_json=True,
         save_txt=True,
@@ -33,6 +31,7 @@ def predict_model(weight_path: str, config_name: str, task: str, source: str):
         iou=0.2,
     )
 
+# load all images from test root, these images will be used to crop patches for ellipse classification
 def load_all_images(test_root):
     image_paths = {}
     for sub in os.listdir(test_root):
@@ -49,34 +48,40 @@ def load_all_images(test_root):
             image_paths[filename] = file_path
     return image_paths
 
-def load_all_labels(config_name):
+# load all label files from prediction folder, these labels will be used to crop patches for ellipse classification
+def load_all_labels(config_name, data_type="test"):
     label_paths = {}
     base = f"model_pipeline/Trained_Models_New/YOLO/{config_name}"
 
-    for label_file in glob.glob(f"{base}/predict_*test/labels/*.txt"):
-        parent  = os.path.basename(os.path.dirname(os.path.dirname(label_file)))  # e.g. predict_data_from_Denise_828_val
-        parent  = parent.replace("predict_", "").replace("_test", "")              # 还原为 data_from_Denise_828
-        stem    = os.path.splitext(os.path.basename(label_file))[0]               # e.g. img001
-        filename = f"{parent}/{stem}"                                             # key
+    # for label_file in glob.glob(f"{base}/predict_*test/labels/*.txt"):
+    for label_file in glob.glob(f"{base}/predict_for_{data_type}/*/labels/*.txt"): # loop through all txt files in the labels folder
+        parent  = os.path.basename(os.path.dirname(os.path.dirname(label_file)))  
+        # parent  = parent.replace("predict_", "").replace("_test", "")            
+        stem    = os.path.splitext(os.path.basename(label_file))[0]               
+        filename = f"{parent}/{stem}"                                             
         label_paths[filename] = label_file
     return label_paths
 
-# ===== 1) 加载分类模型（启动时一次） =====
+# specify device for ellipse classification model
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-ellipse_model_path = "model_pipeline/YOLO/ellipse/ellipse_cnn.pt"  # ← 你的权重路径
 
+# load ellipse classification model(from train_cnn_classifier) and set to eval mode
+ellipse_model_path = "model_pipeline/YOLO/ellipse/ellipse_cnn.pt"  
 ellipse_model = EllipseCNN(input_size=64, use_sigmoid_in_model=False,
                            extra_conv_layers=2, use_gap=False)
 ellipse_model.load_state_dict(torch.load(ellipse_model_path, map_location=device))
 ellipse_model.to(device)
 ellipse_model.eval()
 
+# because EllipseCNN is a standalone classifier, it doesn't have built-in preprocessing like YOYO does, so we need to
+# manually define how to convert each cropped image into right format before feeding it into the model
 val_tf = transforms.Compose([
     transforms.Grayscale(1),
     SquarePad(),
     transforms.Resize(64),
     transforms.ToTensor(),
 ])
+
 
 @torch.no_grad()
 def classify_crop(crop_np):
@@ -138,22 +143,33 @@ def analyze_and_write_ellipse(img_path, label_path, k=0.5):
         f.writelines(new_lines)
     print(f"✅ updated {label_path}")
 
+# -------------------------
+# Configuration
+# -------------------------
+
+EXP_ROOT = "model_pipeline/Trained_Models_New/YOLO"
+DATA_TYPE = "test"  # change as needed
+test_root = f"dataset/{DATA_TYPE}/images"
+k = 0.5  # weight for confidence adjustment
+config_name = "yolov8s_sgd_lr0001_max_E200P20_AD914_OS68"
+weight_path = f"model_pipeline/Trained_Models_New/YOLO/{config_name}/train/weights/best.pt"
+task = "detect"
+
+# -------------------------
+# Main
+# -------------------------
+
 if __name__ == "__main__":
 
-    weight_path = "model_pipeline/Trained_Models_New/YOLO/yolov8s_sgd_lr0001_max_E200P20_AD_0914/train/weights/best.pt"
-    config_name = "yolov8s_sgd_lr0001_max_E200P20_AD_0914"
-    task = "detect"
-
-    test_root = "dataset/test/images"
     all_images = load_all_images(test_root)
 
     for sub in os.listdir(test_root):
         sub_path = os.path.join(test_root, sub)
         if os.path.isdir(sub_path):
-            predict_model(weight_path, config_name, task, sub_path)
+            predict_model(weight_path, config_name, task, sub_path, data_type=DATA_TYPE)
 
-    label_files = load_all_labels(config_name)
+    label_files = load_all_labels(config_name, data_type=DATA_TYPE)
 
     for key in all_images:
         if key in label_files:
-            analyze_and_write_ellipse(all_images[key], label_files[key], k=0.5)
+            analyze_and_write_ellipse(all_images[key], label_files[key], k=k)

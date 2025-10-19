@@ -40,7 +40,7 @@ def prediction_needed(image_dir, label_dir):
 
 if prediction_needed(IMAGE_DIR, LABEL_DIR):
     print(f"Warning: Prediction results missing. Running prediction with model: {MODEL_NAME} for {SPLIT}")
-    # this is a issue here, need to fix it later
+    # this is a issue here and need to fix before using, this predict_model function has been modified in yolo_training.py
     predict_model(weight_path= MODEL_PATH, config_name=MODEL_NAME, task = task, name = SPLIT) # type: ignore
     print("Prediction complete.")
 
