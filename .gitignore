@@ -262,6 +262,7 @@ faster_rcnn/faster_rcnn_with_cv.py
 /Evaluation/overlays
 report_image.py
 /Helper/report_image.py
+model_pipeline/Trained_Models_Legacy/
 
 ################################################################################
 # 文件类型（全局忽略）

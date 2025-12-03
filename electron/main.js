@@ -31,17 +31,6 @@ async function createWindow() {
   }
 }
 
-// function startBackendInProd() {
-//   if (isDev()) return; // 开发期不在这里启动，保持你现在的流程
-//   const resources = process.resourcesPath; // 打包后资源根目录
-//   const exeName = process.platform === 'win32' ? 'egg-backend.exe' : 'egg-backend';
-//   const exePath = require('node:path').join(resources, 'backend', exeName);
-
-//   // 与前端里 getApiBase() 约定同一端口
-//   backendProc = spawn(exePath, ['--port', '5178'], { stdio: 'ignore' });
-//   backendProc.on('exit', () => { backendProc = undefined; });
-// }
-
 function startBackendInProd() {
   if (isDev()) return;
   const resources = process.resourcesPath;

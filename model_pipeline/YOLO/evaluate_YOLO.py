@@ -365,7 +365,7 @@ DATA_TYPE = 'test'
 GT_FOLDER = os.path.join('dataset', DATA_TYPE, 'labels') 
 
 # before starting evaluation, specify the prediction files for later comparison.
-MODEL_NAME = 'yolov8s_sgd_lr0001_max_E200P20_AD914_OS68' # Name of the model which you are going to evaluate
+MODEL_NAME = 'yolov8s_sgd_lr0001_max_E200P20_AD_0914_brightness_0.1' # Name of the model which you are going to evaluate
 PRED_FOLDER = os.path.join('model_pipeline', 'Trained_Models_New', 'YOLO', MODEL_NAME) # specify the folder which contains the prediction results of the model you want to evaluate
 
 # specify where to save the evaluation results

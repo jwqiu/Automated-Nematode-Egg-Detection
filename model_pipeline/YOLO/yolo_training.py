@@ -6,7 +6,6 @@ import time
 import logging
 from ultralytics import YOLO
 
-
 # -------------------------
 # Configuration 
 # -------------------------
@@ -107,11 +106,17 @@ CONFIGS = [
     # === The best model developed in Semester 2, 2025 ===
     # {"name": "yolov8s_sgd_lr0001_max_E200P20_AD_0914", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 20},   
 
-    # === based on the best model this semester, add brightness augmentation, increase the hsv_v from 0.4 to 0.6 ===
+    # === based on the best model this semester, add brightness augmentation, change hsv_v from default 0.4 to 0.6 and 0.1  ===
     # {"name": "yolov8s_sgd_lr0001_max_E200P20_AD_0914_brightness", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 20, "hsv_v": 0.6},
-    
+    {"name": "yolov8s_sgd_lr0001_max_E200P20_AD_0914_brightness_0.1", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 20, "hsv_v": 0.1},
+
     # === The best model + 68 open-source images ===
-    {"name": "yolov8s_sgd_lr0001_max_E200P20_AD914_OS68", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 20},
+    # {"name": "yolov8s_sgd_lr0001_max_E200P20_AD914_OS68", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 20},
+
+    # === The best model + contrast augmentation ===
+    # {"name": "yolov8s_sgd_lr0001_max_E200P20_AD_0914_contrast_0.2", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 20, "contrast_limit": 0.2},
+    # {"name": "yolov8s_sgd_lr0001_max_E200P20_AD_0914_contrast_0.5", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 20, "contrast_limit": 0.5},
+    # {"name": "yolov8s_sgd_lr0001_max_E200P20_AD_0914_contrast_0.8", "optimizer": "SGD", "lr0": 0.001, "mosaic": 1, "erasing": 0.5, "fliplr": 1.0, "flipud": 0.5, "epochs": 200, "patience": 20, "contrast_limit": 0.8},
 
 ]
 
@@ -136,6 +141,7 @@ COMMON_ARGS = {
     "project": "/Users/chenyuqi/Desktop/Automated-Nematode-Egg-Detection/model_pipeline/Trained_Models_New/YOLO",
     "iou": 0.6,
 }
+
 
 # the trained model and results will be save under this root folder
 

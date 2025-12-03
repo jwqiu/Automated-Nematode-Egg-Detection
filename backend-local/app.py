@@ -1,198 +1,10 @@
-# import os
-# import sys
-# import glob
-# import uuid
-# import io
-# import json
-# import base64
-# import cv2           # 新增
-# import numpy as np    # 新增
-# from flask import Flask, request, send_file, jsonify
-# from werkzeug.utils import secure_filename
-# from flask_cors import CORS
-# from ultralytics import YOLO
-# from PIL import Image
-
-
-# app = Flask(__name__)
-# CORS(app)
-
-
-# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
-# OUTPUT_FOLDER = os.path.join(BASE_DIR, 'outputs')
-# WEIGHTS_PATH = os.path.abspath(
-#     os.path.join(os.path.dirname(__file__), "..", "ModelPipeline", "Trained_Models", "YOLO", "yolov8s_sgd_lr0001_max", "weights", "best.pt")
-# )
-
-# CONFIG_NAME = "web_predict"
-# TASK = "detect"
-
-# model = YOLO(WEIGHTS_PATH)
-
-# os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-# os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
-# def draw_boxes_on_array(img_array, boxes):
-#     """在 numpy 数组图像上绘制预测框，并返回 RGB ndarray"""
-
-#     # OpenCV 处理的是 BGR，因此如果输入是 RGB，则先转为 BGR
-#     image = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
-
-#     for idx, box in enumerate(boxes):
-#         x1, y1, x2, y2 = map(int, box['bbox'])
-#         conf = box['confidence']
-#         label = f"{conf*100:.1f}%"
-
-#         cv2.rectangle(image, (x1, y1), (x2, y2), color=(0, 255, 128), thickness=2)
-#         cv2.putText(image, label, (x1, y1 - 8), cv2.FONT_HERSHEY_SIMPLEX,
-#                     fontScale=0.6, color=(0, 255, 128), thickness=2)
-
-#     # 转回 RGB 返回
-#     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-#     return image_rgb
-
-
-# @app.route('/predict', methods=['POST'])
-# def predict():
-#     data = request.get_json()
-#     image_b64 = data.get("image_base64")
-#     filename  = data.get("filename", "uploaded_image.jpg")
-
-#     if not image_b64:
-#         return jsonify(error="Missing image_base64"), 400
-
-#     try:
-
-#       # 解码 base64
-#         image_bytes = base64.b64decode(image_b64)
-#         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-
-#         # 临时转换成 numpy 数组传给模型
-#         img_array = np.array(image)
-#         # 内存中推理，不写任何中间文件
-#         results = model.predict(
-#             source=img_array,
-#             task=TASK,
-#             exist_ok=True,
-#             save=False,
-#             save_json=False,
-#             save_conf=False,
-#             verbose=False
-#         )
-#     except Exception as e:
-#         app.logger.error(f"Predict error: {e}")
-#         return jsonify(error="Internal prediction error"), 500
-    
-#     if not results:
-#         return jsonify(image=None, boxes=[]), 200
-    
-#     r = results[0]
-#     # 提取坐标和置信度
-    
-#     coords = r.boxes.xyxy.cpu().numpy().tolist() # type: ignore
-#     confs  = r.boxes.conf.cpu().numpy().tolist() # type: ignore
-
-#     boxes_info = [
-#         {"bbox": b, "confidence": c}
-#         for b, c in zip(coords, confs)
-#         if c > 0.5
-#     ]        
-
-#     # 把框画在原图上
-#     drawn_img_array = draw_boxes_on_array(img_array, boxes_info)  # 注意你可能要改一下 draw 函数的输入
-#     output_pil = Image.fromarray(drawn_img_array)
-#     buf = io.BytesIO()
-#     output_pil.save(buf, format="PNG")
-#     result_image_b64 = base64.b64encode(buf.getvalue()).decode()
-
-#     return jsonify({
-#         "image": result_image_b64,
-#         "boxes": boxes_info
-#     })
-
-# if __name__ == '__main__':
-#     # 监听所有接口，端口改为 5001
-#     app.run(host='0.0.0.0', port=5001, debug=True)
-
-
-# @app.route('/upload', methods=['GET', 'POST'])
-# def upload_image():
-#     if request.method == 'GET':
-#         return "Upload route is ready. Use POST to upload images."
-    
-#     if 'image' not in request.files:
-#         return {"error": "No image uploaded"}, 400
-
-#     file = request.files['image']
-#     if not file or not file.filename:
-#         return {"error": "No file or filename provided."}
-
-#     filename = secure_filename(file.filename)
-#     uid = uuid.uuid4().hex[:8]
-
-#     # 保存路径
-#     temp_input_dir = os.path.join(UPLOAD_FOLDER, uid)
-#     os.makedirs(temp_input_dir, exist_ok=True)
-#     saved_path = os.path.join(temp_input_dir, filename)
-#     file.save(saved_path)
-
-#     # 返回图片路径或标识
-#     return {"uid": uid, "filename": filename}, 200
-
-
-# @app.route('/delete', methods=['DELETE'])
-# def delete_image():
-#     """
-#     前端传来 JSON：{ "uid": "...", "filename": "xxx.png" }
-#     后端删除 uploads/uid/filename 文件，并在目录空时删除该 uid 目录。
-#     """
-#     data = request.get_json() or {}
-#     uid = data.get('uid')
-#     filename = data.get('filename')
-#     if not uid or not filename:
-#         return jsonify(error="Missing uid or filename"), 400
-
-#     # 目标路径
-#     target_dir = os.path.join(UPLOAD_FOLDER, uid)
-#     target_path = os.path.join(target_dir, filename)
-
-#     if not os.path.isfile(target_path):
-#         return jsonify(error="File not found"), 404
-
-#     try:
-#         os.remove(target_path)
-#         # 如果该 uid 目录下没有其它文件，就把目录删了
-#         if not os.listdir(target_dir):
-#             os.rmdir(target_dir)
-#     except Exception as e:
-#         return jsonify(error=f"Delete failed: {e}"), 500
-
-#     return jsonify(status="success"), 200
-
-
-
-# app.py  —— 本地推理后端（Flask 版）
-# 目录结构建议：
-# backend-local/
-# ├─ app.py
-# ├─ requirements.txt
-# └─ runtime_assets/
-#    └─ best.onnx
-
 import os
 from dotenv import load_dotenv
 from utils_path import resource_path
 
-load_dotenv(resource_path(".env"))    # 打包后/本地都能找对 .env
+# load environment variables from .env file, so it can be located correctly after packing
+load_dotenv(resource_path(".env"))    
 
-
-# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# load_dotenv(os.path.join(BASE_DIR, ".env"))  # 或：load_dotenv(dotenv_path=os.path.join(BASE_DIR, ".env"), override=False)
-
-
-from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 import base64, io, os, json
 import numpy as np
@@ -200,10 +12,10 @@ from PIL import Image, ImageDraw, ImageFont
 import onnxruntime as ort
 from flask_cors import CORS
 
-
 app = Flask(__name__)
-# CORS(app, resources={r"/predict": {"origins": ["http://localhost:5173"]}},
-#      supports_credentials=False, allow_headers=["Content-Type"], methods=["POST", "OPTIONS"])
+
+# flask runs as a standalone web server, so we need to manually enable CORS in the code
+# For Azure Functions backend, CORS only needs to be configured in the Azure portal or local.settings.json; it works automatically after that.
 
 CORS(app,
      resources={
@@ -215,8 +27,10 @@ CORS(app,
      allow_headers=["Content-Type"],
      methods=["POST", "OPTIONS"])
 
+# if this backend is used in Electron desktop application, os.path,join might fail to find the model file after packaging
+# because the model file and the function file are not stored in the same directory after packaging
+# therefore, resource_path() is used here instead, it work both in development and after packaging
 
-# —— 全局加载 ONNX 模型 —— #
 # RUNTIME_DIR = os.path.join(os.path.dirname(__file__), "runtime_assets")
 # MODEL_PATH  = os.path.join(RUNTIME_DIR, "best.onnx")
 RUNTIME_DIR = resource_path("runtime_assets")
@@ -224,6 +38,14 @@ MODEL_PATH  = resource_path("runtime_assets", "best.onnx")
 sess = ort.InferenceSession(MODEL_PATH, providers=["CPUExecutionProvider"])
 input_name = sess.get_inputs()[0].name
 
+#-------------------------------------------------------------------------------------------------------------------------------------------
+# most of the code below is similar to the azure function backend implementation, for detail comments and explanations, please refer to backend-azure/function_app.py
+# this local flask backend is not up to date with the azure function backend, update this file from backend-azure/function_app.py if needed
+# for example, the ellipse classifier is not integrated to this local backend yet, and the box drawing part is still done on the backend instead of frontend
+#-------------------------------------------------------------------------------------------------------------------------------------------
+
+# in the electron desktop application, the backend service take some time to start up, this endpoint is used by the frontend to check
+# whether the backend is ready to accept requests, only when this endpoint responds successfully, the detection button will be clickable on the frontend
 @app.get("/health")
 def health():
     return {"ok": True}
@@ -231,26 +53,28 @@ def health():
 @app.post("/predict")
 def predict():
     try:
-        # 1. 解析输入
+        # extract base64 image from request JSON
         data = request.get_json(force=True)
         image_b64 = data.get("image_base64")
         if not image_b64:
             return jsonify({"error": "Missing image_base64"}), 400
-
+        
+        # decode base64 to bytes
         image_bytes = base64.b64decode(image_b64)
 
+        # convert bytes to PIL image
         pil = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         orig_w, orig_h = pil.size
         original_pil = pil.copy()
 
-        # 2. 预处理到 608×608，归一化，NCHW
-        # img608 = pil.resize((608, 608))
-        assert pil.size == (608, 608), f"Expect 608x608, got {pil.size}"  # 可选但推荐
+        # the frontend already resized the image to this size
+        assert pil.size == (608, 608), f"Expect 608x608, got {pil.size}"  
 
+        # convert PIL image to numpy array before feeding into model and change the shape to standard format
         arr = np.array(pil).astype(np.float32) / 255.0
         arr = np.transpose(arr, (2, 0, 1))[None, ...]  # shape (1,3,608,608)
 
-        # 3. ONNX 推理
+        # run the model and store the output predictions
         outputs = sess.run(None, {input_name: arr})
         preds   = outputs[0] if outputs else None  # shape (M,5+num_classes) or (M,6) if nms=True
 
@@ -259,10 +83,11 @@ def predict():
 
         boxes_info = []
 
-        # 如果 shape 是 (1, 300, 6)，先 squeeze
+        # remove batch dimension if exists
         if len(preds.shape) == 3:
             preds = preds.squeeze(0)  # 变成 (N, 6)
 
+        # extract boxes with confidence > 0.5
         for row in preds:
             x1, y1, x2, y2, conf, cls = [float(v) for v in row[:6]]
             if conf > 0.5:
@@ -271,7 +96,7 @@ def predict():
                     "confidence": conf
                 })
 
-        # 5. 用 Pillow 在原图上画框和置信度
+        # Draw boxes on the image. In the Azure Function backend, this part was removed and the frontend now handles the drawing instead.
         draw = ImageDraw.Draw(pil)
         font = ImageFont.load_default()
 
@@ -280,18 +105,15 @@ def predict():
             draw.rectangle([x1, y1, x2, y2], outline="red", width=2)
 
             text = f"{b['confidence']*100:.1f}%"
-            tx, ty = x1, max(0, y1 - 12)  # 上移一点且不小于 0
+            tx, ty = x1, max(0, y1 - 12)  
 
-            # 白色描边（周围一圈）
             for dx in [-1, 0, 1]:
                 for dy in [-1, 0, 1]:
                     if dx != 0 or dy != 0:
                         draw.text((tx + dx, ty + dy), text, font=font, fill="white")
 
-            # 红色文字在正中
             draw.text((tx, ty), text, font=font, fill="red")
 
-        # 6. 输出 Base64（带框 + 原图）
         buf1 = io.BytesIO()
         pil.save(buf1, format="PNG")
         annotated_b64 = base64.b64encode(buf1.getvalue()).decode()
@@ -309,10 +131,13 @@ def predict():
     except Exception as e:
         return jsonify({"error": f"Predict error: {e}"}), 500
 
+#-------------------------------------------------------------------------------------------------------------
+# the following code handles uploading images and drawn boxes to azure blob storage and postgresql database
+# This part is basically the same as its counterpart in the Azure Function backend. no change needed.
+# for more detailed comments and code explanations, please refer to backend-azure/upload_image.py and backend-azure/upload_boxes.py
+#-------------------------------------------------------------------------------------------------------------
 
-
-
-# ===== 上传标注框到 PostgreSQL =====
+# upload drawn boxes to PostgreSQL database
 import psycopg2
 from datetime import datetime
 
@@ -338,7 +163,6 @@ def upload_boxes():
         cur = conn.cursor()
         upload_date = datetime.utcnow().date()
 
-        # 期待表结构：boxes(image_name text, x_left int, y_left int, x_right int, y_right int, confidence float, upload_date date)
         for box in boxes:
             x1, y1, x2, y2 = box["bbox"]
             confidence = float(box.get("confidence", 1.0))
@@ -358,7 +182,7 @@ def upload_boxes():
         return jsonify({"error": f"Error uploading boxes: {e}"}), 500
 
 
-# ===== 上传原始图片到 Azure Blob =====
+# upload image to Azure Blob Storage
 from azure.storage.blob import BlobServiceClient
 
 BLOB_CONTAINER = os.environ.get("AZURE_BLOB_CONTAINER", "images")
@@ -366,6 +190,8 @@ AZURE_BLOB_CONN_STR = (
     os.getenv("AZURE_STORAGE_CONNECTION_STRING")
     or os.getenv("AzureWebJobsStorage")
 )
+
+assert AZURE_BLOB_CONN_STR, "Missing Azure Storage connection string"
 
 blob_service_client = BlobServiceClient.from_connection_string(AZURE_BLOB_CONN_STR)
 
@@ -400,73 +226,6 @@ def upload_image():
 
 
 if __name__ == "__main__":
-    # 5178 只是建议端口；与 Electron 里保持一致即可
     app.run(host="127.0.0.1", port=5178)
 
 
-# package.json  —— 同时启动前后端
-# {
-#   "name": "auto-nematode",
-#   "private": true,
-#   "scripts": {
-#     "dev": "concurrently \"cd frontend && npm run dev-frontend\" \"npm run dev-backend\"",
-#     "dev-backend": "cd backend-azure && func start"
-#   },
-#   "devDependencies": {
-#     "concurrently": "^9.2.1",
-#     "cpx": "^1.5.0",
-#     "cross-env": "^10.0.0",
-#     "electron": "^38.1.0",
-#     "electron-builder": "^26.0.12",
-#     "shx": "^0.4.0",
-#     "wait-on": "^8.0.5"
-#   },
-#   "dependencies": {
-#     "react-router-dom": "^7.7.1",
-#     "utif": "^3.1.0"
-#   }
-# }
-
-
-
-# {
-#   "name": "auto-nematode",
-#   "private": true,
-#   "scripts": {
-#     "dev": "concurrently \"cd frontend && npm run dev-frontend\" \"npm run dev-backend\"",
-#     "dev-backend": "cd backend-azure && func start",
-
-#     "dev:frontend": "cd frontend && npm run dev-frontend",
-#     "dev:electron": "wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron electron/main.js",
-#     "dev:desktop": "concurrently -k -n FRONTEND,ELECTRON -c cyan,magenta \"npm:dev:frontend\" \"npm:dev:electron\"",
-
-#     "build:frontend": "cd frontend && npm run build && shx rm -rf ../frontend-dist && shx mkdir -p ../frontend-dist && cpx \"dist/**\" ../frontend-dist",
-#     "dist": "npm run build:frontend && electron-builder",
-#     "dist:mac": "npm run dist -- -m",
-#     "dist:win": "npm run dist -- -w"
-#   },
-#   "devDependencies": {
-#     "concurrently": "^9.2.1",
-#     "cpx": "^1.5.0",
-#     "cross-env": "^10.0.0",
-#     "electron": "^38.1.0",
-#     "electron-builder": "^26.0.12",
-#     "shx": "^0.4.0",
-#     "wait-on": "^8.0.5"
-#   },
-#   "dependencies": {
-#     "react-router-dom": "^7.7.1",
-#     "utif": "^3.1.0"
-#   },
-#   "build": {
-#     "appId": "me.junwen.eggdetector",
-#     "productName": "EggDetector",
-#     "files": [
-#       "electron/**/*",
-#       "frontend-dist/**/*",
-#       "package.json"
-#     ],
-#     "mac": { "target": ["dmg"] },
-#     "win": { "target": ["nsis"] }
-#   }
-# }

@@ -1,26 +1,23 @@
-// frontend/src/App.jsx
 // @ts-ignore
-// import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+
 // @ts-ignore
 import Homepage from './pages/Homepage';
 // @ts-ignore
 import BatchModePage from './pages/Batchmodepage';
 // @ts-ignore
-
 import BatchResultPage from './pages/BatchResultPage';
 // @ts-ignore
-
 import FolderModePage from './pages/Foldermodepage';
+
 // @ts-ignore
 import { ImageProvider } from './context/ImageContext';
-// @ts-ignore
 
+// @ts-ignore
 import { API_BASE, isElectron, IS_ELECTRON } from './apiBase';
+
 // @ts-ignore
-
 import React, { useState, useEffect } from 'react';
-
 
 
 function App() {
@@ -51,6 +48,7 @@ function App() {
 
     check();
   }, []);
+
   return (
     <ImageProvider>
       {/* <Router basename="/Automated-Nematode-Egg-Detection"> */}

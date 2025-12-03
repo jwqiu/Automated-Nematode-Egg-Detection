@@ -148,10 +148,10 @@ def analyze_and_write_ellipse(img_path, label_path, k=0.5):
 # -------------------------
 
 EXP_ROOT = "model_pipeline/Trained_Models_New/YOLO"
-DATA_TYPE = "test"  # change as needed
+DATA_TYPE = "val"  # change as needed
 test_root = f"dataset/{DATA_TYPE}/images"
 k = 0.5  # weight for confidence adjustment
-config_name = "yolov8s_sgd_lr0001_max_E200P20_AD914_OS68"
+config_name = "yolov8s_sgd_lr0001_max_E200P20_AD_0914_brightness_0.1"
 weight_path = f"model_pipeline/Trained_Models_New/YOLO/{config_name}/train/weights/best.pt"
 task = "detect"
 

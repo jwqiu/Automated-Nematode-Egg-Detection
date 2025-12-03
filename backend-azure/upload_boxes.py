@@ -10,6 +10,8 @@ from function_app import app
 # -------------------------------------------------------------
 
 # PostgreSQL configuration from environment variables
+# the environment variables are read once when the function app starts up
+
 DB_CONFIG = {
     "host": os.environ["DB_HOST"],       
     "port": 5432,
@@ -20,10 +22,10 @@ DB_CONFIG = {
 }
 
 @app.function_name(name="upload_boxes")
-# @app.route(route="upload_boxes", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 @app.route(route="upload/boxes", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def upload_boxes(req: func.HttpRequest) -> func.HttpResponse:
     try:
+        # extract filename and boxes from the request body
         data = req.get_json()
         filename = data.get("filename")
         boxes = data.get("boxes")
