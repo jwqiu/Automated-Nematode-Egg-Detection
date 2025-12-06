@@ -109,6 +109,8 @@ def predict(req: func.HttpRequest) -> func.HttpResponse:
         # for YOLO detection models, there is only a single output element, which contains all detected boxes information
         preds   = outputs[0]   # shape (M,5+num_classes) or (M,6) if nms=True
         
+        assert isinstance(preds, np.ndarray)
+
         # if no boxes detected, return empty result
         if preds is None or preds.shape[0] == 0:
            return func.HttpResponse(

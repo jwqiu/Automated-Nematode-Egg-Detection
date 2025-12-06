@@ -35,7 +35,7 @@ export function getApiBase() {
     // if in development model, use the dev API base, could be azure function or flask local backend
     ? (import.meta.env.VITE_API_BASE_DEV)
     // if in production model, use the prod API base(azure function backend)
-    : (import.meta.env.VITE_API_BASE_PROD);
+    : (import.meta.env.VITE_API_BASE_PROD || 'https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api');
 }
 
 export const API_BASE = getApiBase();
