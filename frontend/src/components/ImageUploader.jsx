@@ -58,6 +58,16 @@ export async function convertTifToPng(file) {
   });
 }
 
+function convertToBase64(blob) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result.split(",")[1];
+      resolve(base64);
+    };
+    reader.readAsDataURL(blob);
+  });
+}
 
 // React 组件函数，名称为 ImageUploader
 function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bottomButton = false, defaultHints = true, isCard = false, ready }) {
@@ -181,18 +191,6 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
 
     loadAll();
   }
-
-  function convertToBase64(blob) {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result.split(",")[1];
-        resolve(base64);
-      };
-      reader.readAsDataURL(blob);
-    });
-  }
-
 
   function handleRemove(uidToRemove) {
     const imgIndex = images.findIndex(img => img.uid === uidToRemove);

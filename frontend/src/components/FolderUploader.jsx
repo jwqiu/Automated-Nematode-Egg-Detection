@@ -1,20 +1,24 @@
 // @ts-ignore
-
 import React from 'react';
 // index.js
 const useState = React.useState;
 const useEffect = React.useEffect;
 const useRef = React.useRef;
 // @ts-ignore
-
 import { API_BASE } from '../apiBase'; 
 import FolderList from './FolderList';
 // @ts-ignore
 import { resizeAndPadImage, convertTifToPng } from './ImageUploader';
 import { drawBoxes } from "./FolderImagesList";
 
+
+// Here are some super simple rules i should remember when to use const to define a function, and when to use function declaration
+// Rule 1: if a function lives inside a React component, use const + arrow function
+// Rule 2: if a function does not depend on the component, use function declaration and place it outside the component
+
 function FolderUploader({ folders, setFolders, folderImages, setFolderImages, selectedFolder, setSelectedFolder, ready, detectionSettings, Threshold }) {
 
+    // create a ref to the hidden file input element, image upload button
     const inputRef = useRef(null);
 
     const [loading, setLoading]   = useState(false); // 是否显示浮层
@@ -148,6 +152,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
     }
 
     // Convert object URL to Base64 for easier handling on the backend
+    // this function should be defined by a function declaration and placed outside the component cause it does not depend on the component
     const objectUrlToBase64 = async (objectUrl) => {
         const res = await fetch(objectUrl);
         const blob = await res.blob();
@@ -176,7 +181,6 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
     };
-
 
     // handle detection
     const handleDetection = async () => {
