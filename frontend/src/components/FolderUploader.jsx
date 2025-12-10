@@ -239,7 +239,9 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         return res.json();
     };
 
-    // handle detection
+    // ---------------------
+    // handle image detection
+    // ---------------------
     const handleDetection = async () => {
 
         const queue = (folders || [])
