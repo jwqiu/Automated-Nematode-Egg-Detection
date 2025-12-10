@@ -6,7 +6,6 @@ Parasite infections are a major problem for farm animals and can cause significa
 
 <img width="360" height="270" alt="image" src="https://github.com/user-attachments/assets/cff5b22e-66b4-42a0-a2b7-c2a87885afd6" />
 
-
 ### 1.2 Problem
 
 The current manual egg-counting process is highly repetitive and time-consuming, which can be a serious bottleneck in parasite research and in animal health monitoring.
@@ -31,11 +30,11 @@ The original work laid a solid foundation with powerful model training tools. I 
 
 ### 2.2 Tech Stack for this Project
 
-- **Frontend:** React, Tailwind CSS, Vite — deployed via GitHub Pages
-- **Backend (Cloud):** Azure Functions (Python, ONNX Runtime)
-- **Backend (Local):** Flask — for development and testing
-- **Model Frameworks:** YOLO, DeepLab, and Faster R-CNN — all based on PyTorch
+- **Frontend:** React, Tailwind CSS, Vite 
+- **Backend :** Python, Flask
+- **Machine Learning & AI:** YOLO, MLP, PyTorch, ONNX Runtime
 - **Database & Storage:** Azure Blob Storage + Azure Database for PostgreSQL Flexible Server
+- **Deployment:** GitHub Pages(Frontend), Azure Function(Backend)
 
 ## 3. Model Details & Evaluation Results
 
