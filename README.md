@@ -28,7 +28,7 @@ Moving forward, the focus will be on improving detection effectiveness in real-w
 
 ## System Architecture
 
-![System Architecture](/docs/System%20Architecture.jpg)
+![System Architecture](/docs/System%20Architecture.png)
 
 ---
 
