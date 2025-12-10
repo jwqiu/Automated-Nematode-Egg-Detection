@@ -8,24 +8,25 @@ Parasite infections are a major problem for farm animals and can cause significa
 
 ### 1.2 Problem
 
-The current manual egg-counting process is highly repetitive and time-consuming, which can be a serious bottleneck in parasite research and in animal health monitoring.
+The current manual egg-counting process is highly repetitive and time-consuming, which can be a serious bottleneck in parasite research and in regular animal health monitoring.
 
 ### 1.3 Solution
 
-Building an automated way to identify and count the eggs, make the process faster, and reduces the amount of human effort required. The diagram below shows the difference between the current manual egg-counting process and the automated process I designed. This project forms a key part of that automated process
+Building an automated way to identify and count the eggs, make the process faster, and reduces the amount of human effort required. The diagram below shows the difference between the current manual egg-counting process and the automated process I designed. **This project forms a key part of that automated process, allowing users to upload folders of images - each folder represent images captured from a single slide - and use AI models to detect parasite eggs in every image and automatically count the total eggs identified per folder(slide)**
 
 <img width="469" height="439" alt="image" src="https://github.com/user-attachments/assets/4b2b2751-79eb-4730-b8d0-115f6e701f4c" />
 
 ### 1.4 Previous Work
 
-This project inherits and builds upon the work of [**shion92**](https://github.com/shion92), who created the original model training pipeline, including **DeepLab**, **Faster R-CNN**, **YOLO**, and various helper functions for training and evaluation.
+This project inherits and builds upon the work of [**shion92**](https://github.com/shion92), who created the original model training pipeline, including DeepLab, Faster R-CNN, YOLO, and various helper functions for training and evaluation.
 
-The original work laid a solid foundation with powerful model training tools. I extended it by developing a full web application, expanding the dataset, and further improving the model’s performance
+The original work laid a solid foundation with powerful model training tools and provided some baseline models to start with. **I extended it by developing a full web application, increasing the dataset's diversity, improving the model's performance, and adding post detection process to further enhance system accuracy.**
 
 ## 2. System Architecture & Tech Stack
 
 ### 2.1 Overview
 
+The following diagram summarizes the architecture of the Automated Egg Counting system, it illustrates the complete workflow - from uploading folders/images, preproessing, model inference, and post-detection processing, to visualizing results and storing relabel results.
 ![System Architecture](/docs/System%20Architecture.png)
 
 ### 2.2 Tech Stack for this Project
@@ -42,7 +43,9 @@ Details will be added soon.
 
 ## 4. Dataset
 
-The dataset used in this project comes from two main sources. First, lab-captured images provided by an industry client — the amount of this data is limited, but it reflects real-world cases. Second, open-source images collected from the internet — this dataset is much larger, but it may not fully represent real-world scenarios
+The dataset used in this project comes from two main sources: 
+- First, lab-captured images provided by an industry client — the amount of this data is limited, but it reflects real-world cases. 
+- Second, open-source images collected from the internet — this dataset is much larger, but it may not fully represent real-world scenarios
 
 | Stage          | Dataset Source     | Test | Validation | Training | Other |
 |----------------|---------------------|------|------------|----------|--------|
