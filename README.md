@@ -65,8 +65,8 @@ The backend then uses these logits to recalculate the final detection confidence
 
 The main metrics used to model performance in this project are F1 score and mAP50, the table below shows the overall performance of the integrated two-model system.
 
-| Model                  | Test F1 | Test mAP50 | Validation F1 | Validation mAP50 | Comment               |
-|------------------------|---------|------------|----------------|------------------|------------------------|
+| Model           | Test F1 | Test mAP50 | Validation F1 | Validation mAP50 | Comment               |
+|-----------------|---------|------------|----------------|------------------|------------------------|
 | yolov8s_sgd_lr0001_max_E200P20_AD_0914 + CNN Ellipse Classifier | 99.1%  | 99.8%     | 96.15%         | 90.91%           | 1. Best-performing model this semester.<br>2. Lower validation performance due to more difficult cases. |
 
 ## 3. Dataset
