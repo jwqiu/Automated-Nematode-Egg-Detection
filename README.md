@@ -12,27 +12,27 @@ The current manual egg-counting process is highly repetitive and time-consuming,
 
 ### 1.3 Solution
 
-#### 1.3.1 Overview
+#### 1) Overview
 
 Building an automated way to identify and count the eggs, make the process faster, and reduces the amount of human effort required. 
 
-#### 1.3.2 Process Design
+#### 2) Process Design
 
 The diagram below shows the difference between the current manual egg-counting process and the automated process I designed. 
 
 <img width="469" height="439" alt="image" src="https://github.com/user-attachments/assets/4b2b2751-79eb-4730-b8d0-115f6e701f4c" />
 
-#### 1.3.3 Key Feature
+#### 3) Key Feature
 
 This project forms a key part of that automated process, **allowing users to upload folders of images - each folder represent images captured from a single slide - and use AI models to detect parasite eggs in every image and automatically count the total eggs identified per folder(slide)**
 
 ### 1.4 Previous Work
 
-#### 1.4.1 Project Foundation
+#### 1) Project Foundation
 
 This project inherits and builds upon the work of [**shion92**](https://github.com/shion92), who created the original model training pipeline, including DeepLab, Faster R-CNN, YOLO, and various helper functions for training and evaluation. The previous work laid a solid foundation with powerful model training tools and provided some baseline models to start with. 
 
-#### 1.4.2 What I added to this Project
+#### 2) What I added to this Project
 
 I extended it by developing a full web application, increasing the dataset's diversity, improving the model's performance, and adding post detection process to further enhance system accuracy.
 
@@ -54,14 +54,14 @@ The following diagram summarizes the architecture of the Automated Egg Counting 
 
 ### 2.3 Model Components
 
-#### 2.3.1 Model Overview
+#### 1) Model Overview
 
 There are two models used in this project:
 -  The main model is YOLOv8s, which identifies candidate egg objects. it takes the user-uploaded images(after preprocessing) as input and outputs the bounding-box coordinates and detection confidence for all detected objects
 -  The second model is a CNN-Based classifier, which evaluates each candidate egg based on its shape (most typical egg have an elliptical appearance) and adjusts YOLO's detection confidence accordingly. Before running this model, each candidate region is cropped from the original image and processed into a 64×64 grayscale image. The CNN takes this small image as input and outputs logits.
 The backend then uses these logits to recalculate the final detection confidence before returning the results to the frontend
 
-#### 2.3.2 Final Model Performance
+#### 2) Final Model Performance
 
 The main metrics used to model performance in this project are F1 score and mAP50, the table below shows the overall performance of the integrated two-model system.
 
