@@ -1,17 +1,14 @@
 // @ts-ignore
 import React from 'react';
 // @ts-ignore
-
-import { API_BASE } from '../apiBase';
-
-// index.js
 const useState = React.useState;
 const useEffect = React.useEffect;
 const useMemo   = React.useMemo;
 const useRef = React.useRef;
 
 // this function used to draw boxes on the image canvas after receiving boxes from backend
-export function drawBoxes(item, detectionSettings,Threshold) {
+// this function is called when the image first loads and when the detection settings change in applySort(user clicks sort by confidence/ no-eggs)
+export function drawBoxes(item, confidenceMode,Threshold) {
   if (!item?.boxes?.length) return;
   const img = item.imgRef;
   const canvas = document.getElementById(`canvas-${item.filename}`);
@@ -19,32 +16,32 @@ export function drawBoxes(item, detectionSettings,Threshold) {
 
   const ctx = canvas.getContext("2d");
 
-  // ✅ 获取原始尺寸与显示尺寸
-  const naturalWidth = img.naturalWidth;   // 原始图像宽
-  const naturalHeight = img.naturalHeight; // 原始图像高
-  const displayWidth = img.clientWidth;    // 当前显示宽
-  const displayHeight = img.clientHeight;  // 当前显示高
+  // get original and display dimensions, cause the image may be scaled in the browser
+  const naturalWidth = img.naturalWidth;   // original image width
+  const naturalHeight = img.naturalHeight; // original image height
+  const displayWidth = img.clientWidth;    // current display width
+  const displayHeight = img.clientHeight;  // current display height
 
-  // ✅ 计算缩放比例
+  // calculate scaling factors
   const scaleX = displayWidth / naturalWidth;
   const scaleY = displayHeight / naturalHeight;
 
   canvas.width = displayWidth;
   canvas.height = displayHeight;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height); // clear previous drawings
 
   ctx.lineWidth = 2;
   ctx.font = "12px Arial";
 
-  // determine which confidence to use and the boxes to draw, depending on detectionSettings and conf threshold value
+  // determine which confidence to use and the boxes to draw, depending on confidenceMode and conf threshold value
   item.boxes.forEach((b) => {
     const conf =
-      detectionSettings.mode === "adjusted"
+      confidenceMode.mode === "adjusted"
         ? b.adjusted_confidence
         : b.confidence;
     if (Number(conf) < Number(Threshold)) return;
 
-    // ✅ 坐标按比例缩放
+    // scale box coordinates
     const [x1, y1, x2, y2] = b.bbox.map((v, i) =>
       i % 2 === 0 ? v * scaleX : v * scaleY
     );
@@ -52,13 +49,13 @@ export function drawBoxes(item, detectionSettings,Threshold) {
     const text = `${(conf * 100).toFixed(1)}%`;
 
     // draw boxes, confidence text with white shadow and red text
-    // ✅ 红框
+    // ✅ red box
     ctx.strokeStyle = "red";
     ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
 
-    // ✅ 白色阴影文字
+    // ✅ white shadow text
     const x = x1;
-    const y = Math.max(10, y1 - 5); // 防止文字超出边界
+    const y = Math.max(10, y1 - 5); // prevent text from going out of bounds
     ctx.fillStyle = "white";
     [-1, 0, 1].forEach((dx) =>
       [-1, 0, 1].forEach((dy) => {
@@ -66,57 +63,46 @@ export function drawBoxes(item, detectionSettings,Threshold) {
       })
     );
 
-    // ✅ 主文字
+    // ✅ main text
     ctx.fillStyle = "red";
     ctx.fillText(text, x, y);
   });
 }
 
-function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folders, setFolders, setDetectionSettings, detectionSettings,Threshold }) {
+// TODO: if the user confirms adjustment, we should upload the image to the backend so i can re-train the model with the bad cases
+function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folders, setFolders, setConfidenceMode, confidenceMode, Threshold }) {
 
-    // Get and memoize images of the selected folder
+    // useMemo = don't redo work unless necessary
+    // files contains the list of images for the selected folder
+    // useMemo ensure this computation only runs when selectedFolder or folderImages change
     const files = useMemo(() => {
-        if (!selectedFolder || !folderImages) return [];
+        if (!selectedFolder || !folderImages) return []; // if no folder selected or the image data is empty, return empty array
 
-        // 数组模式：全局数组里按 folder 过滤
+        // if folderImages is an array, filter only images from the selected folder to display
         if (Array.isArray(folderImages)) {
             return folderImages.filter(x => x.folder === selectedFolder);
         }
 
-        // 对象模式：直接按 key 取
+        // if folderImages is an object, directly access by key
         const arr = folderImages[selectedFolder];
         return Array.isArray(arr) ? arr : [];
     }, [selectedFolder, folderImages]);
 
-    // Convert a Base64 image string (from backend) into a Blob so it can be displayed or downloaded in the browser
-    function dataURLtoBlob(dataUrl) {
-        const [meta, b64] = String(dataUrl).split(',');
-        const mime = /data:(.*?);base64/.exec(meta)?.[1] || 'application/octet-stream';
-        const bin = atob(b64);
-        const u8 = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-        return new Blob([u8], { type: mime });
-    }
-
-    async function srcToBlob(src) {
-        if (!src) throw new Error('No image src');
-        // dataURL -> Blob；objectURL/普通 URL -> fetch -> Blob
-        return src.startsWith('data:') ? dataURLtoBlob(src) : (await fetch(src)).blob();
-    }
-
     // helpers to identify file types
+    // I might build similar functions like this in other components, consider making it a shared utility later
     const isImage = (name) => /\.(png|jpe?g|gif|bmp|webp|tiff?)$/i.test(name);
     const isPdf = (name) => /\.pdf$/i.test(name);
 
-    const title = selectedFolder || '';
+    const title = selectedFolder || ''; // selectedFolder stores the name of the currently selected folder, which is set in FolderList component
     const total = files.length;
-    const eggnum = folders?.find(f => f.name === selectedFolder)?.eggnum ?? '-';
+    const eggnum = folders?.find(f => f.name === selectedFolder)?.eggnum ?? '-'; // get eggnum for the selected folder, eggnum is stored in folders state
 
-    // 新增：弹层开关与选择值
-    const [editingKey, setEditingKey] = useState(null);
+    // key is foldername/filename, the unique identifier for each image
+    // the adjust egg found modal opens when editingKey is set
+    const [editingKey, setEditingKey] = useState(null); 
     const [choice, setChoice] = useState(0);
 
-    // set up adjust egg found modal
+    // when user clicks "Incorrect detection", set the editingKey to open the adjust modal, and the current eggfound will be set to choice state
     const openAdjust = (key, current) => {
         setEditingKey(key);
         setChoice(Number.isFinite(current) ? current : 0);
@@ -126,99 +112,115 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
     const confirmAdjust = async () => {
         if (!editingKey) return;
 
-        // 先解析 key，定位这张图
-        const [folderName, ...rest] = String(editingKey).split('/');
-        const filename = rest.join('/');
-
-        // 拿到“当前这张图”的快照（上传用），优先 annotated_image
-        const beforeArr = Array.isArray(folderImages?.[folderName]) ? folderImages[folderName] : [];
-        const beforeItem = beforeArr.find(it => it.filename === filename);
+        const [folderName, ...rest] = String(editingKey).split('/'); // first, convert editingKey to string and split to get foldername and filename, then set the first part as folderName
+        const filename = rest.join('/'); // set the rest as filename
 
         setFolderImages(prev => {
-            const arr = Array.isArray(prev?.[folderName]) ? prev[folderName] : [];
+            const arr = Array.isArray(prev?.[folderName]) ? prev[folderName] : []; //prev[folderName] safely checks whether prev and prev[folderName] exist
             if (!arr.length) return prev;
 
             const newArr = arr.map(it =>
-                it.filename === filename ? { ...it, eggfound: choice } : it
+                it.filename === filename ? { ...it, eggfound: choice } : it // update eggfound for the specific image
             );
-            const next = { ...prev, [folderName]: newArr };
+            const next = { ...prev, [folderName]: newArr }; // create a new object with updated array for the specific folder
 
-            // ✅ 这里直接更新 folders，而不是等 folderImages 异步更新完
+            // reduce loops through newArr to calculate total eggfound for the folder
             const total = newArr.reduce((sum, it) => sum + (it.eggfound ?? 0), 0);
             setFolders(fs => fs.map(f =>
-                f.name === folderName ? ({ ...f, eggnum: total }) : f
+                f.name === folderName ? ({ ...f, eggnum: total }) : f // set the updated eggnum for the specific folder
             ));
 
             return next;
         });
 
+        // close the modal and clear editingKey
         setEditingKey(null);
     };
 
     const cancelAdjust = () => setEditingKey(null);
 
-    // 弹层与模式
+    // state and handlers for sort modal
     const [sortOpen, setSortOpen] = useState(false);
-    const [sortPos, setSortPos] = useState({ x: 0, y: 0 });
+    const [sortPos, setSortPos] = useState({ x: 0, y: 0 }); // this state is to save the clicked position of my mouse
     const [sortMode, setSortMode] = useState(null); // 'lowest' | 'noeggs'
 
-    // set up sort modal
+    // this function is called when user clicks the sort button 
     const handleOpenSort = (e) => {
-        setSortPos({ x: e.clientX, y: e.clientY });
-        setSortOpen(true);
+        setSortPos({ x: e.clientX, y: e.clientY }); // save the mouse click position
+        setSortOpen(true); // open the sort modal
     };
 
     // apply sorting to images in the selected folder
     const applySort = (mode) => {
+        // after use clicks a sort option, first set the sortMode state
         setSortMode(mode);
         if (!selectedFolder) { setSortOpen(false); return; }
 
+        // then update folderImages state to sort images based on the selected mode
         setFolderImages(prev => {
             const arr = Array.isArray(prev?.[selectedFolder]) ? prev[selectedFolder] : [];
             if (!arr.length) return prev;
 
+            // define a small helper function to return score for images, if no eggs detected, return 0, else return 1
             const scoreNoEggs = (img) =>
             (img.detected && (img.boxes?.length || 0) === 0) ? 0 : 1;
 
+            // define a small helper function to return the lowest confidence in an image's boxes
             const metricLowest = (img) => {
-            const boxes = img.boxes || [];
-            if (!boxes.length) return Number.POSITIVE_INFINITY;
-            let m = Infinity;
-            for (const b of boxes) {
-                const c = typeof b.confidence === 'number' ? b.confidence : 1;
-                if (c < m) m = c;
-            }
-            return m;
+                const boxes = img.boxes || [];
+                if (!boxes.length) return Number.POSITIVE_INFINITY;
+                let m = Infinity;
+                for (const b of boxes) {
+                    const conf =
+                    confidenceMode.mode === "adjusted"
+                        ? b.adjusted_confidence
+                        : b.confidence;
+                    const c = typeof conf === 'number' ? conf : 1;
+                    if (c < m) m = c;
+                }
+                return m;
             };
 
-            const sorted = arr.slice().sort((a, b) =>
-            mode === 'noeggs'
-                ? (scoreNoEggs(a) - scoreNoEggs(b))
-                : (metricLowest(a) - metricLowest(b))
+            const sorted = arr.slice().sort((a, b) => // slice() means create a shallow copy to avoid mutating original array
+            mode === 'noeggs' 
+                ? (scoreNoEggs(a) - scoreNoEggs(b)) // the smaller number appears first, so no-eggs (0) comes before eggs (1)
+                : (metricLowest(a) - metricLowest(b)) // the lower confidence appears fiirst
             );
 
-            return { ...prev, [selectedFolder]: sorted }; // 仅更新该文件夹
+            return { ...prev, [selectedFolder]: sorted }; // only update the specific folder
         });
 
         setSortOpen(false);
     };
 
-    // check if the selected folder is complete
+    // check if the detection for the selected folder is complete, and this will determine whether to show the eggnum and sort button
     const isComplete = !!folders?.some(
         f => f.name === selectedFolder && (f.status || '').toLowerCase() === 'completed'
     );
 
+    // apply initial sort when selectedFolder changes and detection is complete
+    useEffect(() => {
+        if (selectedFolder && isComplete) {
+            setSortMode('lowest');
+            applySort('lowest');
+        }
+    }, [selectedFolder, isComplete]);
+
+
     return (
         <div className='bg-white flex flex-col rounded-lg w-full shadow-lg p-8'>
+            {/* the right-hand header */}
             <div className='flex   justify-between items-center mb-3'>
                 <div className='flex flex-col  gap-y-3 xl:flex-row xl:items-center xl:justify-between xl:gap-y-0  w-full'>
                     <h2 className='font-semibold mb-0'>{title}</h2>
                     <div className='flex gap-x-4'>
+                        {/* show total images found in the selected folder if selectedFolder exists */}
                         {selectedFolder && (
                             <div className='text-gray-700 px-4 py-2 bg-gray-100 shadow rounded-lg'><span className='font-bold text-md text-blue-500 me-2'>{total}</span> images Found</div>
 
                         )}
-                    
+
+                        {/* show total eggs found in the selected folder if detection is complete */}
                         { isComplete && (
                             <div className='flex items-center gap-x-4'>
                                 <div className='text-gray-500 bg-gray-100 shadow  px-4 py-2 rounded-lg'>
@@ -242,7 +244,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
 
             </div>
             {sortOpen &&  (
-
+                // dropdown menu for sort options
                 <div className="relative inline-block">
                     <div className="fixed inset-0 z-40" onClick={() => setSortOpen(false)}></div>  {/* ✅ 新增遮罩层 */}
                     <div className="absolute top-full mt-2 right-0 z-50 bg-white shadow-lg rounded-lg border p-8 w-96 text-gray-700 text-sm" onClick={(e) => e.stopPropagation()} >
@@ -275,32 +277,32 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                             <div className="text-md font-semibold  mb-3">How to Identify an Egg:</div>
                             <button
                             onClick={() => {
-                                setDetectionSettings({ mode: 'original' });
+                                setConfidenceMode({ mode: 'original' });
                                 setSortOpen(false);
                                 files.forEach(item => drawBoxes(item, { mode: 'original' }, Threshold)); // ✅ 立即重绘
                             }}
                             className={`w-full bg-gray-100 group inline-flex justify-start mb-2 items-center gap-2 px-4 py-2 rounded-lg 
                                 hover:bg-blue-100 hover: transition 
-                                ${detectionSettings.mode === 'original' ? '  bg-blue-100 ' : ''}`}
+                                ${confidenceMode.mode === 'original' ? '  bg-blue-100 ' : ''}`}
                             >
 
                             Original Confidence &gt; {Threshold}
-                            {detectionSettings.mode === 'original' && <span className="ml-auto text-blue-500">✓</span>}
+                            {confidenceMode.mode === 'original' && <span className="ml-auto text-blue-500">✓</span>}
                             </button>
 
                             <button
                             onClick={() => {
-                                setDetectionSettings({ mode: 'adjusted' });
+                                setConfidenceMode({ mode: 'adjusted' });
                                 setSortOpen(false);
                                 files.forEach(item => drawBoxes(item, { mode: 'adjusted' }, Threshold)); // ✅ 立即重绘
                             }}
                             className={`w-full bg-gray-100 group inline-flex justify-start items-center gap-2 px-4 py-2 rounded-lg 
                                 hover:bg-blue-100 hover: transition 
-                                ${detectionSettings.mode === 'adjusted' ? '  bg-blue-100 ' : ''}`}
+                                ${confidenceMode.mode === 'adjusted' ? '  bg-blue-100 ' : ''}`}
                             >
 
                             Adjusted Confidence &gt; {Threshold}
-                            {detectionSettings.mode === 'adjusted' && <span className="ml-auto text-blue-500">✓</span>}
+                            {confidenceMode.mode === 'adjusted' && <span className="ml-auto text-blue-500">✓</span>}
                             </button>
                         </div>
                         
@@ -310,7 +312,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                 </div>
 
             )}
-
+        {/* No images message */}
         {total === 0 ? (
             <div className="flex h-full justify-center items-center text-gray-400 mb-4 italic">
                 <div>
@@ -318,6 +320,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                 </div>
             </div>
         ) : (
+            // images grid
             <div className="overflow-y-auto mt-3 overscroll-y-contain grid grid-cols-1 xl:grid-cols-2 gap-4">
             {files.map((item) => {
                 const url = item.annotated_image || item.original_image; // 优先标注图
@@ -326,7 +329,8 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                 return (
                 <div key={key} className="border relative rounded-lg " >
                     {isImage(item.filename) ? (
-    
+                    
+                    // image preview with canvas for boxes
                     <div style={{ position: "relative", display: "inline-block" }}>
                         <img
                             ref={(el) => (item.imgRef = el)} // ✅ 保存图片引用
@@ -334,7 +338,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                             alt={item.filename}
                             className="w-full h-auto rounded"
                             loading="lazy"
-                            onLoad={() => drawBoxes(item, detectionSettings, Threshold)} // ✅ 图片加载后画框
+                            onLoad={() => drawBoxes(item, confidenceMode, Threshold)} // ✅ 图片加载后画框
                         />
                         <canvas
                             id={`canvas-${item.filename}`}
@@ -360,7 +364,9 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                     ) : (
                     <div className="text-gray-500 text-sm">No preview</div>
                     )}
+                    {/* Image details panel */}
                     <div>
+                        {/* Image filename and egg count */}
                         <div className='flex flex-row text-nowrap items-center '>
                             <div className="px-2 py-1 text-md truncate" title={item.filename}>
                                 {item.filename}
@@ -369,11 +375,13 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                 <span className=" me-1 text-sm">({item.eggfound} eggs)</span>
                             )}
                         </div>
-                
+                        
+                        {/* Detection boxes list */}
                         <div className="px-2 pb-1 text-xs text-gray-600">
+                            {/* if detected, render the detection boxes */}
                             {item.detected ? (
                                 (item.boxes?.some(b => {
-                                    const conf = detectionSettings.mode === 'adjusted'
+                                    const conf = confidenceMode.mode === 'adjusted'
                                     ? b.adjusted_confidence
                                     : b.confidence;
                                     return conf > Threshold;
@@ -382,7 +390,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                     <ul className="space-y-1">
                                         {item.boxes
                                             ?.filter(b => {
-                                                const conf = detectionSettings.mode === 'adjusted'
+                                                const conf = confidenceMode.mode === 'adjusted'
                                                 ? b.adjusted_confidence
                                                 : b.confidence;
                                                 return conf > Threshold; // ✅ 阈值判断
@@ -406,6 +414,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                         <div className='text-blue-500 cursor-pointer' onClick={() => openAdjust(key, item.eggfound)}>
                                            Incorrect detection {">>"}
                                         </div>
+                                        {/* Adjust egg count modal */}
                                         {editingKey === key && (
                                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
                                                 <div className="bg-white rounded-lg p-4 w-64 shadow-lg">
@@ -434,6 +443,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                     </div>
                                 </div>
                             ) : (
+                                // if no eggs found, show message
                                 <div className='flex flex-col items-start'>
                                     <div className="italic text-gray-400 mb-1">No eggs found by AI</div>
                                     <div className="flex items-center">
@@ -472,6 +482,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                 </div>
                             ))
                             ) : (
+                            // if not yet detected, show pending message
                             <div className="italic text-gray-400">Pending detection…</div>
                             )}
                         </div>

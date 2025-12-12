@@ -6,9 +6,11 @@ const useEffect = React.useEffect;
 const useRef = React.useRef;
 // @ts-ignore
 import { API_BASE } from '../apiBase'; 
+// @ts-ignore
 import FolderList from './FolderList';
 // @ts-ignore
 import { resizeAndPadImage, convertTifToPng } from './ImageUploader';
+// @ts-ignore
 import { drawBoxes } from "./FolderImagesList";
 
 
@@ -83,7 +85,7 @@ const objectUrlToBase64 = async (objectUrl) => {
 // there is something that doesn't make sense here, my code convert the file to an object URL for preview, and later convert that URL back into Base64 to send to backend
 // it's not very efficient, because i already had the original file, i could keep the file and convert it directly when needed
 
-function FolderUploader({ folders, setFolders, folderImages, setFolderImages, selectedFolder, setSelectedFolder, ready, detectionSettings, Threshold }) {
+function FolderUploader({ folders, setFolders, folderImages, setFolderImages, selectedFolder, setSelectedFolder, ready, confidenceMode, Threshold }) {
 
     // create a ref to the hidden file input element, image upload button
     // however, this ref is not used in the current code, because we use label+htmlFor to trigger the input click
@@ -307,7 +309,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                             // eggfound: (json.boxes?.length || 0),
                             // the count of boxes depending on which confidence mode user selected
                             eggfound: (json.boxes || []).filter(b => {
-                                const conf = detectionSettings.mode === 'adjusted'
+                                const conf = confidenceMode.mode === 'adjusted'
                                     ? b.adjusted_confidence
                                     : b.confidence;
                                 return conf > Threshold;
@@ -317,7 +319,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                         // after receiving boxes, draw them on the image
                         // drawBoxes is a function imported from FolderImagesList.jsx
                         setTimeout(() => {
-                            drawBoxes(updated, detectionSettings, Threshold);
+                            drawBoxes(updated, confidenceMode, Threshold);
                         }, 0);
                         
                         // loop through each image in the array, if the index matches idx, replace it with updated object we just created, otherwise keep it unchanged
@@ -351,7 +353,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                     // count the number of valid boxes across all images in this folder, and only count boxes that meet the confidence threshold
                     const eggCount = arr.reduce((sum, it) => {
                         const validBoxes = (it.boxes || []).filter(b => {
-                            const conf = detectionSettings.mode === 'adjusted' 
+                            const conf = confidenceMode.mode === 'adjusted' 
                             ? b.adjusted_confidence 
                             : b.confidence;
                             return conf > Threshold;
@@ -380,7 +382,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
     useEffect(() => {
         setFolderImages(prev => { 
             // this use of setFolderImages is different from the previous one
-            // here we update every image's eggfound based on the new detectionSettings
+            // here we update every image's eggfound based on the new confidenceMode
             // before we only updated folder-level status without modifying image data
             const next = {};
 
@@ -392,7 +394,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
             // recalculate eggfound for each image
             next[folderName] = arr.map(it => {
                 const validBoxes = (it.boxes || []).filter(b => {
-                    const conf = detectionSettings.mode === 'adjusted'
+                    const conf = confidenceMode.mode === 'adjusted'
                         ? b.adjusted_confidence
                         : b.confidence;
                     return conf > Threshold;
@@ -411,7 +413,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
             const arr = folderImages?.[f.name] || [];
             const eggCount = arr.reduce((sum, it) => {
                 const validBoxes = (it.boxes || []).filter(b => {
-                const conf = detectionSettings.mode === 'adjusted'
+                const conf = confidenceMode.mode === 'adjusted'
                     ? b.adjusted_confidence
                     : b.confidence;
                 return conf > Threshold;
@@ -421,7 +423,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
             return { ...f, eggnum: eggCount };
             })
         );
-    }, [detectionSettings.mode]); // this is a dependency array, meaning this effect runs whenever detectionSettings.mode changes
+    }, [confidenceMode.mode]); // this is a dependency array, meaning this effect runs whenever confidenceMode.mode changes
 
     // determine if detection can be started
     const statuses = (folders || []).map(f => (f.status || 'not started').toLowerCase());
@@ -437,6 +439,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
 
     return (
         <div className=" bg-white rounded-lg shadow-lg h-full shrink-0 flex flex-col gap-y-4 w-[350px] p-8 ">
+            {/* Folders upload button */}
             <div className='flex flex-row h-[30px] items-center justify-between  gap-x-4 mb-1'>
                 <h2 className="font-semibold">Folders</h2>
 
@@ -469,11 +472,12 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                     setFolderImages={setFolderImages}
                     selectedFolder={selectedFolder}
                     setSelectedFolder={setSelectedFolder}
-                    detectionSettings={detectionSettings}
+                    confidenceMode={confidenceMode}
                     Threshold={Threshold}
   
                 />
             </div>
+            {/* Start detection button */}
             <div className='mt-auto flex h-[30px] flex-col gap-y-1'>
                 <div>
                     <button
@@ -488,6 +492,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                     </button>
                 </div>
             </div>
+            {/* Uploading and loading overlay */}
             {(uploading || loading) && (
                 <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center z-50">
                     <div className="w-72 bg-gray-200 rounded-full h-4 mb-4 overflow-hidden shadow-inner">

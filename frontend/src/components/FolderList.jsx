@@ -1,14 +1,5 @@
-// @ts-ignore
 
-import React from 'react';
-// index.js
-const useState = React.useState;
-const useEffect = React.useEffect;
-const useRef = React.useRef;
-import { drawBoxes } from "./FolderImagesList";
-
-
-function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImages, selectedFolder, setSelectedFolder, detectionSettings, Threshold }) {
+function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImages, selectedFolder, setSelectedFolder }) {
 
     // handle folder selection
     const handleFolderSelect = (folder) => {
@@ -22,8 +13,10 @@ function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImag
     }
 
     // folder status badge
+    // status is a property of each folder object, it first set to not started when uploaded in FolderUploader
+    // this property will be set to in progress when detection starts, and completed when detection finishes
     const statusBadge = (status) => {
-        switch ((status || 'not started').toLowerCase()) {
+        switch ((status || 'not started').toLowerCase()) { // if status is empty, underdefined, or null, use not started as default / fall back
             case 'in progress':
                 return <span className="text-xs bg-blue-500 text-white rounded-lg px-2 py-1 italic">In Progress</span>;
             case 'completed':
@@ -34,21 +27,24 @@ function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImag
     };
 
     // handle folder deletion
+    // when a user deletes a folder, three things need to be done:
+    // 1) remove the folder from the folders state
+    // 2) remove all images belonging to that folder from the folderImages state
+    // 3) clear 'selectedFolder' if the deleted folder is currently selected
     const handleDelete = (e, name) => {
         e.stopPropagation();
         setFolders(prev => prev.filter(f => f.name !== name));
-        
         setFolderImages(prev => {
-            // 1) 若是数组，先按 folder 分组为对象
+            // if prev is an array, convert to object first
             const obj = Array.isArray(prev)
                 ? prev.reduce((acc, img) => {
                     const key = img.folder || 'unknown';
                     (acc[key] ||= []).push(img);
                     return acc;
                 }, {})
-                : { ...(prev || {}) }; // 2) 若已是对象，浅拷贝
+                : { ...(prev || {}) }; // if already an object, just copy it
 
-            // 3) 删除该文件夹
+            // 3) Delete the folder
             delete obj[name];
             return obj;
         });
@@ -59,6 +55,7 @@ function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImag
 
     return (
         <div className=" flex flex-col gap-y-4">
+        {/* render each folder item from folders state */}
         {folders.map(({ name, count, status, eggnum }) => {
 
             const active = selectedFolder === name;
@@ -115,7 +112,6 @@ function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImag
                     <div>{statusBadge(status)}</div>
 
                 </div>
-                {/* 右边：状态，这里先固定成 Waiting，你可以以后加状态逻辑 */}
             
             </div>
             );
