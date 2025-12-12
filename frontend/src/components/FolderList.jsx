@@ -1,3 +1,6 @@
+// ==========================================
+// Main UI component
+// ==========================================
 
 function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImages, selectedFolder, setSelectedFolder }) {
 

@@ -30,7 +30,7 @@ function FolderModePage({ ready }) {
     const [confidenceMode, setConfidenceMode] = useState({
         mode: 'original' // 'original' | 'adjusted'
     });
-    const [Threshold, setThreshold] = useState(0.5);
+    const [Threshold, setThreshold] = useState(0.5); // at the moment, this threshold can only be changed in this code, can not be changed from UI yet
 
     return (
         <div className='flex flex-col h-screen '>

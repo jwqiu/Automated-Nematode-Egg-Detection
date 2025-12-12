@@ -69,8 +69,16 @@ export function drawBoxes(item, confidenceMode,Threshold) {
   });
 }
 
+// ==========================================
+// Main UI component
+// ==========================================
+
 // TODO: if the user confirms adjustment, we should upload the image to the backend so i can re-train the model with the bad cases
 function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folders, setFolders, setConfidenceMode, confidenceMode, Threshold }) {
+
+    // ---------------------
+    // Data preparation
+    // ---------------------
 
     // useMemo = don't redo work unless necessary
     // files contains the list of images for the selected folder
@@ -88,7 +96,19 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
         return Array.isArray(arr) ? arr : [];
     }, [selectedFolder, folderImages]);
 
-    // helpers to identify file types
+    // ---------------------------------------------
+    // Folder completion check(controls header UI)
+    // ---------------------------------------------
+
+    // check if the detection for the selected folder is complete, and this will determine whether to show the eggnum and sort button
+    const isComplete = !!folders?.some(
+        f => f.name === selectedFolder && (f.status || '').toLowerCase() === 'completed'
+    );
+
+    // -----------------------------------------------------------------
+    // helper functions to identify file types (probably not necessary)
+    // -----------------------------------------------------------------
+
     // I might build similar functions like this in other components, consider making it a shared utility later
     const isImage = (name) => /\.(png|jpe?g|gif|bmp|webp|tiff?)$/i.test(name);
     const isPdf = (name) => /\.pdf$/i.test(name);
@@ -97,22 +117,26 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
     const total = files.length;
     const eggnum = folders?.find(f => f.name === selectedFolder)?.eggnum ?? '-'; // get eggnum for the selected folder, eggnum is stored in folders state
 
-    // key is foldername/filename, the unique identifier for each image
-    // the adjust egg found modal opens when editingKey is set
-    const [editingKey, setEditingKey] = useState(null); 
-    const [choice, setChoice] = useState(0);
+    // ---------------------
+    // Adjust egg count logic
+    // ---------------------
 
-    // when user clicks "Incorrect detection", set the editingKey to open the adjust modal, and the current eggfound will be set to choice state
+    // key is foldername/filename, the unique identifier for each image
+    // the adjust egg found modal opens when imageBeingEdited is set
+    const [imageBeingEdited, setImageBeingEdited] = useState(null); 
+    const [choice, setChoice] = useState(0); // choice is the number of eggs user selects in the adjust modal
+    
+    // when user clicks "Incorrect detection", set the imageBeingEdited to open the adjust modal, and the current eggfound will be set to choice state
     const openAdjust = (key, current) => {
-        setEditingKey(key);
+        setImageBeingEdited(key);
         setChoice(Number.isFinite(current) ? current : 0);
     };
     
     // handle confirm adjust and update folderimages and folders state
     const confirmAdjust = async () => {
-        if (!editingKey) return;
+        if (!imageBeingEdited) return;
 
-        const [folderName, ...rest] = String(editingKey).split('/'); // first, convert editingKey to string and split to get foldername and filename, then set the first part as folderName
+        const [folderName, ...rest] = String(imageBeingEdited).split('/'); // first, convert imageBeingEdited to string and split to get foldername and filename, then set the first part as folderName
         const filename = rest.join('/'); // set the rest as filename
 
         setFolderImages(prev => {
@@ -133,11 +157,15 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
             return next;
         });
 
-        // close the modal and clear editingKey
-        setEditingKey(null);
+        // close the modal and clear imageBeingEdited
+        setImageBeingEdited(null);
     };
 
-    const cancelAdjust = () => setEditingKey(null);
+    const cancelAdjust = () => setImageBeingEdited(null);
+
+    // ---------------------
+    // Image sorting logic
+    // ---------------------
 
     // state and handlers for sort modal
     const [sortOpen, setSortOpen] = useState(false);
@@ -192,11 +220,6 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
 
         setSortOpen(false);
     };
-
-    // check if the detection for the selected folder is complete, and this will determine whether to show the eggnum and sort button
-    const isComplete = !!folders?.some(
-        f => f.name === selectedFolder && (f.status || '').toLowerCase() === 'completed'
-    );
 
     // apply initial sort when selectedFolder changes and detection is complete
     useEffect(() => {
@@ -415,7 +438,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                            Incorrect detection {">>"}
                                         </div>
                                         {/* Adjust egg count modal */}
-                                        {editingKey === key && (
+                                        {imageBeingEdited === key && (
                                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
                                                 <div className="bg-white rounded-lg p-4 w-64 shadow-lg">
                                                     <div className="font-medium mb-2">Adjust egg count</div>
@@ -453,7 +476,7 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                         <div className='text-blue-500 cursor-pointer' onClick={() => openAdjust(key, item.eggfound)}>
                                             Incorrect detection {">>"}
                                         </div>
-                                        {editingKey === key && (
+                                        {imageBeingEdited === key && (
                                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
                                                 <div className="bg-white rounded-lg p-8 w-64 shadow-lg">
                                                     <div className="font-medium mb-2">Adjust Egg Num in this picture</div>

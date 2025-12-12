@@ -39,6 +39,10 @@ import { drawBoxes } from "./FolderImagesList";
 // merge the existing data and new data into it, and then set the new object/array as the new state
 
 
+// ==========================================
+// Image processing helper functions
+// ==========================================
+
 // this function takes an uploaded file, convert TIFF to PNG if needed, loads it as an image,, resizes and pads it to 608×608
 // returns a new PNG blob with a temporary URL and a new filename
 async function preprocessTo608(file) {
@@ -85,6 +89,11 @@ const objectUrlToBase64 = async (objectUrl) => {
 // there is something that doesn't make sense here, my code convert the file to an object URL for preview, and later convert that URL back into Base64 to send to backend
 // it's not very efficient, because i already had the original file, i could keep the file and convert it directly when needed
 
+
+// ==========================================
+// Main UI component
+// ==========================================
+
 function FolderUploader({ folders, setFolders, folderImages, setFolderImages, selectedFolder, setSelectedFolder, ready, confidenceMode, Threshold }) {
 
     // create a ref to the hidden file input element, image upload button
@@ -100,6 +109,24 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
     const [uploading, setUploading]   = useState(false);
     const [uplProgress, setUplProgress] = useState(0);
     const [uplTotal, setUplTotal]       = useState(0);
+
+    // ---------------------
+    // helper functions
+    // ---------------------
+
+    // simple image name checker
+    const isImageName = (name) => /\.(png|jpe?g|gif|bmp|webp|tiff?)$/i.test(name);
+
+    // function to call backend
+    const callPredict = async (image_base64, API_BASE) => {
+        const res = await fetch(`${API_BASE}/predict`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_base64 })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+    };
 
     // ---------------------
     // handle folder upload
@@ -225,20 +252,6 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         if (!selectedFolder && nextFolders.length) setSelectedFolder(nextFolders[0].name);
 
         e.target.value = '';
-    };
-
-    // simple image name checker
-    const isImageName = (name) => /\.(png|jpe?g|gif|bmp|webp|tiff?)$/i.test(name);
-
-    // function to call backend
-    const callPredict = async (image_base64, API_BASE) => {
-        const res = await fetch(`${API_BASE}/predict`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_base64 })
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
     };
 
     // ---------------------
@@ -378,6 +391,10 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
 
     };
 
+    // ---------------------
+    // Egg count recalculation
+    // ---------------------
+    
     // whenever detectionsetting changes, recalculate eggfound for all images and folders
     useEffect(() => {
         setFolderImages(prev => { 
@@ -425,13 +442,18 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         );
     }, [confidenceMode.mode]); // this is a dependency array, meaning this effect runs whenever confidenceMode.mode changes
 
+
+    // ---------------------
+    // Can start check
+    // ---------------------
+
     // determine if detection can be started
     const statuses = (folders || []).map(f => (f.status || 'not started').toLowerCase());
     // folders || [] means if folders exists, use it, otherwise use an empty array
     // for each folder, if f.status exists, use it, otherwise use 'not started'
     // the code above is to get all folder statuses as a lowercase list of strings, defaulting to 'not started' if status is missing
     
-    // the condition below controls whether the start detection button is enables
+    // the condition below controls whether the start detection button is enabled
     const canStart = (Array.isArray(folders) && folders.length > 0) // there are folders uploaded
         && statuses.includes('not started') // at least one folder is not started
         && !statuses.includes('in progress') // no folder is in progresss
