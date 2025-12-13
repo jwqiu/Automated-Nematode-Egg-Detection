@@ -3,25 +3,24 @@ import React from 'react';
 // @ts-ignore
 import LogoHeader from '../components/LogoHeader';
 // @ts-ignore
-
 import ImageUploader from '../components/ImageUploader';
 // @ts-ignore
-
 import { useContext } from 'react';
 // @ts-ignore
-
 import { ImageContext } from '../context/ImageContext';
 
-
+// =================================================================================================
+// This page is currently unvisible in the app, the entry point is currently commented out
+// =================================================================================================
 
 function BatchModePage( { ready }) {
   const { images, setImages, selectedImage, setSelectedImage } = useContext(ImageContext);
-
   return (
     <div className='flex flex-col h-screen '>
         <LogoHeader />
         <div className='px-12 pb-12 pt-6 flex h-full flex-row gap-x-8 mx-auto w-full max-w-[800px] '>
             <div className=" w-full  ">
+                {/* this image uploader is the same as the one used in home page, but with different props for a different UI */}
                 <ImageUploader
                     images={images}
                     setImages={setImages}
@@ -33,17 +32,7 @@ function BatchModePage( { ready }) {
                     ready={ready}
                 />  
             </div>
-            {/* <div className=" w-full px-8 lg:px-0 lg:w-[700px] h-[75vh] min-h-[500px]   ">
-              <DetectionResult 
-                  selectedImage={selectedImage} 
-                  setSelectedImage={setSelectedImage}
-                  images={images}
-                  setImages={setImages}
-                />
-            </div> */}
-
         </div>
-
     </div>
   );
 }

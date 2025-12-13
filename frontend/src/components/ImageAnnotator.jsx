@@ -7,18 +7,25 @@ import { API_BASE } from '../apiBase';
 
 
 function ImageAnnotator() {
-    const { annotateImage, setAnnotateImage } = useContext(ImageContext);
+
+    const { annotateImage, setAnnotateImage } = useContext(ImageContext); // get the annotateImage and setAnnotateImage from global context
     const [boxes, setBoxes] = useState([]);
     const [drawing, setDrawing] = useState(false);
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const imageRef = useRef(null);
     const [hasMoved, setHasMoved] = useState(false);
-    const [submitted, setSubmitted] = useState(false);
-    const [errorMsg, setErrorMsg] = useState("");
+    const [submitted, setSubmitted] = useState(false); // determine whether to show the submission result message
+    const [errorMsg, setErrorMsg] = useState(""); // this error message would be shown on frontend if upload fails
 
 
     if (!annotateImage) return null;
+
+    // -----------------------------------
+    // functions to handle drawing boxes
+    // -----------------------------------
+
+    // these three functions together allow the user to draw bounding boxes on the image by clicking and dragging the mouse
 
     const handleMouseDown = (e) => {
     if (!imageRef.current) return;
@@ -61,50 +68,53 @@ function ImageAnnotator() {
         });
     };
 
+    // -----------------------------------------------
+    // functions to handle uploading boxes and image
+    // -----------------------------------------------
+
+    // please note that we upload the image file and boxes separately
+    // this function handles uploading the image file to the backend
     const handleUpload = async () => {
         if (!annotateImage || !annotateImage.file) {
             console.error("❌ No image to upload.");
             return;
         }
-
-        // await fetch(`${API_BASE}/upload?filename=${encodeURIComponent(annotateImage.filename)}`, {
+        // call the upload image API, which accepts a post request with form-data body, including the image file
         await fetch(`${API_BASE}/upload/image?filename=${encodeURIComponent(annotateImage.filename)}`, {
             method: "POST",
-            body: annotateImage.file,          // ✅ 传二进制，不加 headers
+            body: annotateImage.file, // annotateImage.file is a blob/file object, blob = raw binary data        
         })
         .then((res) => res.text())
         .then((msg) => {
+            // if success
             console.log("✅ Done:", msg);
             setSubmitted(true);
-            setErrorMsg(""); // 清除上次的错误
+            setErrorMsg(""); // clear error message on success
             setTimeout(() => {
+                // after 2 seconds, clear the submission state and close the annotator, reset UI
                 setSubmitted(false);
                 setAnnotateImage(null);
             }, 2000);
         })
         .catch((err) => {
+            // if error
             console.error("❌ Failed to Upload:", err);
             setErrorMsg("❌ Upload failed. Please try again.");
-            setSubmitted(true); // 仍然显示提示区域
-
+            setSubmitted(true); // still show the message area
             setTimeout(() => {
                 setSubmitted(false);
                 setErrorMsg("");
             }, 2000);
         });
     };
-
+    // this function handles uploading the boxes data to the backend
     const handleBoxUpload = async () => {
         if (!annotateImage || !annotateImage.filename || boxes.length === 0) {
             console.error("❌ Missing image filename or boxes.");
             return;
         }
 
-        // const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-        // const apiBaseUrl = isLocalhost
-        //     ? "http://localhost:7071/api/upload_boxes"
-        //     : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/upload_boxes";
-
+        // all bounding boxes for this image will be uploaded together in one request
         const payload = {
             filename: annotateImage.filename,
             boxes: boxes.map(b => ({
@@ -113,9 +123,7 @@ function ImageAnnotator() {
             }))
         };
         
-        // await fetch(`${API_BASE}/upload_boxes`, {
         await fetch(`${API_BASE}/upload/boxes`, {
-        // fetch(apiBaseUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -124,6 +132,7 @@ function ImageAnnotator() {
         })
         .then(res => res.text())
         .then(msg => {
+            // if success
             console.log("✅ Box Upload Success:", msg);
             setSubmitted(true);
             setErrorMsg("");
@@ -143,9 +152,9 @@ function ImageAnnotator() {
         });
     };
 
-
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+            {/* close button */}
             <button
                 onClick={() => {
                     setAnnotateImage(null);
@@ -157,10 +166,8 @@ function ImageAnnotator() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
             </button>
-
             <div className="relative flex flex-col rounded-lg shadow-lg">
-
-      
+                {/* header and submit button */}
                 <div className="flex justify-between items-center mb-3">
                     <p className='text-white text-lg '>Please label all the eggs you found below ⬇️</p>
                     <button onClick={
@@ -173,23 +180,20 @@ function ImageAnnotator() {
                             console.log("🖼️ filename:", annotateImage.filename); 
                             handleUpload(); 
                             handleBoxUpload(); 
-                            setBoxes([]); // ✅ 清空所有框
-                            // setSubmitted(true);         
-                            // setTimeout(() => {
-                            //     setSubmitted(false);
-                            //     setAnnotateImage(null);
-                            // }, 2500); 
+                            setBoxes([]); // ✅ Clear all boxes
 
                         }
                     } className='bg-blue-500 text-white rounded-lg px-4 py-2 hover:bg-blue-600'>Submit</button>
                 </div>
 
+                {/* submission result message */}
                 {submitted && (
                     <p className={`mb-4 text-sm ${errorMsg ? 'text-red-400' : 'text-green-400'}`}>
                         {errorMsg || "✅ Submission successful! 🎉 Every label helps us get better. Thank you!"}
                     </p>
                 )}
 
+                {/* image and annotation boxes */}
                 <div
                     className="relative inline-block"
                         onMouseDown={handleMouseDown}
@@ -203,6 +207,7 @@ function ImageAnnotator() {
                         className="max-w-[90vw] max-h-[80vh] rounded-lg select-none"
                     />
                     
+                    {/* showing the box being drawn */}
                    {drawing && hasMoved &&  (
                         <div
                             className="absolute border-2 border-dashed border-red-400 bg-blue-200/20"
@@ -214,7 +219,7 @@ function ImageAnnotator() {
                             }}
                         />
                     )}
-
+                    {/* showing all existing boxes */}
                     {boxes.map((box, index) => {
                         const [x1, y1, x2, y2] = box.bbox;
                         return (
@@ -231,11 +236,8 @@ function ImageAnnotator() {
                         );
                     })}
                 </div>
-
                 <button className='text-blue-500 underline mt-2' onClick={() => setBoxes([])}>Clear Boxes {'>>'}</button>
-
             </div>
-
         </div>
     );
 }

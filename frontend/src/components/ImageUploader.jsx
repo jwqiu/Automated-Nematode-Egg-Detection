@@ -1,32 +1,39 @@
 // @ts-ignore
 import React from 'react';
-
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
-
 import { decode, decodeImage, toRGBA8 } from "utif";
 
+// ==========================================
+// Image processing helper functions
+// ==========================================
+
+// this function resizes an image to fit inside a 608x608 square while keeping its aspect ratio, pads the remaining area with gray color, and outputs a PNG blob
+// the callback here is a function that we pass in to handle the result when the blob is ready
+// we need to resize and pad the image because our model was trained on 608x608 images with padding, so we need to do the same preprocessing before running inference
 export function resizeAndPadImage(img, callback) {
   const targetSize = 608;
   const canvas = document.createElement("canvas");
   canvas.width = targetSize;
   canvas.height = targetSize;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d"); // ctx = 2D drawing API, used to draw rectangles and images
 
-  const ratio = Math.min(targetSize / img.width, targetSize / img.height);
+  const ratio = Math.min(targetSize / img.width, targetSize / img.height); // computing scale ratio
   const newWidth = img.width * ratio;
   const newHeight = img.height * ratio;
 
-  const dx = (targetSize - newWidth) / 2;
-  const dy = (targetSize - newHeight) / 2;
+  const dx = (targetSize - newWidth) / 2; // calculates how much empty space remains on each side
+  const dy = (targetSize - newHeight) / 2; // calculates how much empty space remains on each side
   ctx.fillStyle = "rgb(114,114,114)";
   ctx.fillRect(0, 0, targetSize, targetSize);
 
-  ctx.drawImage(img, dx, dy, newWidth, newHeight);
-
-  canvas.toBlob((blob) => callback(blob), "image/png");
+  ctx.drawImage(img, dx, dy, newWidth, newHeight); // draw the scaled image
+  // canvas.toBlob() is asynchronous, it does not product the result immediately, so use a callback instead of return
+  canvas.toBlob((blob) => callback(blob), "image/png"); // convert the canvas to a PNG blob, there is no default quality parameter for PNG, it is always full quality
 }
 
+// this function is used to convert a TIFF file to PNG format
+// TIFF is the standard format for images provided by our client, but our model and frontend do not support this format, so we need to convert it to PNG first
 export async function convertTifToPng(file) {
   const name = file.name.toLowerCase();
   if (!name.endsWith(".tif") && !name.endsWith(".tiff")) return file;
@@ -58,6 +65,8 @@ export async function convertTifToPng(file) {
   });
 }
 
+// this function converts a Blob object to a base64-encoded string, then it can be sent to the backend API for inference
+// however, I already moved the base64 conversion logic into DetectionResult.jsx, so i don't need to use this function during image upload
 function convertToBase64(blob) {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -69,7 +78,10 @@ function convertToBase64(blob) {
   });
 }
 
-// React 组件函数，名称为 ImageUploader
+// ==========================================
+// Main UI component
+// ==========================================
+
 function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bottomButton = false, defaultHints = true, isCard = false, ready }) {
 
   const navigate = useNavigate();
@@ -77,31 +89,36 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
   const useEffect = React.useEffect;
   const useRef = React.useRef;
 
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadCompleted, setUploadCompleted] = useState(false);
   const imageListRef = useRef(null);
 
-  // 处理上传图片的函数
+  // ---------------------
+  // image upload handler
+  // ---------------------
+
+  // user can upload images manually
   async function handleImageUpload(event) {
     
     const fileList = event.target.files;
-    const files = Array.from(fileList);
+    const files = Array.from(fileList); // create an array from the FileList object, copies each item from fileList into a new array
 
+    // currently, each file is processed by convertTifToPng, which convert the image file to PNG if it is in TIFF format, this helper function contains a format check logic
+    // TODO: however, it is good practice to keep helper function focused and specialized, therefore, the format check logic should be moved to the main function here before calling convertTifToPng
     const uploadTasks = files.map(async (originalFile) => {
-      const file = await convertTifToPng(originalFile);
-      // const file = originalFile;
+      const file = await convertTifToPng(originalFile); 
 
       return new Promise((resolve) => {
-      // 🧠 Step 1: 将原始文件转换为 Image 对象
+      // create an Image object to load the file
         const img = new Image();
-        img.src = URL.createObjectURL(file);
+        img.src = URL.createObjectURL(file); // this URL is used only to load the image into memory
 
-        img.onload = () => {
+        img.onload = () => { // onload here means run this function when the image has finished loading
           resizeAndPadImage(img, async (blob) => {
-            const previewUrl = URL.createObjectURL(blob);
+            const previewUrl = URL.createObjectURL(blob); // this creates a preview URL for the processed image, this URL is different from img.src, because they represent different images
             const formData = new FormData();
-            formData.append("image", blob, file.name); // 保留原文件名
+            formData.append("image", blob, file.name); 
             const newUid = crypto.randomUUID();
-    
+              // add the new image to the images state
               setImages((prev) =>
                 prev.concat({
                   file: blob,
@@ -113,23 +130,24 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
                   boxes: null,
                 })
               );
-              
+              // at this point, the new image has been added to the image state
               resolve();
-
-          }, "image/jpeg", 1); // 第三个参数为压缩质量（可选）
+          }); 
         };
       });
     });
     await Promise.all(uploadTasks); 
-    setIsUploading(true); 
+    setUploadCompleted(true); 
     event.target.value = "";
   }
 
+  // this effect is used to automatically select the last uploaded image and scroll the image list to the top
   useEffect(() => {
-    if (isUploading && images.length > 0) {
+    if (uploadCompleted && images.length > 0) { // this ensures the effect runs only when there is at least one image
       setSelectedImage(images[images.length - 1]);
-      setIsUploading(false); // 重置状态
+      setUploadCompleted(false); // 重置状态
 
+      // this code scrolls the image list to the top smoothly after image updated
       setTimeout(() => {
         const el = imageListRef.current;
         if (!el) return;
@@ -138,10 +156,11 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
           left: 0,
           behavior: "smooth",
         });
-      }, 0); // 确保 DOM 更新后再滚动
+      }, 0);  // ensure it runs after DOM update
     }
-  }, [images]);
+  }, [images]);// this effect runs every time images state changes
 
+  // user can also load default images provided 
   function loadDefaultImages() {
     const defaultImageUrls = [
       `${import.meta.env.BASE_URL}static/images/default_Image1.png`,
@@ -154,21 +173,21 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
         defaultImageUrls.map(async (url) => {
           const res = await fetch(url);
           const blob = await res.blob();
-          const objectUrl = URL.createObjectURL(blob);  // 原图临时地址
+          const objectUrl = URL.createObjectURL(blob);  // temporary URL for loading the image
 
-          // Step 1: 加载图片为 Image 对象
+          // resize and pad the image, same as in handleImageUpload
           const resizedBlob = await new Promise((resolve) => {
             const img = new Image();
             img.src = objectUrl;
             img.onload = () => {
               resizeAndPadImage(img, (resizedBlob) => {
                 resolve(resizedBlob);
-              }, "image/jpeg", 0.9);
+              });
             };
           });
 
           const previewUrl = URL.createObjectURL(resizedBlob);
-          const base64 = await convertToBase64(resizedBlob);
+          // const base64 = await convertToBase64(resizedBlob); // we don't need to convert to base64 here anymore
 
           return {
             file: resizedBlob,
@@ -176,7 +195,7 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
             annotatedUrl: null,
             uid: crypto.randomUUID(),
             filename: url.split("/").pop(),
-            image_base64: base64,
+            // image_base64: base64,
             detected: false,
             boxes: null,
           };
@@ -192,40 +211,44 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
     loadAll();
   }
 
+  // ---------------------
+  // image remove handler
+  // ---------------------
+  
+  // remove a single image
   function handleRemove(uidToRemove) {
     const imgIndex = images.findIndex(img => img.uid === uidToRemove);
     if (imgIndex === -1) return;
 
     const img = images[imgIndex];
 
-    // 清理 URL
-    URL.revokeObjectURL(img.url);
+    URL.revokeObjectURL(img.url); // releases a temporary URL that was previously created
 
-    // 更新图片列表（前端删除）
+    // update images state by filtering out the removed image
     const newImages = images.filter(img => img.uid !== uidToRemove);
     setImages(newImages);
 
-    // 清理 selectedImage（必须在最后执行，不能用旧的 images 判断）
+    // if the removed image is currently selected, clear the selection
     if (selectedImage?.uid === uidToRemove) {
       const selectedUrl = selectedImage.annotatedUrl || selectedImage.originalUrl;
       if (typeof selectedUrl === "string" && selectedUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(selectedUrl);
+        URL.revokeObjectURL(selectedUrl); // releases a temporary URL that was previously created
       }
       setSelectedImage(null);
     }
   }
 
+  // clear all images at once
   function clearUploads() {
     setImages([]);
     setSelectedImage(null);
   }
 
-  // 返回要渲染的 HTML 结构（JSX）
   return (
     <div  className={`relative min-h-0 flex flex-col rounded-lg border  px-8 py-6 bg-white shadow-lg
       ${isCard ? 'h-[80vh] min-h-[300px] pb-24 '  : 'h-full'}
     `}>
-      {/* 图片上传的 input 元素 */}
+        {/* image list header with upload button */}
         <div className="flex overflow-auto flex-shrink-0 h-[50px] items-center w-full  justify-between mb-3 mt-0 sticky z-10  rounded-lg  top-0">
             <div className="flex items-center"> 
                 {/* <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5 my-0 text-gray-400 me-1">
@@ -253,7 +276,7 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
             </div>
         </div>
 
-        {/* 图片列表区域 */}
+        {/* image list area */}
         <div ref={imageListRef} className={
           ` gap-6 overflow-auto 
           ${isCard ? 'grid grid-cols-2 gap-6  relative min-h-32    '  : 'flex flex-row lg:flex-col'}
@@ -297,7 +320,6 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
                         relative group min-w-[160px] shadow-lg flex flex-col h-44 xl:h-52 flex-shrink-0  bg-gray-100 hover:bg-gray-300 overflow-hidden rounded cursor-pointer 
                         ${isSelected ? 'border-2 border-blue-500 rounded' : ''}
                         ${isCard ? '' : 'lg:w-full'}
-
                       `
                     }
                   >
@@ -329,7 +351,8 @@ function ImageUploader({ images, setImages, setSelectedImage, selectedImage, bot
               })
           )}
         </div>
-
+        
+        {/* batch detection action, only used in batch detection page */}
         <div className='absolute bottom-4 left-0 right-0 flex px-6 justify-center'>
           {bottomButton && (
             <div className='flex flex-col items-center w-full'>

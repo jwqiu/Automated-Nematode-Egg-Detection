@@ -1,11 +1,8 @@
 // @ts-ignore
-
 import React, { useState, useEffect } from 'react'; 
 // @ts-ignore
-
 import LogoHeader from '../components/LogoHeader';
 // @ts-ignore
-
 import ImageUploader from '../components/ImageUploader';
 // @ts-ignore
 import ImagePreview from '../components/ImagePreview';
@@ -19,7 +16,6 @@ import ImageAnnotator from '../components/ImageAnnotator';
 function HomePage({ ready }) {
   const [images, setImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
-  
 
   return (
     <>

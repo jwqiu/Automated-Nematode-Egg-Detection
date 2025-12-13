@@ -5,11 +5,70 @@ import { ImageContext } from '../context/ImageContext';
 // @ts-ignore
 import { API_BASE } from '../apiBase'; 
 
-function DetectionResult({ images,setImages, selectedImage,setSelectedImage, ready }) {
+// TODO: I have built another similar function to draw boxes in FolderImageList.jsx, consider merging them later
+async function drawBoxesOnImage(imageFile, boxes) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(imageFile);
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      ctx.lineWidth = 2;
+      ctx.font = "12px Arial";
+
+      boxes.forEach((b) => {
+        const [x1, y1, x2, y2] = b.bbox;
+        const confText = `${(b.confidence * 100).toFixed(1)}%`;
+
+        // 红色矩形
+        ctx.strokeStyle = "red";
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+        // 白色阴影文字
+        const textX = x1;
+        const textY = y1 - 5;
+        ctx.fillStyle = "white";
+        [-1, 0, 1].forEach((dx) =>
+          [-1, 0, 1].forEach((dy) => {
+            if (dx || dy) ctx.fillText(confText, textX + dx, textY + dy);
+          })
+        );
+
+        // 红色主文字
+        ctx.fillStyle = "red";
+        ctx.fillText(confText, textX, textY);
+      });
+
+      // 返回带框的 base64 图片
+      resolve(canvas.toDataURL("image/png"));
+    };
+  });
+}
+
+function DetectionResult({ images,setImages, selectedImage, setSelectedImage, ready }) {
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  // annotateImage is a global state defined in ImageContext
+  // when the user clicks the correction button, the current selectedImage will be set to annotateImage
+  //so it can be accessed by ImageAnnotator component without passing it down through props
   const { setAnnotateImage } = useContext(ImageContext);
+
+  // ---------------------------------
+  // handle detection button click
+  // ---------------------------------
 
   const handleDetect = async () => {
     if (!selectedImage) return;
@@ -18,29 +77,23 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
     setError(null);
 
     try {
-      // 把 FileReader 封装成 Promise
-      const base64Data = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
+
+      const base64Data = await new Promise((resolve, reject) => { 
+        const reader = new FileReader(); // filereader is a built-in browser API to read files
+        // if the file is read successfully, call this function
         reader.onload = () => {
-          const base64 = reader.result.split(',')[1]; // 去掉前缀
-          resolve(base64);
+          const base64 = reader.result.split(',')[1]; // remove the data URL prefix and keep only the base64 part
+          resolve(base64); // resolve the promise with the base64 data
         };
-        reader.onerror = () => reject("无法读取图像");
-        reader.readAsDataURL(selectedImage.file);
+        // if there is an error reading the file, call this function
+        reader.onerror = () => reject("Unable to read image");
+        // the code below asks the browser to do three things:
+        // 1. read bytes from selectedImage.file
+        // 2. encode the bytes into base64 format
+        // 3. add a prefix "data:image/xxx;base64," to indicate that this is a base64-encoded image
+        reader.readAsDataURL(selectedImage.file);  // start reading the file as a data URL
       });
-
-
-      // // 根据当前页面的 host 判断运行环境
-      // const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-
-      // // 设置 API base URL
-      // const apiBaseUrl = isLocalhost
-      //   ? "http://localhost:7071/api/predict"  // 本地 Azure Function 地址
-      //   : "https://eggdetection-dnepbjb0fychajh6.australiaeast-01.azurewebsites.net/api/predict"; // 替换成你的部署地址
-
-
-      // // 调用后端
-      // const res = await fetch(`${apiBaseUrl}`, {
+      // call the backend/predict endpoint with the base64 image data we just got
       const res = await fetch(`${API_BASE}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,21 +105,21 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
 
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(`预测失败: ${res.status} ${text}`);
+        throw new Error(`Prediction Failed: ${res.status} ${text}`);
       }
 
       const resJson = await res.json();
-
+      // after receiving the response from backend, draw boxes on the image
       const annotatedUrl = await drawBoxesOnImage(selectedImage.file, resJson.boxes);
 
+      // update the selectedImage state
       setSelectedImage({
         ...selectedImage,
-        // originalUrl: "data:image/png;base64," + resJson.original_image,
-        annotatedUrl,
+        annotatedUrl, // please note that in JS, if the property name and the variable name are the same, we can just write it once
         detected: true,
         boxes: resJson.boxes,
       });
-
+      // also update the images list in the context
       setImages((prevImages) =>
         prevImages.map((img) =>
           img.uid === selectedImage.uid
@@ -77,62 +130,15 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
       
     } catch (err) {
       console.error(err);
-      setError(err.message || "发生错误");
+      setError(err.message || "An error occurred during detection.");
     } finally {
       setLoading(false);
     }
   };
 
-  async function drawBoxesOnImage(imageFile, boxes) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(imageFile);
-
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-
-        ctx.lineWidth = 2;
-        ctx.font = "12px Arial";
-
-        boxes.forEach((b) => {
-          const [x1, y1, x2, y2] = b.bbox;
-          const confText = `${(b.confidence * 100).toFixed(1)}%`;
-
-          // 红色矩形
-          ctx.strokeStyle = "red";
-          ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-
-          // 白色阴影文字
-          const textX = x1;
-          const textY = y1 - 5;
-          ctx.fillStyle = "white";
-          [-1, 0, 1].forEach((dx) =>
-            [-1, 0, 1].forEach((dy) => {
-              if (dx || dy) ctx.fillText(confText, textX + dx, textY + dy);
-            })
-          );
-
-          // 红色主文字
-          ctx.fillStyle = "red";
-          ctx.fillText(confText, textX, textY);
-        });
-
-        // 返回带框的 base64 图片
-        resolve(canvas.toDataURL("image/png"));
-      };
-    });
-  }
-
+  // ---------------------------------
+  // Detection status message logic
+  // ---------------------------------
 
   let statusMessage = null;
 
@@ -143,14 +149,13 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
   } else if (loading) {
     statusMessage = <p className="italic text-gray-400">Fetching result...</p>;
   } else if (!selectedImage.detected) {
-    // 未点击 Detect 按钮
     statusMessage = (
       <p className="italic text-gray-400">
         Click  <span className="text-red-400">“Detect”</span> to get the result.
       </p>
     );
   } else if (selectedImage.detected && (!selectedImage.boxes || selectedImage.boxes.length === 0)) {
-    // 点击了 Detect 但没有检测到任何结果
+    // if detected but no boxes found
     statusMessage = (
       <div>
         <p className="italic text-center text-gray-400">
@@ -158,14 +163,11 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
         </p>
         <button onClick={() => setAnnotateImage(selectedImage)} className='text-center text-sm mt-1 text-blue-500 underline'>Not accurate? Help us correct it {'>>'}</button>
       </div>
-
-      
     );
   }
-
   return (
     <div className="bg-white border shadow-lg h-[200px] flex flex-col justify-start items-center rounded-lg p-6">
-
+      {/* Detection Result header and detection button */}
       <div className="flex w-full justify-between h-[35px]  items-center  gap-2">
         <div>
           <p className="text-lg text-gray-500">Detection Result:</p>
@@ -190,16 +192,14 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
           </button>
         </div>
       </div>
-      {/* {(!selectedImage?.boxes || selectedImage.boxes.length === 0) && (
-      )} */}
-
+      {/* Detection Result display area */}
       <div
         className={`w-full flex flex-col  items-center mt-4 overflow-y-auto rounded-lg flex-1 
           ${selectedImage?.boxes?.length > 0 ? 'justify-start' : 'bg-gray-100 justify-center'}
         `}
       >
         {statusMessage}
-        {/* 显示 boxes */}
+        {/* Display boxes */}
         {selectedImage?.boxes?.length > 0 && (
           <div className="text-left w-full  overflow-y-auto">
             <ul className=" space-y-2">
@@ -221,6 +221,7 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
                 );
               })}
             </ul>
+            {/* correction button */}
             <div className='flex items-center justify-center'>
               <button onClick={() => setAnnotateImage(selectedImage)} className='text-center text-sm mt-2 text-blue-500 underline'>Not accurate? Help us correct it {'>>'}</button>
             </div>
@@ -228,6 +229,7 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
       )}
       </div>
 
+      {/* settings modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black/30 z-40 flex justify-center items-center" onClick={() => setShowSettings(false)} >
           <div className="bg-white rounded-xl shadow-lg p-6 w-96 relative z-50" onClick={(e) => e.stopPropagation()}>
@@ -279,12 +281,8 @@ function DetectionResult({ images,setImages, selectedImage,setSelectedImage, rea
           </div>
         </div>
       )}
-
-
-
     </div>
   );
-
 }
 
 export default DetectionResult;

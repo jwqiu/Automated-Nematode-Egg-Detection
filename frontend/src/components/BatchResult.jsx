@@ -1,13 +1,13 @@
 // @ts-ignore
 import React, { useContext } from 'react';
 // @ts-ignore
-
 import { ImageContext } from '../context/ImageContext';
-// 如果你想加图表
 // @ts-ignore
-
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Label, ResponsiveContainer } from 'recharts';
 
+// =================================================================================================
+// This component is not currently used in the app
+// =================================================================================================
 
 function BatchResult() {
   const { images } = useContext(ImageContext);

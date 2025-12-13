@@ -6,13 +6,10 @@ import LogoHeader from '../components/LogoHeader';
 import DetectionResult from '../components/DetectionResult'; 
 // @ts-ignore
 import FolderUploader from '../components/FolderUploader';
-
-const useState = React.useState;
-const useEffect = React.useEffect;
-const useRef = React.useRef;
-
 // @ts-ignore
 import FolderImagesList from '../components/FolderImagesList';
+
+const useState = React.useState;
 
 // --------------------------------------------------------------------------------------------------------------------------------
 // Notes on keeping the state shape consistent

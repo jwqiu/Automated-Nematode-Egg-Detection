@@ -1,42 +1,18 @@
-// import React from 'react';
-
-// function ImagePreview({ selectedImage }) {
-//   const containerClass = `rounded-lg flex flex-col overflow-auto border ${
-//     selectedImage ? 'p-0 bg-white' : 'p-8 bg-white shadow-lg flex-1'
-//   }`;
-
-//   return (
-//     <div className={containerClass}>
-//       {selectedImage ? (
-//         <div className="w-full h-full flex justify-center items-center">
-//           <img
-//             src={selectedImage.url}
-//             alt="Selected or Detection Result"
-//             className="max-w-full max-h-full object-contain"
-//             draggable={false}
-//           />
-//         </div>
-//       ) : (
-//         <div className="flex items-center justify-center h-full">
-//           <p className="mb-0 italic text-gray-400">No image selected.</p>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// export default ImagePreview;
 // @ts-ignore
 import React, { useState, useRef, useEffect } from 'react';
 
+// ==========================================
+// Image Preview Component (Used in HomePage)
+// ==========================================
+
 function ImagePreview({ selectedImage }) {
+
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const isDragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
-  // const containerRef = useRef(null); // ✅ 用 ref
 
-  // 滚轮缩放
+  // handle mouse wheel zooming in/out
   const handleWheel = e => {
     e.preventDefault();
     e.stopPropagation();
@@ -46,25 +22,19 @@ function ImagePreview({ selectedImage }) {
       return Math.min(Math.max(next, 0.5), 5);
     });
   };
-  // const handleWheel = (e) => {
-  //   e.preventDefault();
-  //   const delta = e.deltaY > 0 ? 0.9 : 1.1;
-  //   setScale((prev) => {
-  //     const next = prev * delta;
-  //     return Math.min(Math.max(next, 0.5), 5);
-  //   });
-  // };
 
-  // 拖拽开始
+  // start dragging and record the initial mouse position
   const handleMouseDown = e => {
     isDragging.current = true;
     lastPos.current = { x: e.clientX, y: e.clientY };
   };
-  // 拖拽结束
+
+  // stop dragging when mouse is released
   const handleMouseUp = () => {
     isDragging.current = false;
   };
-  // 拖拽中平移
+
+  // handle mouse movement to pan the image while dragging
   const handleMouseMove = e => {
     if (!isDragging.current) return;
     e.preventDefault();
@@ -74,33 +44,22 @@ function ImagePreview({ selectedImage }) {
     lastPos.current = { x: e.clientX, y: e.clientY };
   };
 
+  // reset zoom level and position back to default
   const handleReset = () => {
     setScale(1);
     setTranslate({ x: 0, y: 0 });
   };
 
+  // Container layout styles for the image preview area
   const containerClass = `
     rounded-lg min-h-[500px] lg:min-h-0  flex flex-col flex-1 overflow-y-auto
     border bg-white shadow-lg overflow-hidden
   `;
 
-  // 辅助函数：进/出时关/开 body 滚动
+  // while the user is interacting with the image, don't let the page move
   const disableBodyScroll = () => { document.body.style.overflow = 'hidden'; };
+  // restore page scroll when not interacting
   const enableBodyScroll  = () => { document.body.style.overflow = 'auto'; };
-
-
-  // ✅ 用 ref 精准绑定非 passive 的 wheel 监听
-  // useEffect(() => {
-  //   const container = containerRef.current;
-  //   if (!container) return;
-
-  //   container.addEventListener("wheel", handleWheel, { passive: false });
-
-  //   return () => {
-  //     container.removeEventListener("wheel", handleWheel);
-  //   };
-  // }, []);
-
 
   return (
     <div className={containerClass}>

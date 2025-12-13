@@ -1,10 +1,11 @@
 // @ts-ignore
-// @ts-ignore
 import React, { useState, useContext } from 'react';
 // @ts-ignore
-
 import { ImageContext } from '../context/ImageContext';
 
+// =================================================================================================
+// This component is not currently used in the app
+// =================================================================================================
 
 function BatchImagesList() {
   const { images } = useContext(ImageContext);

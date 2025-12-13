@@ -1,10 +1,8 @@
 // @ts-ignore
 import React, { useState, useEffect, useRef } from 'react';
 // @ts-ignore
-
 import { useNavigate } from 'react-router-dom';
 // @ts-ignore
-
 import { useLocation } from 'react-router-dom';
 
 function LogoHeader() {
@@ -15,17 +13,19 @@ function LogoHeader() {
   const dropdownRef = useRef(null);
   const location = useLocation();
 
+  // useEffect to handle clicks outside the dropdown and close it
   useEffect(() => {
     function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) { // if dropdownRef exists and click is outside
         setMenuOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside); // listen for clicks 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // update menu title based on current path, whenever locaton.pathname changes
   useEffect(() => {
     if (location.pathname.includes('/batch')) {
       setMenuTitle('Batch Mode');
@@ -35,7 +35,8 @@ function LogoHeader() {
       setMenuTitle('Images Mode');
     }
   }, [location.pathname]);
-
+  
+  // the dropdown menu component
   let dropdownMenu = null;
   if (menuOpen) {
     dropdownMenu = (
@@ -83,17 +84,15 @@ function LogoHeader() {
 
   return (
     <div className="flex-shrink-0 h-[100px] flex justify-between items-center shadow-lg lg:transparent lg:shadow-none">
+      {/* the logo on the left side of the top bar */}
       <div className='flex items-center gap-2'>
         <img onClick={() => navigate('/')}
           src={`${import.meta.env.BASE_URL}static/images/Lincoln-University-Logo-Horizontal-RGB-Blue-01.png`}
           className="h-[100px] cursor-pointer"
           alt="LOGO"
         />
-
       </div>
-    
-
-
+      {/* the system title and dropdown menu on the right side of the top bar */}
       <div className="flex flex-col me-8 items-end  gap-0">
         <div>
           <p className="text-gray-700 font-serif  font-bold text-md lg:text-xl  mb-0 text-nowrap">Parasite Egg Detection System</p>
@@ -108,10 +107,7 @@ function LogoHeader() {
           </button>
           {dropdownMenu}
         </div>
-
       </div>
-
-
     </div>
   );
 }
