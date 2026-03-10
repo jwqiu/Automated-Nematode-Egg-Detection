@@ -280,7 +280,6 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                 hover:bg-blue-100 hover: transition 
                                 ${sortMode === 'lowest' ? '  bg-blue-100 ' : ''}`}
                             >
-                    
                             Display lowest-confidence box first
                             {sortMode === 'lowest' && <span className="ml-auto text-blue-500">✓</span>}
                             </button>
@@ -291,7 +290,6 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                 hover:bg-blue-100 hover: transition 
                                 ${sortMode === 'noeggs' ? '  bg-blue-100 ' : ''}`}
                             >
-                    
                             Display no-eggs pictures first
                             {sortMode === 'noeggs' && <span className="ml-auto text-blue-500">✓</span>}
                             </button>
@@ -308,7 +306,6 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                 hover:bg-blue-100 hover: transition 
                                 ${confidenceMode.mode === 'original' ? '  bg-blue-100 ' : ''}`}
                             >
-
                             Original Confidence &gt; {Threshold}
                             {confidenceMode.mode === 'original' && <span className="ml-auto text-blue-500">✓</span>}
                             </button>
@@ -323,17 +320,12 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                                 hover:bg-blue-100 hover: transition 
                                 ${confidenceMode.mode === 'adjusted' ? '  bg-blue-100 ' : ''}`}
                             >
-
                             Adjusted Confidence &gt; {Threshold}
                             {confidenceMode.mode === 'adjusted' && <span className="ml-auto text-blue-500">✓</span>}
                             </button>
                         </div>
-                        
-                        
                     </div>
-
                 </div>
-
             )}
         {/* No images message */}
         {total === 0 ? (
@@ -510,8 +502,6 @@ function FolderImagesList({ selectedFolder, folderImages, setFolderImages, folde
                             )}
                         </div>
                     </div>
-    
-      
                 </div>
                 );
             })}

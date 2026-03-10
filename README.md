@@ -40,9 +40,9 @@ I extended it by developing a full web application, increasing the dataset's div
 
 ### 2.1 System Design
 
-The following diagram summarizes the architecture of the Automated Egg Counting system, it illustrates the complete workflow - from uploading folders/images, preproessing, model inference, and post-detection processing, to visualizing results and storing relabel results.
+The system consists of a React frontend deployed on GitHub Pages, a Python backend deployed on Azure Functions, a YOLOv8-based detection pipeline with CNN-based confidence refinement, and a storage layer using PostgreSQL and Azure Blob Storage.
 
-![System Architecture](/docs/system_architecture.png)
+![System Architecture](/docs/system_overview.jpeg)
 
 ### 2.2 Tech Stack for this Project
 

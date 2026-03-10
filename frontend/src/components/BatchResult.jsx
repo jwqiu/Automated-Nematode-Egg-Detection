@@ -10,6 +10,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Label, ResponsiveContainer } from
 // =================================================================================================
 
 function BatchResult() {
+    
   const { images } = useContext(ImageContext);
 
   const detectedImages = images.filter(img => img.detected && !img.error);
