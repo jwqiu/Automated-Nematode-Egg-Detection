@@ -13,15 +13,16 @@ Manual egg counting is highly repetitive and time-consuming, which can become a 
 
 ### 1.3 Solution
 
-This project builds an AI-powered web system for automated parasite egg detection and counting. Users can upload folders of microscope images (each folder representing one slide). The system automatically detects parasite eggs in each image and calculates the total egg count. The detection pipeline combines a YOLOv8 detector with a CNN-based ellipse classifier to improve accuracy.
+This project builds an AI-powered web system for automated parasite egg detection and counting. Users can upload folders of microscope images (each folder representing one slide). The system automatically detects parasite eggs in each image and calculates the total egg count. 
 
 ### 1.4 Previous Work
 
 This project builds upon the work of [**shion92**](https://github.com/shion92), who developed the original model training pipeline including DeepLab, Faster R-CNN, YOLO, and supporting training and evaluation utilities.
 
-Based on this foundation, I extended the project by:
-- improving overall detection performance by introducing post-detection processing to refine detection confidence and better aligning the dataset with real-world usage
-- designing and building a full web application from scratch for end-to-end use
+Based on this foundation, I extended the project by focusing on two aspects:
+
+- improving overall detection performance through post-detection processing to refine detection confidence and better align the dataset with real-world usage
+- designing and building a full-stack web prototype from scratch, integrating the detection pipeline
 
 
 ## 2. Live Demo
@@ -40,7 +41,7 @@ Based on this foundation, I extended the project by:
 
 ## 3. System Design and Implementation
 
-### 3.1 System Overview
+### 3.1  Overview
 
 The system consists of a React frontend deployed on GitHub Pages, a Python backend deployed on Azure Functions, a YOLOv8-based detection pipeline with CNN-based confidence refinement, and a storage layer using PostgreSQL and Azure Blob Storage.
 
@@ -49,9 +50,9 @@ The system consists of a React frontend deployed on GitHub Pages, a Python backe
 ### 3.2 Tech Stack for this Project
 
 - **Frontend:** React, Tailwind CSS, Vite 
-- **Backend :** Python, Azure Function
-- **Machine Learning & AI:** YOLO, CNN, PyTorch, ONNX Runtime
-- **Database & Storage:** Azure Blob Storage + Azure Database for PostgreSQL Flexible Server
+- **Backend :** Python (Azure Functions)
+- **Machine Learning & AI:** YOLO, CNN classifier, PyTorch, ONNX Runtime
+- **Database & Storage:** Azure Blob Storage · Azure PostgreSQL (Flexible Server)
 - **Deployment:** GitHub Pages(Frontend), Azure Function(Backend)
 
 ### 3.3 Model Components
@@ -59,18 +60,18 @@ The system consists of a React frontend deployed on GitHub Pages, a Python backe
 #### 1) Model Overview
 
 There are two models used in this project:
--  The main model is YOLOv8s, which identifies candidate egg objects. it takes the user-uploaded images(after preprocessing) as input and outputs the bounding-box coordinates and detection confidence for all detected objects
--  The second model is a CNN-Based classifier, which evaluates each candidate egg based on its shape (most typical egg have an elliptical appearance) and adjusts YOLO's detection confidence accordingly. Before running this model, each candidate region is cropped from the original image and processed into a 64×64 grayscale image. The CNN takes this small image as input and outputs logits.
-The backend then uses these logits to recalculate the final detection confidence before returning the results to the frontend
+- The main model is YOLOv8s, which detects candidate egg objects. It takes the user-uploaded images (after preprocessing) as input and outputs bounding boxes and detection confidence for all detected objects.
+- The second model is a CNN-based classifier that evaluates each candidate egg based on its shape (most parasite eggs typically have an elliptical appearance). The classifier produces a score that is used to refine YOLO’s detection confidence.
 
 #### 2) Final Model Performance
 
 The main metrics used to model performance in this project are F1 score and mAP50, the table below shows the overall performance of the integrated two-model system.
 
-| Model           | Test F1 | Test mAP50 | Validation F1 | Validation mAP50 | Comment               |
-|-----------------|---------|------------|----------------|------------------|------------------------|
-| yolov8s_sgd_lr0001_max_E200P20_AD_0914 + CNN Ellipse Classifier | 99.1%  | 99.8%     | 96.15%         | 90.91%           | Lower validation performance because the validation set intentionally contains more difficult cases.|
+| Model           | Test F1 | Test mAP50 | Validation F1 | Validation mAP50 | 
+|-----------------|---------|------------|----------------|------------------|
+| yolov8s_sgd_lr0001_max_E200P20_AD_0914 + CNN Ellipse Classifier | 99.1%  | 99.8%     | 96.15%         | 90.91%           |
 
+Lower validation performance because the validation set intentionally contains more difficult cases
 
 ## 4. Dataset
 
@@ -92,10 +93,11 @@ The dataset used in this project comes from two main sources:
 AUTOMATED-NEMATODE-EGG-DETECTION/
 ├── backend-azure/        # Azure Functions backend for ONNX model inference and API deployment
 ├── backend-local/        # Local backend for development/testing (e.g. Flask or raw Python)
-├── frontend/             # React + Tailwind CSS frontend for UI interaction, image upload, and inference result rendering
-├── ModelPipeline/        # Core model code: YOLO, DeepLab, Faster R-CNN, helpers, pretrained weights
 ├── docs/                 # Project documentation and screenshots
-├── Dataset/              # Optional training/evaluation datasets (may not be tracked in Git)
+├── electron/             # Electron wrapper used to package the React web app as an offline desktop application
+├── frontend/             # React + Tailwind CSS frontend for UI interaction, image upload, and inference result rendering
+├── model_pipeline/       # Core model code: YOLO, DeepLab, Faster R-CNN, helpers, pretrained weights
+├── dataset/              # Optional training/evaluation datasets (may not be tracked in Git)
 ├── node_modules/         # Frontend dependencies (not tracked by Git)
 ├── venv/                 # Python virtual environment (excluded from Git)
 ├── README.md             # Project documentation (you are here)
