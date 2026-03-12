@@ -63,28 +63,84 @@ There are two models used in this project:
 - The main model is YOLOv8s, which detects candidate egg objects. It takes the user-uploaded images (after preprocessing) as input and outputs bounding boxes and detection confidence for all detected objects.
 - The second model is a CNN-based classifier that evaluates each candidate egg based on its shape (most parasite eggs typically have an elliptical appearance). The classifier produces a score that is used to refine YOLO’s detection confidence.
 
-#### 2) Final Model Performance
+#### 2) Model Performance Improvements
 
-The main metrics used to model performance in this project are F1 score and mAP50, the table below shows the overall performance of the integrated two-model system.
+The following table summarizes the model performance improvements (F1 score and mAP50 on both the test set and validation set) after introducing the post-processing refinement (CNN classifier).
 
-| Model           | Test F1 | Test mAP50 | Validation F1 | Validation mAP50 | 
-|-----------------|---------|------------|----------------|------------------|
-| yolov8s_sgd_lr0001_max_E200P20_AD_0914 + CNN Ellipse Classifier | 99.1%  | 99.8%     | 96.15%         | 90.91%           |
+| Model                         | Test F1 | Test mAP50 | Val F1 | Val mAP50 | 
+|-------------------------------|---------|------------|---------------|------------------|
+| Baseline YOLO Detection Model | 98.21% | 99.54% | 94.44% | 90.57% |
+| YOLO + Post-Processing Refinement (CNN Classifier) | 99.12%(+0.91%) | 99.84%(+0.30%) | 96.15%(+1.71%) | 90.91%(+0.34%) |
 
-Lower validation performance because the validation set intentionally contains more difficult cases
+Validation performance is lower because the validation set intentionally contains more difficult cases.
 
 ## 4. Dataset
+
+### 4.1 Dataset Overview
+
+The following table summarises the dataset used at the beginning of the project and the final dataset when the project was completed.
+
+<table>
+<tr>
+<th>Stage</th>
+<th>Dataset Source</th>
+<th>Test</th>
+<th>Validation</th>
+<th>Training</th>
+<th>Unused</th>
+</tr>
+
+<tr>
+<td rowspan="2">Project Start</td>
+<td>Lab-captured images</td>
+<td>17</td>
+<td>17</td>
+<td>79</td>
+<td>0</td>
+</tr>
+
+<tr>
+<td>Open-source images</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+
+<tr>
+<td rowspan="2">Current</td>
+<td>Lab-captured images</td>
+<td>66</td>
+<td>66</td>
+<td>225</td>
+<td>55</td>
+</tr>
+
+<tr>
+<td>Open-source images</td>
+<td>0</td>
+<td>0</td>
+<td>68</td>
+<td>21013</td>
+</tr>
+</table>
 
 The dataset used in this project comes from two main sources: 
 - First, lab-captured images provided by an industry client — the amount of this data is limited, but it reflects real-world cases. 
 - Second, open-source images collected from the internet — this dataset is much larger, but it may not fully represent real-world scenarios
 
-| Stage          | Dataset Source     | Test | Validation | Training | Other |
-|----------------|---------------------|------|------------|----------|--------|
-| Project Start  | Lab-captured images | 17   | 17         | 79       | 0      |
-|                | Open-source images  | 0    | 0          | 0        | 0      |
-| Currently      | Lab-captured images | 66   | 66         | 225      | 55     |
-|                | Open-source images  | 0    | 0          | 68       | 21013  |
+### 4.2 Dataset Coverage Improvement
+
+During the development of this project, the dataset was expanded to better represent real-world microscope samples.  
+Through iterative data collection and dataset diversification, the estimated coverage of real-world sample variations was significantly improved.
+
+| Dataset Version | Estimated Real-World Sample Coverage |
+|---|---|
+| Initial Dataset | ~70% |
+| Final Dataset | ~95% |
+
+The coverage estimate reflects how well the dataset represents the variations observed in real-world microscope samples.
+
 
 
 ## 5. Folder Structure & Modules
