@@ -22,7 +22,7 @@ This project builds upon the work of [**shion92**](https://github.com/shion92), 
 Based on this foundation, I extended the project by focusing on two aspects:
 
 - improving overall detection performance through post-detection processing to refine detection confidence and better align the dataset with real-world usage
-- designing and building a full-stack web prototype from scratch, integrating the detection pipeline
+- transforming the trained models into a usable web prototype by designing and building a full-stack web application and integrating the detection pipeline
 
 
 ## 2. Live Demo
@@ -57,13 +57,25 @@ The system consists of a React frontend deployed on GitHub Pages, a Python backe
 
 ### 3.3 Model Components
 
-#### 1) Model Overview
+#### 1) Main Model
 
-There are two models used in this project:
-- The main model is YOLOv8s, which detects candidate egg objects. It takes the user-uploaded images (after preprocessing) as input and outputs bounding boxes and detection confidence for all detected objects.
-- The second model is a CNN-based classifier that evaluates each candidate egg based on its shape (most parasite eggs typically have an elliptical appearance). The classifier produces a score that is used to refine YOLO’s detection confidence.
+The main model used in this project is YOLOv8s, which detects candidate egg objects. It takes the user-uploaded images (after preprocessing) as input and outputs bounding boxes and detection confidence for all detected objects.
 
-#### 2) Model Performance Improvements
+#### 2) Examples of Detection Results and Errors
+
+However, the main detection model can still make mistakes. The Image below shows examples of accurate detections and common errors.
+
+![Examples of Detection Results and Errors](/docs/Detection_Examples.jpeg)
+
+#### 3) How I Address the Errors
+
+To address the problematic cases mentioned above, I introduced a post-processing step. This step uses a CNN-based classifier that classify each candidate object based on its shape, since most parasite eggs typically have an elliptical shape.
+
+If the candidate object has an elliptical shape, the detection confidence is increased; otherwise, it is decreased. The classifier outputs a probability that is used to adjust YOLO’s detection confidence.
+
+![Classification Examples](/docs/Classificaiton_Samples.png)
+
+#### 4) Model Performance Improvements
 
 The following table summarizes the model performance improvements (F1 score and mAP50 on both the test set and validation set) after introducing the post-processing refinement (CNN classifier).
 
