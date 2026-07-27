@@ -8,10 +8,12 @@ import { useLocation } from 'react-router-dom';
 function LogoHeader() {
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuTitle, setMenuTitle] = useState("Image Mode");
+  const [menuTitle, setMenuTitle] = useState("Folder Mode");
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const location = useLocation();
+  const isImageMode = location.pathname.includes('/image');
+  const isFolderMode = location.pathname === '/' || location.pathname.includes('/folder');
 
   // useEffect to handle clicks outside the dropdown and close it
   useEffect(() => {
@@ -29,10 +31,10 @@ function LogoHeader() {
   useEffect(() => {
     if (location.pathname.includes('/batch')) {
       setMenuTitle('Batch Mode');
-    } else if (location.pathname.includes('/folder')) {
-      setMenuTitle('Folder Mode');
-    } else {
+    } else if (location.pathname.includes('/image')) {
       setMenuTitle('Images Mode');
+    } else {
+      setMenuTitle('Folder Mode');
     }
   }, [location.pathname]);
   
@@ -43,16 +45,39 @@ function LogoHeader() {
       <div ref={dropdownRef} className="absolute  right-0 z-20 mt-2 w-64 rounded-lg bg-white shadow-xl ring-1 ring-black ring-opacity-5" id="mode-dropdown">
         <div className="p-4 text-sm text-gray-700">
           <button 
+            onClick={() => {
+              setMenuOpen(false);
+              navigate('/');
+            }} 
+            className={`w-full group inline-flex text-start justify-start items-center gap-2 px-4 py-2 rounded-lg transition-colors hover:bg-blue-50  ${
+              isFolderMode
+                ? 'text-blue-700 '
+                : ''
+            }`}
+            aria-current={isFolderMode ? 'page' : undefined}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6 group-hover:scale-105">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+            </svg>
+            <span>Folder Mode</span>
+            {isFolderMode && <span className="ml-auto text-blue-600" aria-hidden="true">✓</span>}
+          </button>
+          <button 
               onClick={() => {
                 setMenuOpen(false);
-                navigate('/');
+                navigate('/image');
               }} 
-              className="w-full group inline-flex  justify-start items-center gap-2 px-4 py-2 rounded-lg hover:bg-blue-100 hover:font-bold">
+              className={`w-full group inline-flex justify-start items-center gap-2 px-4 py-2 rounded-lg transition-colors hover:bg-blue-50  ${
+                isImageMode
+                  ? 'text-blue-700 '
+                  : ''
+              }`}
+              aria-current={isImageMode ? 'page' : undefined}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6 group-hover:scale-105 ">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
               </svg>                
-              Images Mode
-              <span></span>
+              <span>Images Mode</span>
+              {isImageMode && <span className="ml-auto text-blue-600" aria-hidden="true">✓</span>}
           </button>
           {/* <button 
             onClick={() => {
@@ -65,18 +90,6 @@ function LogoHeader() {
             </svg>
             Batch Mode
           </button> */}
-          <button 
-            onClick={() => {
-              setMenuOpen(false);
-              navigate('/folder');
-            }} 
-            className="w-full group inline-flex text-start  justify-start items-center gap-2 px-4 py-2 rounded-lg hover:bg-blue-100 hover:font-bold">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
-            </svg>
-
-            Folder Mode 
-          </button>
         </div>
       </div>
     );

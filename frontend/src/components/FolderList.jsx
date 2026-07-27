@@ -2,7 +2,7 @@
 // Main UI component
 // ==========================================
 
-function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImages, selectedFolder, setSelectedFolder }) {
+function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImages, selectedFolder, setSelectedFolder, onLoadDefault }) {
 
     // handle folder selection
     const handleFolderSelect = (folder) => {
@@ -12,7 +12,18 @@ function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImag
 
     // handle empty state
     if (!folders.length) {
-        return <p className="text-gray-400 bg-gray-100 p-4 mt-2 rounded-lg italic">Please upload the folders with images in them</p>;
+        return (
+            <p className="text-gray-400 bg-gray-100 p-4 mt-2 rounded-lg italic">
+                Please upload a folder with images in it, or <br />
+                <button
+                    type="button"
+                    onClick={onLoadDefault}
+                    className="text-blue-400 underline cursor-pointer hover:text-blue-600 transition"
+                >
+                    Load default folder {'>>'}
+                </button>
+            </p>
+        );
     }
 
     // folder status badge

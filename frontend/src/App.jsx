@@ -52,7 +52,8 @@ function App() {
       {/* <Router basename="/Automated-Nematode-Egg-Detection"> */}
       <Router>
         <Routes>
-          <Route path="/" element={<Homepage ready={ready} />} />
+          <Route path="/" element={<FolderModePage ready={ready} />} />
+          <Route path="/image" element={<Homepage ready={ready} />} />
           <Route path="/batch" element={<BatchModePage ready={ready} />} />
           <Route path="/batch/result" element={<BatchResultPage />} />
           <Route path="/folder" element={<FolderModePage ready={ready} />} />
@@ -64,4 +65,3 @@ function App() {
 }
 
 export default App;
-

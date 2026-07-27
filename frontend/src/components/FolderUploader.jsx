@@ -128,6 +128,58 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
         return res.json();
     };
 
+    // Load the three bundled example images as a real folder.
+    const loadDefaultFolder = async () => {
+        const folderName = 'Default Images';
+        const defaultImageUrls = [
+            `${import.meta.env.BASE_URL}static/images/default_Image1.png`,
+            `${import.meta.env.BASE_URL}static/images/default_Image2.jpeg`,
+            `${import.meta.env.BASE_URL}static/images/default_Image3.png`,
+        ];
+
+        setUploading(true);
+        setUplProgress(0);
+        setUplTotal(defaultImageUrls.length);
+
+        try {
+            const images = await Promise.all(
+                defaultImageUrls.map(async (url) => {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Failed to load ${url}`);
+
+                    const sourceBlob = await response.blob();
+                    const sourceName = url.split('/').pop();
+                    const sourceFile = new File([sourceBlob], sourceName, { type: sourceBlob.type });
+                    const { url: processedUrl, filename } = await preprocessTo608(sourceFile);
+
+                    setUplProgress(prev => prev + 1);
+                    return {
+                        folder: folderName,
+                        filename,
+                        original_image: processedUrl,
+                        detected: false,
+                        boxes: [],
+                        eggfound: null
+                    };
+                })
+            );
+
+            setFolderImages({ [folderName]: images });
+            setFolders([{
+                name: folderName,
+                count: images.length,
+                status: 'not started',
+                eggnum: '-'
+            }]);
+            setSelectedFolder(folderName);
+        } catch (error) {
+            console.error('Unable to load the default folder:', error);
+            alert('Unable to load the default folder. Please try again.');
+        } finally {
+            setUploading(false);
+        }
+    };
+
     // ---------------------
     // handle folder upload
     // ---------------------
@@ -496,6 +548,7 @@ function FolderUploader({ folders, setFolders, folderImages, setFolderImages, se
                     setSelectedFolder={setSelectedFolder}
                     confidenceMode={confidenceMode}
                     Threshold={Threshold}
+                    onLoadDefault={loadDefaultFolder}
   
                 />
             </div>
