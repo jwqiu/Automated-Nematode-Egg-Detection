@@ -1,176 +1,137 @@
+# Automated Nematode Egg Detection and Counting
+
 ## 1. Project Overview
 
-### 1.1 Background
+A computer vision pipeline that detects parasite eggs in microscope images and automates slide-level counting and review.
 
-Parasite infections are a major problem for farm animals and can cause significant losses for farmers.
-To evaluate infection severity, technicians typically examine fecal samples under a microscope, manually identify parasite eggs, and count the number of eggs in each sample.
+The system combines a **YOLOv8s object detector**, a **CNN-based shape classifier**, and a **folder-to-count workflow**. A user can provide folders of microscope images, run detection across every image, and receive image-level predictions and an aggregated egg count for each slide.
 
-<img width="360" height="270" alt="image" src="https://github.com/user-attachments/assets/cff5b22e-66b4-42a0-a2b7-c2a87885afd6" />
+<img width="1436" height="817" alt="Folder-based automated detection workflow" src="https://github.com/user-attachments/assets/ece4a404-0b56-408e-9ad1-68e4b6f33956" />
 
-### 1.2 Problem
+## 2. Problem
 
-Manual egg counting is highly repetitive and time-consuming, which can become a bottleneck in parasite research and routine animal health monitoring.
+Assessing parasite infection severity often requires technicians to examine faecal samples under a microscope and manually identify and count parasite eggs.
 
-### 1.3 Solution
+This process is repetitive and time-consuming, creating a bottleneck in parasite research and routine animal health monitoring.
 
-This project builds an AI-powered web system for automated parasite egg detection and counting. Users can upload folders of microscope images (each folder representing one slide). The system automatically detects parasite eggs in each image and calculates the total egg count. 
+## 3. Solution
 
-### 1.4 Previous Work
+This project uses computer vision to automatically detect and count parasite eggs. For digital analysis, each microscope slide is captured as a series of images. The system detects eggs in every image, refines the predictions using shape information, and combines the results into one slide-level count.
 
-This project builds upon the work of [**shion92**](https://github.com/shion92), who developed the original model training pipeline including DeepLab, Faster R-CNN, YOLO, and supporting training and evaluation utilities.
+### End-to-end automated workflow
 
-Based on this foundation, I extended the project by focusing on two aspects:
+Images from the same slide are grouped in one folder. The user can upload one or more folders and start detection once; the system then processes every image and calculates the total egg count for each folder automatically.
 
-- improving overall detection performance through post-detection processing to refine detection confidence and better align the dataset with real-world usage
-- transforming the trained models into a usable web prototype by designing and building a full-stack web application and integrating the detection pipeline
-
-
-## 2. Live Demo
-
-### 2.1 Screenshot
-
-![HomePage Screenshot](/docs/home_screenshot.png)
-
-<img width="1436" height="817" alt="image" src="https://github.com/user-attachments/assets/ece4a404-0b56-408e-9ad1-68e4b6f33956" />
-
-### 2.2 Live Site
-
-👉 Try it out here:  
-[**https://jwqiu.github.io/Automated-Nematode-Egg-Detection/**](https://jwqiu.github.io/Automated-Nematode-Egg-Detection/)
-
-
-## 3. System Design and Implementation
-
-### 3.1  Overview
-
-The system consists of a React frontend deployed on GitHub Pages, a Python backend deployed on Azure Functions, a YOLOv8-based detection pipeline with CNN-based confidence refinement, and a storage layer using PostgreSQL and Azure Blob Storage.
-
-![System Architecture](/docs/system_overview.jpeg)
-
-### 3.2 Tech Stack for this Project
-
-- **Frontend:** React, Tailwind CSS, Vite 
-- **Backend :** Python (Azure Functions)
-- **Machine Learning & AI:** YOLO, CNN classifier, PyTorch, ONNX Runtime
-- **Database & Storage:** Azure Blob Storage · Azure PostgreSQL (Flexible Server)
-- **Deployment:** GitHub Pages(Frontend), Azure Function(Backend)
-
-### 3.3 Model Components
-
-#### 1) Main Model
-
-The main model used in this project is YOLOv8s, which detects candidate egg objects. It takes the user-uploaded images (after preprocessing) as input and outputs bounding boxes and detection confidence for all detected objects.
-
-#### 2) Examples of Detection Results and Errors
-
-However, the main detection model can still make mistakes. The Image below shows examples of accurate detections and common errors.
-
-![Examples of Detection Results and Errors](/docs/Detection_Examples.jpeg)
-
-#### 3) How I Address the Errors
-
-To address the problematic cases mentioned above, I introduced a post-processing step. This step uses a CNN-based classifier that classify each candidate object based on its shape, since most parasite eggs typically have an elliptical shape.
-
-If the candidate object has an elliptical shape, the detection confidence is increased; otherwise, it is decreased. The classifier outputs a probability that is used to adjust YOLO’s detection confidence.
-
-![Classification Examples](/docs/Classificaiton_Samples.png)
-
-#### 4) Model Performance Improvements
-
-The following table summarizes the model performance improvements (F1 score and mAP50 on both the test set and validation set) after introducing the post-processing refinement (CNN classifier).
-
-| Model                         | Test F1 | Test mAP50 | Val F1 | Val mAP50 | 
-|-------------------------------|---------|------------|---------------|------------------|
-| Baseline YOLO Detection Model | 98.21% | 99.54% | 94.44% | 90.57% |
-| YOLO + Post-Processing Refinement (CNN Classifier) | 99.12%(+0.91%) | 99.84%(+0.30%) | 96.15%(+1.71%) | 90.91%(+0.34%) |
-
-Validation performance is lower because the validation set intentionally contains more difficult cases.
-
-## 4. Dataset
-
-### 4.1 Dataset Overview
-
-The following table summarises the dataset used at the beginning of the project and the final dataset when the project was completed.
-
-<table>
-<tr>
-<th>Stage</th>
-<th>Dataset Source</th>
-<th>Test</th>
-<th>Validation</th>
-<th>Training</th>
-<th>Unused</th>
-</tr>
-
-<tr>
-<td rowspan="2">Project Start</td>
-<td>Lab-captured images</td>
-<td>17</td>
-<td>17</td>
-<td>79</td>
-<td>0</td>
-</tr>
-
-<tr>
-<td>Open-source images</td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
-</tr>
-
-<tr>
-<td rowspan="2">Current</td>
-<td>Lab-captured images</td>
-<td>66</td>
-<td>66</td>
-<td>225</td>
-<td>55</td>
-</tr>
-
-<tr>
-<td>Open-source images</td>
-<td>0</td>
-<td>0</td>
-<td>68</td>
-<td>21013</td>
-</tr>
-</table>
-
-The dataset used in this project comes from two main sources: 
-- First, lab-captured images provided by an industry client — the amount of this data is limited, but it reflects real-world cases. 
-- Second, open-source images collected from the internet — this dataset is much larger, but it may not fully represent real-world scenarios
-
-### 4.2 Dataset Coverage Improvement
-
-During the development of this project, the dataset was expanded to better represent real-world microscope samples.  
-Through iterative data collection and dataset diversification, the estimated coverage of real-world sample variations was significantly improved.
-
-| Dataset Version | Estimated Real-World Sample Coverage |
-|---|---|
-| Initial Dataset | ~70% |
-| Final Dataset | ~95% |
-
-The coverage estimate reflects how well the dataset represents the variations observed in real-world microscope samples.
-
-
-
-## 5. Folder Structure & Modules
-
-```bash
-AUTOMATED-NEMATODE-EGG-DETECTION/
-├── backend-azure/        # Azure Functions backend for ONNX model inference and API deployment
-├── backend-local/        # Local backend for development/testing (e.g. Flask or raw Python)
-├── docs/                 # Project documentation and screenshots
-├── electron/             # Electron wrapper used to package the React web app as an offline desktop application
-├── frontend/             # React + Tailwind CSS frontend for UI interaction, image upload, and inference result rendering
-├── model_pipeline/       # Core model code: YOLO, DeepLab, Faster R-CNN, helpers, pretrained weights
-├── dataset/              # Optional training/evaluation datasets (may not be tracked in Git)
-├── node_modules/         # Frontend dependencies (not tracked by Git)
-├── venv/                 # Python virtual environment (excluded from Git)
-├── README.md             # Project documentation (you are here)
-├── requirements.txt      # Python dependencies for backend + model
-├── .gitignore            # Git ignore rules
-├── package.json          # Frontend config for npm
-└── package-lock.json     # Exact npm dependency versions
+```text
+Slide folders
+    -> image conversion, resizing, and padding
+    -> YOLOv8s candidate detection
+    -> CNN shape-based confidence refinement
+    -> confidence filtering and egg counting
+    -> per-image and per-slide aggregation
+    -> low-confidence / no-detection review
+    -> optional manual count correction
 ```
+
+### Automated processing
+
+1. **Folder ingestion** — images are grouped by their top-level folder so results remain associated with the correct slide.
+2. **Preprocessing** — TIFF images are converted when necessary, then every image is resized and padded to `608 x 608`.
+3. **Queued inference** — the system processes each unprocessed image and tracks progress across the complete queue.
+4. **Count aggregation** — detections above the selected confidence threshold are counted per image and summed for the folder.
+
+### Review assistance
+
+Automation does not remove the need for quality control. After inference, the interface can place low-confidence results or images with no detected eggs first. A reviewer can inspect the bounding boxes and manually correct an image count when needed.
+
+## 4. Computer Vision Approach
+
+### 4.1 Candidate detection with YOLOv8s
+
+The production detector is YOLOv8s. It receives a preprocessed microscope image and outputs candidate egg bounding boxes with detection confidence scores. The repository also retains training and evaluation pipelines for Faster R-CNN and DeepLabV3+ from the earlier research project.
+
+### 4.2 Observed failure modes
+
+The detector performs well on clear examples, but difficult backgrounds and egg-like structures can still produce false positives or uncertain predictions.
+
+![Examples of correct detections and common errors](/docs/Detection_Examples.jpeg)
+
+### 4.3 Shape-aware confidence refinement
+
+Many problematic detections can be distinguished using shape. For every YOLO candidate, the system crops the predicted region, converts it to grayscale, enhances its contrast, and sends it to a binary CNN classifier trained to distinguish elliptical from non-elliptical objects.
+
+![Ellipse and non-ellipse classification samples](/docs/Classificaiton_Samples.png)
+
+The classifier does not replace YOLO or produce new bounding boxes. Instead, its probability adjusts the detector's original confidence:
+
+```text
+adjusted confidence = YOLO confidence + k * (0.5 - non-ellipse probability)
+```
+
+An egg-like shape raises the score, while a non-elliptical shape lowers it. The adjusted score can then be used for thresholding, display, and counting.
+
+## 5. Model Results
+
+Adding shape-aware confidence refinement improved both F1 and mAP50 on the held-out test and validation sets. The largest gain was on the more difficult validation set, where F1 increased from **94.44% to 96.15%**.
+
+| Model | Test F1 | Test mAP50 | Validation F1 | Validation mAP50 |
+|---|---:|---:|---:|---:|
+| Baseline YOLOv8s | 98.21% | 99.54% | 94.44% | 90.57% |
+| **YOLOv8s + CNN confidence refinement** | **99.12% (+0.91 pp)** | **99.84% (+0.30 pp)** | **96.15% (+1.71 pp)** | **90.91% (+0.34 pp)** |
+
+F1 was evaluated using a confidence threshold of `0.5` and a matching IoU threshold of `0.5`. Greedy non-maximum suppression used an IoU threshold of `0.2`. The validation set intentionally contains more difficult cases, which explains its lower absolute performance.
+
+## 6. Dataset and Experiment Design
+
+The project uses two complementary sources of data:
+
+- **Lab-captured images** provided by an industry client. This set is limited in size but represents the real microscope samples the system is intended to process.
+- **Open-source images** collected to expand visual diversity. Because their distribution may differ from the target environment, only a selected subset was used for training.
+
+| Project stage | Data source | Test | Validation | Training | Available but not used |
+|---|---|---:|---:|---:|---:|
+| Initial | Lab-captured images | 17 | 17 | 79 | 0 |
+| Initial | Open-source images | 0 | 0 | 0 | 0 |
+| Final | Lab-captured images | 66 | 66 | 225 | 55 |
+| Final | Open-source images | 0 | 0 | 68 | 21,013 |
+
+The final dataset places real lab images in every split and uses selected open-source examples only in training. The validation set was designed to contain more challenging cases so that model changes could be tested against realistic failure modes rather than only clean examples.
+
+## 7. Demo
+
+The deployed demo opens in **Folder Mode**, which demonstrates the complete automated workflow. Upload a folder of microscope images or select **Load default folder**, then start detection to see progress, image-level boxes, and the aggregated folder count.
+
+[Try the live demo](https://jwqiu.github.io/Automated-Nematode-Egg-Detection/)
+
+The interface also includes an Image Mode for inspecting individual images.
+
+## 8. Operational Inference and Deployment
+
+The trained PyTorch models are exported to ONNX and executed with ONNX Runtime on CPU. A Python inference service runs the YOLO detector and CNN refinement pipeline, while a lightweight React interface manages folder ingestion, progress, counting, and result review. The project supports an Azure Functions deployment for the web demo and an Electron wrapper for local desktop packaging.
+
+These components make the computer vision workflow usable outside a training notebook; they are supporting infrastructure rather than the main focus of the project.
+
+## 9. Repository Structure
+
+```text
+Automated-Nematode-Egg-Detection/
+├── model_pipeline/   # Data preparation, training, inference, and evaluation
+├── backend-azure/    # ONNX inference through Azure Functions
+├── backend-local/    # Local ONNX inference service
+├── frontend/         # Folder automation and result-review interface
+├── electron/         # Offline desktop packaging
+└── docs/             # Figures, screenshots, and supporting notes
+```
+
+## 10. Attribution
+
+This project builds on the original work by [shion92](https://github.com/shion92), which established model training and evaluation pipelines for DeepLabV3+, Faster R-CNN, and YOLO.
+
+The work added in this repository focuses on:
+
+- expanding and restructuring the dataset around real-world microscope samples;
+- evaluating and improving the YOLO detection pipeline;
+- training and integrating the CNN-based shape refinement stage;
+- comparing original and adjusted confidence scores;
+- automating folder-level preprocessing, inference, counting, and review; and
+- operationalising the models through ONNX-based web and desktop inference.
