@@ -14,13 +14,13 @@ function FolderList({ folders = [], setFolders, folderImages = {}, setFolderImag
     if (!folders.length) {
         return (
             <p className="text-gray-400 bg-gray-100 p-4 mt-2 rounded-lg italic">
-                Please upload a folder with images in it, or <br />
+                Upload a folder of microscopy images to get started. <br />
                 <button
                     type="button"
                     onClick={onLoadDefault}
                     className="text-blue-400 underline cursor-pointer hover:text-blue-600 transition"
                 >
-                    Load default folder {'>>'}
+                    Try the sample folder {'→'}
                 </button>
             </p>
         );

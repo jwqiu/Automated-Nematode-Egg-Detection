@@ -8,8 +8,11 @@ import DetectionResult from '../components/DetectionResult';
 import FolderUploader from '../components/FolderUploader';
 // @ts-ignore
 import FolderImagesList from '../components/FolderImagesList';
+// @ts-ignore
+import FolderModeGuide from '../components/FolderModeGuide';
 
 const useState = React.useState;
+const useCallback = React.useCallback;
 
 // --------------------------------------------------------------------------------------------------------------------------------
 // Notes on keeping the state shape consistent
@@ -21,16 +24,19 @@ const useState = React.useState;
 
 function FolderModePage({ ready }) {
 
+    const [showGuide, setShowGuide] = useState(true);
+    const closeGuide = useCallback(() => setShowGuide(false), []);
     const [folders, setFolders] = useState([]);
     const [folderImages, setFolderImages] = useState({}); // the data in folderImages is start as an object, and should be kept as an object
     const [selectedFolder, setSelectedFolder] = useState(null);
     const [confidenceMode, setConfidenceMode] = useState({
         mode: 'original' // 'original' | 'adjusted'
     });
-    const [Threshold, setThreshold] = useState(0.5); // at the moment, this threshold can only be changed in this code, can not be changed from UI yet
+    const [Threshold] = useState(0.5); // at the moment, this threshold can only be changed in this code, can not be changed from UI yet
 
     return (
         <div className='flex flex-col h-screen '>
+            {showGuide && <FolderModeGuide onClose={closeGuide} />}
             <LogoHeader />
             <div className='px-12 pb-12 pt-6 flex h-[calc(100vh-100px)] flex-row gap-x-8 mx-auto w-full min-w-[1000px] max-w-[1400px] '>
                 <FolderUploader
